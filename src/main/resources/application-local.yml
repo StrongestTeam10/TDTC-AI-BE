@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/market_twin
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: validate   # 스키마는 schema.sql/마이그레이션으로 관리, 엔티티가 스키마를 덮어쓰지 않도록 validate 고정
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# FastAPI 시뮬레이션 엔진 (로컬 실행 시 별도 프로세스로 uvicorn 구동 필요)
+simulation-engine:
+  base-url: http://localhost:8000
+
+cors:
+  allowed-origins:
+    - http://localhost:5173
