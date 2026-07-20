@@ -49,9 +49,9 @@ export DB_PASSWORD=postgres
 로컬 실행 후 http://localhost:8080/swagger-ui.html
 
 ## TODO (다음 단계에서 구체화 필요)
+- [x] 실제 ERD 기준으로 엔티티/DTO 교체 완료 (Market, Zone, CrowdDensity, Risk)
+- [ ] ⚠️ **구역 간 연결(그래프) 구조가 ERD에 없음** — Mesa NetworkGrid에 필요한 인접성 정보를 폴리곤 좌표로 런타임 계산할지, 스키마에 컬럼을 추가할지 결정 필요
+- [ ] 나머지 14개 테이블 반영: USRUSR501M(사용자), SENSENS01M(센서), SENLIDR01M/H(라이다), SENRAD01M/H(레이더), AUDEVNT01M/H(음향), SIMSCNR01M(시나리오), SIMRSLT01D(시나리오결과), ENTCHAN01H(승인로그), MRKFCTS01M(시설), CRDDNST01H(밀집도로그), COMCODE01M(공통코드)
 - [ ] `gradle wrapper` 실행 후 wrapper 파일 커밋 (이 저장소는 wrapper 미포함 상태)
-- [ ] LidarReading, AcousticEvent 등 나머지 엔티티/리포지토리 추가 (현재 CctvDetection, AlertLog, SpatialNode만 구현)
-- [ ] DashboardService의 acousticScore/flowRateScore 계산 로직 연결
-- [ ] getAvailableTimestamps() 실제 쿼리 구현
-- [ ] Spring Security 인증/인가 (현재 미적용 — B2G 요건상 필수 검토)
-- [ ] DB 마이그레이션 도구(Flyway/Liquibase) 도입 여부 결정
+- [ ] Spring Security 인증/인가 (현재 미적용 — B2G 요건상 필수 검토, `USRUSR501M` 테이블과 연동)
+- [ ] DB 마이그레이션 도구(Flyway/Liquibase) 도입 여부 결정 — SQL Editor 수동 실행 방식은 임시 조치

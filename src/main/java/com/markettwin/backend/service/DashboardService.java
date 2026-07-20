@@ -1,12 +1,13 @@
 package com.markettwin.backend.service;
 
-import com.markettwin.backend.domain.entity.AlertLog;
-import com.markettwin.backend.domain.entity.CctvDetection;
+import com.markettwin.backend.domain.entity.CrowdDensity;
+import com.markettwin.backend.domain.entity.Risk;
 import com.markettwin.backend.dto.response.AgentStateDto;
-import com.markettwin.backend.dto.response.AlertLogDto;
+import com.markettwin.backend.dto.response.CrowdDensityDto;
 import com.markettwin.backend.dto.response.DashboardSnapshotDto;
-import com.markettwin.backend.repository.AlertLogRepository;
-import com.markettwin.backend.repository.CctvDetectionRepository;
+import com.markettwin.backend.dto.response.RiskDto;
+import com.markettwin.backend.repository.CrowdDensityRepository;
+import com.markettwin.backend.repository.RiskRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,59 +18,62 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DashboardService {
 
-    private final CctvDetectionRepository cctvDetectionRepository;
-    private final AlertLogRepository alertLogRepository;
-    private final RiskScoringService riskScoringService;
+    private final CrowdDensityRepository crowdDensityRepository;
+    private final RiskRepository riskRepository;
 
     public DashboardSnapshotDto getSnapshot(Instant snapshotTime) {
         Instant targetTime = snapshotTime != null ? snapshotTime : Instant.now();
 
-        List<CctvDetection> detections = snapshotTime != null
-                ? cctvDetectionRepository.findByTimestamp(snapshotTime)
-                : cctvDetectionRepository.findTop100ByOrderByTimestampDesc();
+        List<CrowdDensity> densities = snapshotTime != null
+                ? crowdDensityRepository.findByCapturedAt(snapshotTime)
+                : crowdDensityRepository.findTop100ByOrderByCapturedAtDesc();
 
-        List<AgentStateDto> agents = detections.stream()
-                .map(this::toAgentState)
+        List<CrowdDensityDto> crowdDensities = densities.stream()
+                .map(this::toCrowdDensityDto)
                 .toList();
 
-        // TODO: acousticScore, flowRateScore는 acoustic_events / lidar_readings 조회로 대체
-        var riskScore = riskScoringService.computeRiskScore(detections, 0.0, 0.0, targetTime);
-
-        List<AlertLogDto> alerts = alertLogRepository
-                .findByTimestampLessThanEqualOrderByTimestampDesc(targetTime)
+        List<RiskDto> risks = riskRepository
+                .findByDetectedAtLessThanEqualOrderByDetectedAtDesc(targetTime)
                 .stream()
                 .limit(50)
-                .map(this::toAlertDto)
+                .map(this::toRiskDto)
                 .toList();
 
-        return new DashboardSnapshotDto(targetTime, agents, riskScore, alerts);
+        // 개별 에이전트 좌표는 CRDDNST01M(구역 단위 집계)만으로는 복원 불가.
+        // Vision AI 원본 트래킹 결과(개별 좌표)가 별도로 필요하므로 현재는 빈 배열.
+        // 시각화에 필요하면 CRDDNST01M을 구역 중심점에 인원수만큼 점으로 흩뿌리는 방식으로 근사하거나,
+        // Vision AI 원본 테이블이 ERD에 추가되어야 함 (현재 ERD엔 없음).
+        List<AgentStateDto> agents = List.of();
+
+        return new DashboardSnapshotDto(targetTime, crowdDensities, risks, agents);
     }
 
     public List<Instant> getAvailableTimestamps() {
-        // TODO: 실제로는 cctv_detections 테이블의 distinct timestamp 조회 쿼리로 대체
+        // TODO: 실제로는 CRDDNST01M의 distinct captured_at 조회 쿼리로 대체
         return List.of();
     }
 
-    private AgentStateDto toAgentState(CctvDetection detection) {
-        // CCTV 탐지 데이터를 개별 에이전트 좌표로 매핑하는 로직은
-        // Vision AI의 개별 트래킹 결과(person_count 이상)에 따라 정교화 필요
-        return new AgentStateDto(
-                detection.getDetectionId(),
-                detection.getNodeId(),
-                0.0,
-                0.0,
-                "normal"
+    private CrowdDensityDto toCrowdDensityDto(CrowdDensity density) {
+        return new CrowdDensityDto(
+                density.getCrowdDensityId(),
+                density.getMarketId(),
+                density.getZoneId(),
+                density.getVisitorCount(),
+                density.getDensityScore(),
+                density.getStatusLevel(),
+                density.getCapturedAt()
         );
     }
 
-    private AlertLogDto toAlertDto(AlertLog alert) {
-        return new AlertLogDto(
-                alert.getAlertId(),
-                alert.getTimestamp(),
-                alert.getNodeId(),
-                alert.getAlertType(),
-                alert.getMessage(),
-                alert.getResolved()
+    private RiskDto toRiskDto(Risk risk) {
+        return new RiskDto(
+                risk.getRiskId(),
+                risk.getMarketId(),
+                risk.getZoneId(),
+                risk.getRiskScore(),
+                risk.getRiskLevel(),
+                risk.getReasonCode(),
+                risk.getDetectedAt()
         );
     }
 }
