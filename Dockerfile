@@ -1,13 +1,13 @@
-# Build stage (Maven wrapper 없이 공식 Maven 이미지 사용)
-FROM maven:3.9-eclipse-temurin-21 AS build
+# Build stage (Gradle Wrapper 없이 공식 Gradle 이미지 사용)
+FROM gradle:8.10-jdk21 AS build
 WORKDIR /workspace
-COPY pom.xml .
+COPY build.gradle settings.gradle ./
 COPY src src
-RUN mvn -q clean package -DskipTests
+RUN gradle clean bootJar --no-daemon -x test
 
 # Run stage
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY --from=build /workspace/target/*.jar app.jar
+COPY --from=build /workspace/build/libs/*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

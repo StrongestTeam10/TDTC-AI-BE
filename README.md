@@ -1,19 +1,18 @@
 # market-digital-twin-backend
 
-전통시장 AI 안전탐지 관제 솔루션 - Spring Boot API 서버
+전통시장 AI 안전탐지 관제 솔루션 - Spring Boot API 서버 (Gradle)
 
 ## ⚠️ 로컬 환경 안내
-이 컨테이너 환경은 Maven Central 접근이 차단되어 있어 `mvn` 빌드 검증을 하지 못했습니다.
-로컬 또는 CI(Maven Central 접근 가능한 환경)에서 아래로 검증해주세요.
+이 컨테이너 환경은 Gradle/Maven Central 접근이 차단되어 있어 실제 빌드 검증을 하지 못했습니다.
+로컬 또는 CI(외부 저장소 접근 가능한 환경)에서 아래로 먼저 검증해주세요.
 
 ```bash
-mvn clean package
+gradle wrapper          # Gradle Wrapper 생성 (gradlew, gradlew.bat 생성됨) - 최초 1회
+./gradlew clean build
 ```
 
-Maven Wrapper(`mvnw`)가 없는 상태이므로, 필요하면 로컬에서 다음으로 생성하세요.
-```bash
-mvn -N wrapper:wrapper
-```
+Wrapper를 생성해두면 이후에는 로컬에 Gradle이 설치되어 있지 않아도 `./gradlew`만으로 빌드/실행이 가능합니다.
+생성 후에는 `gradle/wrapper/`, `gradlew`, `gradlew.bat`을 반드시 git에 커밋하세요 (원래 Gradle 프로젝트의 표준 관례입니다).
 
 ## 아키텍처 상 역할
 ```
@@ -22,7 +21,7 @@ mvn -N wrapper:wrapper
                         └──────────────► [PostgreSQL] ◄──────┘
 ```
 Spring Boot는 Mesa 시뮬레이션을 직접 실행하지 않고, `SimulationEngineClient`를 통해
-별도의 FastAPI 마이크로서비스(`market-digital-twin` 저장소를 FastAPI로 감싼 것)를 호출합니다.
+별도의 FastAPI 마이크로서비스를 호출합니다.
 
 ## 폴더 구조
 - `config/` : CORS, WebClient(FastAPI 호출용) 설정
@@ -43,13 +42,14 @@ Spring Boot는 Mesa 시뮬레이션을 직접 실행하지 않고, `SimulationEn
 ```bash
 export DB_USERNAME=postgres
 export DB_PASSWORD=postgres
-mvn spring-boot:run -Dspring-boot.run.profiles=local
+./gradlew bootRun --args='--spring.profiles.active=local'
 ```
 
 ## API 문서
 로컬 실행 후 http://localhost:8080/swagger-ui.html
 
 ## TODO (다음 단계에서 구체화 필요)
+- [ ] `gradle wrapper` 실행 후 wrapper 파일 커밋 (이 저장소는 wrapper 미포함 상태)
 - [ ] LidarReading, AcousticEvent 등 나머지 엔티티/리포지토리 추가 (현재 CctvDetection, AlertLog, SpatialNode만 구현)
 - [ ] DashboardService의 acousticScore/flowRateScore 계산 로직 연결
 - [ ] getAvailableTimestamps() 실제 쿼리 구현
