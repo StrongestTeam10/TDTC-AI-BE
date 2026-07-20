@@ -12,7 +12,7 @@ import java.time.Instant;
  * ENTCHAN01H - 협장변경 (승인/변경 이력)
  */
 @Entity
-@Table(name = "ENTCHAN01H")
+@Table(name = "entchan01h")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor

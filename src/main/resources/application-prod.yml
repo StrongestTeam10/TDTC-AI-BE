@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: ${PRO_DB_URL}
-    username: ${PRO_DB_USERNAME}
-    password: ${PRO_DB_PASSWORD}
+    url: ${DB_URL}          # 예: jdbc:postgresql://<RDS 엔드포인트>:5432/market_twin
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: validate

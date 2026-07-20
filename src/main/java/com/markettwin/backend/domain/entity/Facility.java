@@ -12,7 +12,7 @@ import java.time.Instant;
  * MRKFCTS01M - 시설
  */
 @Entity
-@Table(name = "MRKFCTS01M")
+@Table(name = "mrkfcts01m")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor

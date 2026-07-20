@@ -6,7 +6,7 @@
 -- =========================================
 -- 1. 공통코드
 -- =========================================
-CREATE TABLE IF NOT EXISTS COMCODE01M (
+CREATE TABLE IF NOT EXISTS comcode01m (
     code       VARCHAR(3) PRIMARY KEY,
     code_name  VARCHAR(30) NOT NULL UNIQUE,
     code_desc  VARCHAR(200),
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS COMCODE01M (
 -- =========================================
 -- 2. 사용자
 -- =========================================
-CREATE TABLE IF NOT EXISTS USRUSR501M (
+CREATE TABLE IF NOT EXISTS usrusr501m (
     user_id     BIGSERIAL PRIMARY KEY,
     login_id    VARCHAR(30) NOT NULL UNIQUE,
     password    CHAR(64) NOT NULL,
@@ -32,9 +32,9 @@ CREATE TABLE IF NOT EXISTS USRUSR501M (
 -- =========================================
 -- 3. 협장변경 (승인/변경 이력)
 -- =========================================
-CREATE TABLE IF NOT EXISTS ENTCHAN01H (
+CREATE TABLE IF NOT EXISTS entchan01h (
     change_id     BIGSERIAL PRIMARY KEY,
-    user_id       BIGINT NOT NULL REFERENCES USRUSR501M(user_id),
+    user_id       BIGINT NOT NULL REFERENCES usrusr501m(user_id),
     change_type   VARCHAR(10),
     before_data   TEXT,
     after_data    TEXT,
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS ENTCHAN01H (
 -- =========================================
 -- 4. 시장 위치
 -- =========================================
-CREATE TABLE IF NOT EXISTS MRKADDR01M (
+CREATE TABLE IF NOT EXISTS mrkaddr01m (
     market_id    BIGSERIAL PRIMARY KEY,
     market_name  VARCHAR(50) NOT NULL,
     latitude     DECIMAL(10,6),
@@ -56,9 +56,9 @@ CREATE TABLE IF NOT EXISTS MRKADDR01M (
 -- =========================================
 -- 5. 시장 구역 위치 좌표
 -- =========================================
-CREATE TABLE IF NOT EXISTS MRKADDR01D (
+CREATE TABLE IF NOT EXISTS mrkaddr01d (
     zone_id              BIGSERIAL PRIMARY KEY,
-    market_id            BIGINT NOT NULL REFERENCES MRKADDR01M(market_id),
+    market_id            BIGINT NOT NULL REFERENCES mrkaddr01m(market_id),
     zone_name            VARCHAR(30),
     polygon_coordinates  TEXT
 );
@@ -66,9 +66,9 @@ CREATE TABLE IF NOT EXISTS MRKADDR01D (
 -- =========================================
 -- 6. 시설
 -- =========================================
-CREATE TABLE IF NOT EXISTS MRKFCTS01M (
+CREATE TABLE IF NOT EXISTS mrkfcts01m (
     facility_id    BIGSERIAL PRIMARY KEY,
-    market_id      BIGINT NOT NULL REFERENCES MRKADDR01M(market_id),
+    market_id      BIGINT NOT NULL REFERENCES mrkaddr01m(market_id),
     facility_type  VARCHAR(30) NOT NULL,
     name           VARCHAR(30) NOT NULL,
     is_active      BOOLEAN DEFAULT TRUE,
@@ -78,40 +78,40 @@ CREATE TABLE IF NOT EXISTS MRKFCTS01M (
 -- =========================================
 -- 7. 위험 척수
 -- =========================================
-CREATE TABLE IF NOT EXISTS MRKRISK01M (
+CREATE TABLE IF NOT EXISTS mrkrisk01m (
     risk_id      BIGSERIAL PRIMARY KEY,
-    market_id    BIGINT NOT NULL REFERENCES MRKADDR01M(market_id),
-    zone_id      BIGINT NOT NULL REFERENCES MRKADDR01D(zone_id),
+    market_id    BIGINT NOT NULL REFERENCES mrkaddr01m(market_id),
+    zone_id      BIGINT NOT NULL REFERENCES mrkaddr01d(zone_id),
     risk_score   REAL,
     risk_level   VARCHAR(10) NOT NULL,
     reason_code  VARCHAR(300) NOT NULL,
     detected_at  TIMESTAMP NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_mrkrisk01m_detected_at ON MRKRISK01M(detected_at);
+CREATE INDEX IF NOT EXISTS idx_mrkrisk01m_detected_at ON mrkrisk01m(detected_at);
 
 -- =========================================
 -- 8. 인구 밀집도
 -- =========================================
-CREATE TABLE IF NOT EXISTS CRDDNST01M (
+CREATE TABLE IF NOT EXISTS crddnst01m (
     crowd_density_id  BIGSERIAL PRIMARY KEY,
-    market_id         BIGINT NOT NULL REFERENCES MRKADDR01M(market_id),
-    zone_id           BIGINT NOT NULL REFERENCES MRKADDR01D(zone_id),
+    market_id         BIGINT NOT NULL REFERENCES mrkaddr01m(market_id),
+    zone_id           BIGINT NOT NULL REFERENCES mrkaddr01d(zone_id),
     visitor_count     INTEGER DEFAULT 0,
     density_score     DECIMAL(4,2),
     status_level      VARCHAR(10),
     captured_at       TIMESTAMP NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_crddnst01m_captured_at ON CRDDNST01M(captured_at);
-CREATE INDEX IF NOT EXISTS idx_crddnst01m_market_id ON CRDDNST01M(market_id);
+CREATE INDEX IF NOT EXISTS idx_crddnst01m_captured_at ON crddnst01m(captured_at);
+CREATE INDEX IF NOT EXISTS idx_crddnst01m_market_id ON crddnst01m(market_id);
 
 -- =========================================
 -- 9. 인구 밀집도 로그
 -- =========================================
-CREATE TABLE IF NOT EXISTS CRDDNST01H (
+CREATE TABLE IF NOT EXISTS crddnst01h (
     crowd_density_sq  BIGSERIAL PRIMARY KEY,
-    crowd_density_id  BIGINT NOT NULL REFERENCES CRDDNST01M(crowd_density_id),
+    crowd_density_id  BIGINT NOT NULL REFERENCES crddnst01m(crowd_density_id),
     visitor_count     INTEGER DEFAULT 0,
     density_score     DECIMAL(4,2),
     status_level      VARCHAR(10) NOT NULL,
@@ -121,10 +121,10 @@ CREATE TABLE IF NOT EXISTS CRDDNST01H (
 -- =========================================
 -- 10. 센서 (라이다/레이더/음향 공통 마스터)
 -- =========================================
-CREATE TABLE IF NOT EXISTS SENSENS01M (
+CREATE TABLE IF NOT EXISTS sensens01m (
     sensor_id          BIGSERIAL PRIMARY KEY,
-    market_id          BIGINT NOT NULL REFERENCES MRKADDR01M(market_id),
-    zone_id            BIGINT NOT NULL REFERENCES MRKADDR01D(zone_id),
+    market_id          BIGINT NOT NULL REFERENCES mrkaddr01m(market_id),
+    zone_id            BIGINT NOT NULL REFERENCES mrkaddr01d(zone_id),
     sensor_type_code   VARCHAR(3) NOT NULL,
     ip_address         VARCHAR(50)
 );
@@ -132,9 +132,9 @@ CREATE TABLE IF NOT EXISTS SENSENS01M (
 -- =========================================
 -- 11. 음향 이벤트 분석
 -- =========================================
-CREATE TABLE IF NOT EXISTS AUDEVNT01M (
+CREATE TABLE IF NOT EXISTS audevnt01m (
     event_id     BIGSERIAL PRIMARY KEY,
-    sensor_id    BIGINT NOT NULL REFERENCES SENSENS01M(sensor_id),
+    sensor_id    BIGINT NOT NULL REFERENCES sensens01m(sensor_id),
     sound_type   VARCHAR(20),
     confidence   DECIMAL(3,2),
     is_checked   BOOLEAN DEFAULT FALSE,
@@ -144,9 +144,9 @@ CREATE TABLE IF NOT EXISTS AUDEVNT01M (
 -- =========================================
 -- 12. 음향 이벤트 로그
 -- =========================================
-CREATE TABLE IF NOT EXISTS AUDEVNT01H (
+CREATE TABLE IF NOT EXISTS audevnt01h (
     event_sq     BIGSERIAL PRIMARY KEY,
-    event_id     BIGINT NOT NULL REFERENCES AUDEVNT01M(event_id),
+    event_id     BIGINT NOT NULL REFERENCES audevnt01m(event_id),
     sound_type   VARCHAR(20),
     confidence   DECIMAL(3,2),
     is_checked   BOOLEAN DEFAULT FALSE,
@@ -157,9 +157,9 @@ CREATE TABLE IF NOT EXISTS AUDEVNT01H (
 -- =========================================
 -- 13. 라이다 센서 데이터
 -- =========================================
-CREATE TABLE IF NOT EXISTS SENLIDR01M (
+CREATE TABLE IF NOT EXISTS senlidr01m (
     crowd_density_id   BIGSERIAL PRIMARY KEY,
-    sensor_id          BIGINT NOT NULL REFERENCES SENSENS01M(sensor_id),
+    sensor_id          BIGINT NOT NULL REFERENCES sensens01m(sensor_id),
     pt_cloud_cnt       INTEGER,
     updated_at         TIMESTAMP NOT NULL,
     detect_cnt         INTEGER,
@@ -171,9 +171,9 @@ CREATE TABLE IF NOT EXISTS SENLIDR01M (
 -- =========================================
 -- 14. 라이다 센서 데이터 로그
 -- =========================================
-CREATE TABLE IF NOT EXISTS SENLIDR01H (
+CREATE TABLE IF NOT EXISTS senlidr01h (
     crowd_density_sq   BIGSERIAL PRIMARY KEY,
-    crowd_density_id   BIGINT NOT NULL REFERENCES SENLIDR01M(crowd_density_id),
+    crowd_density_id   BIGINT NOT NULL REFERENCES senlidr01m(crowd_density_id),
     pt_cloud_cnt       INTEGER NOT NULL,
     updated_at         TIMESTAMP NOT NULL,
     detect_cnt         INTEGER,
@@ -186,9 +186,9 @@ CREATE TABLE IF NOT EXISTS SENLIDR01H (
 -- =========================================
 -- 15. 레이더 센서 데이터
 -- =========================================
-CREATE TABLE IF NOT EXISTS SENRAD01M (
+CREATE TABLE IF NOT EXISTS senrad01m (
     crowd_density_id   BIGSERIAL PRIMARY KEY,
-    sensor_id          BIGINT NOT NULL REFERENCES SENSENS01M(sensor_id),
+    sensor_id          BIGINT NOT NULL REFERENCES sensens01m(sensor_id),
     refl_intens        INTEGER NOT NULL,
     updated_at         TIMESTAMP NOT NULL,
     detect_cnt         INTEGER,
@@ -199,9 +199,9 @@ CREATE TABLE IF NOT EXISTS SENRAD01M (
 -- =========================================
 -- 16. 레이더 센서 데이터 로그
 -- =========================================
-CREATE TABLE IF NOT EXISTS SENRAD01H (
+CREATE TABLE IF NOT EXISTS senrad01h (
     crowd_density_sq   BIGSERIAL PRIMARY KEY,
-    crowd_density_id   BIGINT NOT NULL REFERENCES SENRAD01M(crowd_density_id),
+    crowd_density_id   BIGINT NOT NULL REFERENCES senrad01m(crowd_density_id),
     refl_intens        INTEGER NOT NULL,
     updated_at         TIMESTAMP NOT NULL,
     detect_cnt         INTEGER,
@@ -213,11 +213,11 @@ CREATE TABLE IF NOT EXISTS SENRAD01H (
 -- =========================================
 -- 17. 시나리오
 -- =========================================
-CREATE TABLE IF NOT EXISTS SIMSCNR01M (
+CREATE TABLE IF NOT EXISTS simscnr01m (
     scenario_id       BIGSERIAL PRIMARY KEY,
-    change_id         BIGINT REFERENCES ENTCHAN01H(change_id),
+    change_id         BIGINT REFERENCES entchan01h(change_id),
     scenario_name     VARCHAR(100) NOT NULL,
-    market_id         BIGINT REFERENCES MRKADDR01M(market_id),
+    market_id         BIGINT REFERENCES mrkaddr01m(market_id),
     virtual_config    TEXT NOT NULL,
     space_mod_data    JSONB,
     reg_datetime      TIMESTAMP NOT NULL,
@@ -229,9 +229,9 @@ CREATE TABLE IF NOT EXISTS SIMSCNR01M (
 -- =========================================
 -- 18. 시나리오 예측 결과
 -- =========================================
-CREATE TABLE IF NOT EXISTS SIMRSLT01D (
+CREATE TABLE IF NOT EXISTS simrslt01d (
     result_id                 BIGSERIAL PRIMARY KEY,
-    scenario_id                BIGINT NOT NULL REFERENCES SIMSCNR01M(scenario_id),
+    scenario_id                BIGINT NOT NULL REFERENCES simscnr01m(scenario_id),
     predicted_max_density      DECIMAL(6,2),
     predicted_risk_score       DECIMAL(6,2),
     economic_effect_analysis   TEXT,
@@ -244,9 +244,9 @@ CREATE TABLE IF NOT EXISTS SIMRSLT01D (
 -- =========================================
 -- (선택) 동작 확인용 샘플 데이터
 -- =========================================
-INSERT INTO MRKADDR01M (market_name, latitude, longitude) VALUES
+INSERT INTO mrkaddr01m (market_name, latitude, longitude) VALUES
     ('테스트 전통시장', 37.5665, 126.9780);
 
-INSERT INTO MRKADDR01D (market_id, zone_name, polygon_coordinates) VALUES
+INSERT INTO mrkaddr01d (market_id, zone_name, polygon_coordinates) VALUES
     (1, 'A구역', NULL),
     (1, 'B구역', NULL);

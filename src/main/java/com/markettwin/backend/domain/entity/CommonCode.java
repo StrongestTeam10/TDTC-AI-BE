@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
  * COMCODE01M - 공통코드
  */
 @Entity
-@Table(name = "COMCODE01M")
+@Table(name = "comcode01m")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor

@@ -13,7 +13,7 @@ import java.time.Instant;
  * AUDEVNT01H - 음향 이벤트 로그 (AUDEVNT01M의 변경 이력)
  */
 @Entity
-@Table(name = "AUDEVNT01H")
+@Table(name = "audevnt01h")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor

@@ -13,7 +13,7 @@ import java.time.Instant;
  * CRDDNST01H - 인구 밀집도 로그 (CRDDNST01M의 변경 이력)
  */
 @Entity
-@Table(name = "CRDDNST01H")
+@Table(name = "crddnst01h")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor

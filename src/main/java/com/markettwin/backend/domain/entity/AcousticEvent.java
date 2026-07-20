@@ -13,7 +13,7 @@ import java.time.Instant;
  * AUDEVNT01M - 음향 이벤트 분석
  */
 @Entity
-@Table(name = "AUDEVNT01M")
+@Table(name = "audevnt01m")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor

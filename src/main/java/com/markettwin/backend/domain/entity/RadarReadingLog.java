@@ -12,7 +12,7 @@ import java.time.Instant;
  * SENRAD01H - 레이더 센서 데이터 로그
  */
 @Entity
-@Table(name = "SENRAD01H")
+@Table(name = "senrad01h")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
