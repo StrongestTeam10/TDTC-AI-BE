@@ -21,12 +21,12 @@ public class CommonCode {
     @Column(name = "code", length = 3)
     private String code;
 
-    @Column(name = "code_name", nullable = false, unique = true, length = 30)
+    @Column(name = "code_name", nullable = false, unique = true, length = 50)
     private String codeName;
 
-    @Column(name = "code_desc", length = 200)
-    private String description;
+    @Column(name = "describe", length = 200)
+    private String describe;
 
-    @Column(name = "mrk", length = 200)
+    @Column(name = "mrk", length = 500)
     private String remark;
 }

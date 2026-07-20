@@ -30,13 +30,13 @@ public class Risk {
     @Column(name = "zone_id", nullable = false)
     private Long zoneId;
 
-    @Column(name = "risk_score")
+    @Column(name = "risk_score", nullable = false)
     private Float riskScore;
 
     @Column(name = "risk_level", nullable = false, length = 10)
     private String riskLevel;
 
-    @Column(name = "reason_code", nullable = false, length = 300)
+    @Column(name = "reason_code", nullable = false, length = 200)
     private String reasonCode;
 
     @Column(name = "detected_at", nullable = false)

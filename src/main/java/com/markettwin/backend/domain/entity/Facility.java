@@ -27,10 +27,10 @@ public class Facility {
     @Column(name = "market_id", nullable = false)
     private Long marketId;
 
-    @Column(name = "facility_type", nullable = false, length = 30)
+    @Column(name = "facility_type", nullable = false, length = 50)
     private String facilityType;   // 위험/화재변 등
 
-    @Column(name = "name", nullable = false, length = 30)
+    @Column(name = "name", nullable = false, length = 50)
     private String name;
 
     @Column(name = "is_active")

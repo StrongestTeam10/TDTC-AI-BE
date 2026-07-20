@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/market_twin
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    url: ${DEV_DB_URL:jdbc:postgresql://localhost:5432/market_twin}
+    username: ${DEV_DB_USERNAME:postgres}
+    password: ${DEV_DB_PASSWORD:postgres}
   jpa:
     hibernate:
       ddl-auto: validate   # 스키마는 schema.sql/마이그레이션으로 관리, 엔티티가 스키마를 덮어쓰지 않도록 validate 고정
