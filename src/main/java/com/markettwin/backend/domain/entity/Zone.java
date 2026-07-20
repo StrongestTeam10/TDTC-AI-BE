@@ -28,7 +28,6 @@ public class Zone {
     @Column(name = "zone_name", length = 30)
     private String zoneName;
 
-    @Lob
-    @Column(name = "polygon_coordinates")
+    @Column(name = "polygon_coordinates", columnDefinition = "TEXT")
     private String polygonCoordinates;
 }

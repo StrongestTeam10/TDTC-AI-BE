@@ -33,8 +33,7 @@ public class Scenario {
     @Column(name = "market_id")
     private Long marketId;
 
-    @Lob
-    @Column(name = "virtual_config", nullable = false)
+    @Column(name = "virtual_config", nullable = false, columnDefinition = "TEXT")
     private String virtualConfig;
 
     @Column(name = "space_mod_data", columnDefinition = "jsonb")
@@ -46,7 +45,7 @@ public class Scenario {
     @Column(name = "agent_count")
     private Integer agentCount;
 
-    @Column(name = "policy_type_code", length = 5)
+    @Column(name = "policy_type_code", length = 3)
     private String policyTypeCode;
 
     @Column(name = "created_at")

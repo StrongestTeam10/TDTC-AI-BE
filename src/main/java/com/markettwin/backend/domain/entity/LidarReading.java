@@ -28,7 +28,7 @@ public class LidarReading {
     @Column(name = "sensor_id", nullable = false)
     private Long sensorId;
 
-    @Column(name = "pt_cloud_cnt")
+    @Column(name = "pt_cloud_cnt", nullable = false)
     private Integer ptCloudCnt;
 
     @Column(name = "updated_at", nullable = false)

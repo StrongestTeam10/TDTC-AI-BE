@@ -5,8 +5,11 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 
 /**
@@ -31,18 +34,19 @@ public class ScenarioResult {
     @Column(name = "predicted_max_density", precision = 6, scale = 2)
     private BigDecimal predictedMaxDensity;
 
-    @Column(name = "predicted_risk_score", precision = 6, scale = 2)
-    private BigDecimal predictedRiskScore;
+    @Column(name = "predicted_density", precision = 6, scale = 2)
+    private BigDecimal predictedDensity;
 
-    @Lob
-    @Column(name = "economic_effect_analysis")
+    @Column(name = "economic_effect_analysis", columnDefinition = "TEXT")
     private String economicEffectAnalysis;
 
-    @Column(name = "generated_report_path", length = 300)
+    @Column(name = "generated_report_path", length = 1000)
     private String generatedReportPath;
 
+    // PostgreSQL INTERVAL 타입 매핑 (Hibernate 6.2+)
+    @JdbcTypeCode(SqlTypes.INTERVAL_SECOND)
     @Column(name = "avg_stay_time")
-    private Integer avgStayTime;
+    private Duration avgStayTime;
 
     @Column(name = "flow_direction", columnDefinition = "jsonb")
     private String flowDirection;

@@ -30,12 +30,10 @@ public class EntityChangeLog {
     @Column(name = "change_type", length = 10)
     private String changeType;
 
-    @Lob
-    @Column(name = "before_data")
+    @Column(name = "before_data", columnDefinition = "TEXT")
     private String beforeData;
 
-    @Lob
-    @Column(name = "after_data")
+    @Column(name = "after_data", columnDefinition = "TEXT")
     private String afterData;
 
     @Column(name = "status", length = 15)

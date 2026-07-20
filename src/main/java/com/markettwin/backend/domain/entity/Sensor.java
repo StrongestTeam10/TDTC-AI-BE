@@ -28,7 +28,7 @@ public class Sensor {
     @Column(name = "zone_id", nullable = false)
     private Long zoneId;
 
-    @Column(name = "sensor_type_code", nullable = false, length = 3)
+    @Column(name = "sensor_type_code", nullable = false, length = 5)
     private String sensorTypeCode;   // 예: LID(라이다), RAD(레이더), AUD(음향)
 
     @Column(name = "ip_address", length = 50)

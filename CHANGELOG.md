@@ -37,3 +37,16 @@
 - 18개 엔티티의 @Table(name=...) 어노테이션을 동일하게 소문자로 통일 (기능 변화 없음, 표기 일관성 목적)
 ### 추가
 - enable-rls.sql: Supabase RLS 활성화용 스크립트 (소문자 테이블명, 대소문자 폴딩 문제 회피)
+
+## [미출시] - 2026-07-20 (5차)
+### 수정 - 최신 ERD 재대조 반영
+- USRUSR501M: roles_code/org_code VARCHAR(3)→VARCHAR(5), created_ip/updated_ip VARCHAR(15)→VARCHAR(16)
+- SIMSCNR01M: policy_type_code VARCHAR(5)→VARCHAR(3)
+- SIMRSLT01D: predicted_risk_score(오류) → predicted_density로 정정, generated_report_path VARCHAR(300)→VARCHAR(1000), avg_stay_time INTEGER→INTERVAL(Duration+@JdbcTypeCode 매핑)
+- MRKFCTS01M: facility_type/name VARCHAR(30)→VARCHAR(50)
+- MRKRISK01M: risk_score NOT NULL 추가, reason_code VARCHAR(300)→VARCHAR(200)
+- SENSENS01M: sensor_type_code VARCHAR(3)→VARCHAR(5)
+- SENLIDR01M: pt_cloud_cnt NOT NULL 추가
+- COMCODE01M: code_name VARCHAR(30)→VARCHAR(50), code_desc→describe로 필드명 복원(예약어 아님 확인됨), mrk VARCHAR(200)→VARCHAR(500)
+### 참고
+- SIMSCNR01M.scenario_name이 ERD상 TIMESTAMP 타입으로 표기되어 있으나 명백한 오타로 판단, VARCHAR(100) 유지 (원본 ERD 작성자 확인 권장)
