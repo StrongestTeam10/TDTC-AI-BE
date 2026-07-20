@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
  * MRKADDR01D - 시장 구역 위치 좌표
  */
 @Entity
-@Table(name = "MRKADDR01D")
+@Table(name = "mrkaddr01d")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor

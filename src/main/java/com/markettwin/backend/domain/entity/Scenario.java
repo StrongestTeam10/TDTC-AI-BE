@@ -12,7 +12,7 @@ import java.time.Instant;
  * SIMSCNR01M - 시나리오 (파이프라인 B: 사용자 지정 시뮬레이션 요청)
  */
 @Entity
-@Table(name = "SIMSCNR01M")
+@Table(name = "simscnr01m")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor

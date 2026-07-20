@@ -13,7 +13,7 @@ import java.time.Instant;
  * SIMRSLT01D - 시나리오 예측 결과
  */
 @Entity
-@Table(name = "SIMRSLT01D")
+@Table(name = "simrslt01d")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor

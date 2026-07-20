@@ -50,8 +50,13 @@ export DB_PASSWORD=postgres
 
 ## TODO (다음 단계에서 구체화 필요)
 - [x] 실제 ERD 기준으로 엔티티/DTO 교체 완료 (Market, Zone, CrowdDensity, Risk)
+- [x] 나머지 14개 테이블 엔티티/리포지토리 추가 완료 (User, EntityChangeLog, Scenario, ScenarioResult, Facility, CrowdDensityLog, Sensor, AcousticEvent/Log, LidarReading/Log, RadarReading/Log, CommonCode) — 18개 테이블 전체 완료. Service/Controller/DTO는 필요한 것부터 추가 예정
 - [ ] ⚠️ **구역 간 연결(그래프) 구조가 ERD에 없음** — Mesa NetworkGrid에 필요한 인접성 정보를 폴리곤 좌표로 런타임 계산할지, 스키마에 컬럼을 추가할지 결정 필요
-- [ ] 나머지 14개 테이블 반영: USRUSR501M(사용자), SENSENS01M(센서), SENLIDR01M/H(라이다), SENRAD01M/H(레이더), AUDEVNT01M/H(음향), SIMSCNR01M(시나리오), SIMRSLT01D(시나리오결과), ENTCHAN01H(승인로그), MRKFCTS01M(시설), CRDDNST01H(밀집도로그), COMCODE01M(공통코드)
 - [ ] `gradle wrapper` 실행 후 wrapper 파일 커밋 (이 저장소는 wrapper 미포함 상태)
 - [ ] Spring Security 인증/인가 (현재 미적용 — B2G 요건상 필수 검토, `USRUSR501M` 테이블과 연동)
 - [ ] DB 마이그레이션 도구(Flyway/Liquibase) 도입 여부 결정 — SQL Editor 수동 실행 방식은 임시 조치
+
+## ⚠️ ERD 대비 구현 시 의도적으로 조정한 부분
+- `COMCODE01M.desc` → `code_desc`로 변경 (DESC는 SQL 예약어라 컬럼명 충돌 위험 방지)
+- `AUDEVNT01M/H.confidence` → ERD엔 `DECIMAL(1,2)`로 표기되어 있었으나 이는 정밀도(1)보다 소수자릿수(2)가 커서 수학적으로 불가능한 값이라 `DECIMAL(3,2)`(0.00~1.00 범위)로 보정
+- `SENLIDR01M/H`, `SENRAD01M/H`의 PK 컬럼명이 ERD상 `crowd_density_id`/`crowd_density_sq`로 되어 있어 `CRDDNST01M`과 이름이 겹치지만, 실제로는 각 테이블 고유의 식별자이므로 그대로 유지(단, Java 필드명은 `lidarReadingId`/`radarReadingId` 등으로 명확화)

@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: ${DEV_DB_URL:jdbc:postgresql://localhost:5432/market_twin}
+    url: jdbc:postgresql://localhost:5432/market_twin
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
   jpa:

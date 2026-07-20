@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
  * SENSENS01M - 센서 (라이다/레이더/음향 공통 마스터)
  */
 @Entity
-@Table(name = "SENSENS01M")
+@Table(name = "sensens01m")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor

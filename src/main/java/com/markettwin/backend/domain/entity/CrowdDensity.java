@@ -13,7 +13,7 @@ import java.time.Instant;
  * CRDDNST01M - 인구 밀집도
  */
 @Entity
-@Table(name = "CRDDNST01M")
+@Table(name = "crddnst01m")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor

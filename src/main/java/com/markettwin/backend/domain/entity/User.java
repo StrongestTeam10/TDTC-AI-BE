@@ -12,7 +12,7 @@ import java.time.Instant;
  * USRUSR501M - 사용자
  */
 @Entity
-@Table(name = "USRUSR501M")
+@Table(name = "usrusr501m")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor

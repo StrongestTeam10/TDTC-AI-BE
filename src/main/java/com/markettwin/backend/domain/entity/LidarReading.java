@@ -13,7 +13,7 @@ import java.time.Instant;
  * 참고: PK 컬럼명이 ERD상 crowd_density_id로 되어 있으나 이 테이블 고유의 라이다 레코드 식별자임
  */
 @Entity
-@Table(name = "SENLIDR01M")
+@Table(name = "senlidr01m")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
