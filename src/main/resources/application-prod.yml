@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: ${DB_URL}          # 예: jdbc:postgresql://<RDS 엔드포인트>:5432/market_twin
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: ${PRO_DB_URL}          # 예: jdbc:postgresql://<RDS 엔드포인트 또는 Supabase>:5432/postgres
+    username: ${PRO_DB_USERNAME}
+    password: ${PRO_DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -10,8 +10,8 @@ spring:
 
 # FastAPI 시뮬레이션 엔진 - 같은 VPC 내부 주소 사용 권장 (외부 미노출)
 simulation-engine:
-  base-url: ${SIMULATION_ENGINE_URL}
+  base-url: ${PRO_SIMULATION_ENGINE_URL}
 
 cors:
   allowed-origins:
-    - ${FRONTEND_ORIGIN}    # 예: https://d1234abc.cloudfront.net (추후 실제 도메인으로 교체)
+    - ${PRO_FRONTEND_ORIGIN}    # 예: https://d1234abc.cloudfront.net (추후 실제 도메인으로 교체)

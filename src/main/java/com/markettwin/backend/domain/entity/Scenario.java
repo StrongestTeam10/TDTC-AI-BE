@@ -42,10 +42,10 @@ public class Scenario {
     @Column(name = "reg_datetime", nullable = false)
     private Instant regDatetime;
 
-    @Column(name = "agent_count")
+    @Column(name = "agent_count", nullable = false)
     private Integer agentCount;
 
-    @Column(name = "policy_type_code", length = 3)
+    @Column(name = "policy_type_code", nullable = false, length = 5)
     private String policyTypeCode;
 
     @Column(name = "created_at")

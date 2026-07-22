@@ -30,11 +30,11 @@ public class User {
     @Column(name = "password", nullable = false, length = 64)
     private String password;
 
-    @Column(name = "name", nullable = false, length = 30)
+    @Column(name = "name", nullable = false, length = 50)
     private String name;
 
-    @Column(name = "roles_code", nullable = false, length = 5)
-    private String rolesCode;
+    @Column(name = "rules_code", nullable = false, length = 5)
+    private String rulesCode;
 
     @Column(name = "org_code", nullable = false, length = 5)
     private String orgCode;
@@ -42,7 +42,7 @@ public class User {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    @Column(name = "created_ip", length = 16)
+    @Column(name = "created_ip", nullable = false, length = 16)
     private String createdIp;
 
     @Column(name = "updated_at")

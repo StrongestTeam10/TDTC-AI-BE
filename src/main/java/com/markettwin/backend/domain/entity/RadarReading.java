@@ -9,10 +9,10 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 
 /**
- * SENRAD01M - 레이더 센서 데이터
+ * SENRADR01M - 레이더 센서 데이터
  */
 @Entity
-@Table(name = "senrad01m")
+@Table(name = "senradr01m")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -39,6 +39,6 @@ public class RadarReading {
     @Column(name = "avg_speed")
     private Integer avgSpeed;
 
-    @Column(name = "status_level_code", length = 3)
+    @Column(name = "status_level_code", length = 5)
     private String statusLevelCode;
 }

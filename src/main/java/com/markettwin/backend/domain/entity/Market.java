@@ -25,9 +25,9 @@ public class Market {
     @Column(name = "market_name", nullable = false, length = 50)
     private String marketName;
 
-    @Column(name = "latitude", precision = 10, scale = 6)
+    @Column(name = "latitude", precision = 10, scale = 8)
     private java.math.BigDecimal latitude;
 
-    @Column(name = "longitude", precision = 11, scale = 6)
+    @Column(name = "longitude", precision = 11, scale = 8)
     private java.math.BigDecimal longitude;
 }
