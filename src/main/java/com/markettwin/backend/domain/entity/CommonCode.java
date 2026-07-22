@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 public class CommonCode {
 
     @Id
-    @Column(name = "code", length = 3)
+    @Column(name = "code", length = 5)
     private String code;
 
     @Column(name = "code_name", nullable = false, unique = true, length = 50)
@@ -27,6 +27,6 @@ public class CommonCode {
     @Column(name = "describe", length = 200)
     private String describe;
 
-    @Column(name = "mrk", length = 500)
+    @Column(name = "rmk", length = 500)
     private String remark;
 }

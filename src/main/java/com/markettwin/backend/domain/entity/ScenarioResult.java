@@ -37,6 +37,10 @@ public class ScenarioResult {
     @Column(name = "predicted_density", precision = 6, scale = 2)
     private BigDecimal predictedDensity;
 
+    /** 예측 위험 점수. ERD상 INT 타입 */
+    @Column(name = "predicted_risk_score")
+    private Integer predictedRiskScore;
+
     @Column(name = "economic_effect_analysis", columnDefinition = "TEXT")
     private String economicEffectAnalysis;
 

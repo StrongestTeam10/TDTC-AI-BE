@@ -33,6 +33,14 @@ public class Facility {
     @Column(name = "name", nullable = false, length = 50)
     private String name;
 
+    /** 시설 위치 위도 (WGS84) - 출입구 등 시뮬레이션에서 좌표가 필요한 시설용 */
+    @Column(name = "latitude", precision = 10, scale = 8)
+    private java.math.BigDecimal latitude;
+
+    /** 시설 위치 경도 (WGS84) */
+    @Column(name = "longitude", precision = 11, scale = 8)
+    private java.math.BigDecimal longitude;
+
     @Column(name = "is_active")
     @Builder.Default
     private Boolean isActive = true;

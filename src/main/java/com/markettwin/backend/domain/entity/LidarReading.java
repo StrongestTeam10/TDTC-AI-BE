@@ -40,7 +40,7 @@ public class LidarReading {
     @Column(name = "avg_dist_m")
     private Integer avgDistM;
 
-    @Column(name = "status_level_code", length = 3)
+    @Column(name = "status_level_code", length = 5)
     private String statusLevelCode;
 
     @Column(name = "density_score")

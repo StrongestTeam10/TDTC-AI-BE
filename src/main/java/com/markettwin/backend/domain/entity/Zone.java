@@ -25,7 +25,7 @@ public class Zone {
     @Column(name = "market_id", nullable = false)
     private Long marketId;
 
-    @Column(name = "zone_name", length = 30)
+    @Column(name = "zone_name", nullable = false, length = 50)
     private String zoneName;
 
     @Column(name = "polygon_coordinates", columnDefinition = "TEXT")
