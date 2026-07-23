@@ -5,7 +5,8 @@ spring:
     password: ${PRO_DB_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none   # audevnt01m/h 테이블 제거 후에도 AcousticEvent/AcousticEventLog 엔티티를 유지하기 위해
+                       # validate에서 none으로 변경. 엔티티-스키마 불일치 조기 탐지 기능은 비활성화됨.
     show-sql: false
 
 # FastAPI 시뮬레이션 엔진 - 같은 VPC 내부 주소 사용 권장 (외부 미노출)

@@ -82,7 +82,6 @@ CREATE TABLE IF NOT EXISTS mrkfcts01m (
 -- =========================================
 CREATE TABLE IF NOT EXISTS mrkrisk01m (
     risk_id      BIGSERIAL PRIMARY KEY,
-    market_id    BIGINT NOT NULL REFERENCES mrkaddr01m(market_id),
     zone_id      BIGINT NOT NULL REFERENCES mrkaddr01d(zone_id),
     risk_score   REAL NOT NULL,
     risk_level   VARCHAR(10) NOT NULL,
@@ -97,7 +96,6 @@ CREATE INDEX IF NOT EXISTS idx_mrkrisk01m_detected_at ON mrkrisk01m(detected_at)
 -- =========================================
 CREATE TABLE IF NOT EXISTS crddnst01m (
     crowd_density_id  BIGSERIAL PRIMARY KEY,
-    market_id         BIGINT NOT NULL REFERENCES mrkaddr01m(market_id),
     zone_id           BIGINT NOT NULL REFERENCES mrkaddr01d(zone_id),
     visitor_count     INTEGER DEFAULT 0,
     density_score     DECIMAL(4,2),
@@ -106,7 +104,7 @@ CREATE TABLE IF NOT EXISTS crddnst01m (
 );
 
 CREATE INDEX IF NOT EXISTS idx_crddnst01m_captured_at ON crddnst01m(captured_at);
-CREATE INDEX IF NOT EXISTS idx_crddnst01m_market_id ON crddnst01m(market_id);
+CREATE INDEX IF NOT EXISTS idx_crddnst01m_zone_id ON crddnst01m(zone_id);
 
 -- =========================================
 -- 9. 인구 밀집도 로그
@@ -125,36 +123,14 @@ CREATE TABLE IF NOT EXISTS crddnst01h (
 -- =========================================
 CREATE TABLE IF NOT EXISTS sensens01m (
     sensor_id          BIGSERIAL PRIMARY KEY,
-    market_id          BIGINT NOT NULL REFERENCES mrkaddr01m(market_id),
     zone_id            BIGINT NOT NULL REFERENCES mrkaddr01d(zone_id),
     sensor_type_code   VARCHAR(5) NOT NULL,
     ip_address         VARCHAR(50)
 );
 
 -- =========================================
--- 11. 음향 이벤트 분석
+-- (11-12. 음향 이벤트 분석/로그 테이블 - audevnt01m/01h 제거됨)
 -- =========================================
-CREATE TABLE IF NOT EXISTS audevnt01m (
-    event_id     BIGSERIAL PRIMARY KEY,
-    sensor_id    BIGINT NOT NULL REFERENCES sensens01m(sensor_id),
-    sound_type   VARCHAR(20),
-    confidence   DECIMAL(3,2),
-    is_checked   BOOLEAN DEFAULT FALSE,
-    detected_at  TIMESTAMP NOT NULL
-);
-
--- =========================================
--- 12. 음향 이벤트 로그
--- =========================================
-CREATE TABLE IF NOT EXISTS audevnt01h (
-    event_sq     BIGSERIAL PRIMARY KEY,
-    event_id     BIGINT NOT NULL REFERENCES audevnt01m(event_id),
-    sound_type   VARCHAR(20),
-    confidence   DECIMAL(3,2),
-    is_checked   BOOLEAN DEFAULT FALSE,
-    detected_at  TIMESTAMP NOT NULL,
-    created_at   TIMESTAMP
-);
 
 -- =========================================
 -- 13. 라이다 센서 데이터
@@ -235,7 +211,7 @@ CREATE TABLE IF NOT EXISTS simrslt01d (
     result_id                 BIGSERIAL PRIMARY KEY,
     scenario_id                BIGINT NOT NULL REFERENCES simscnr01m(scenario_id),
     predicted_max_density      DECIMAL(6,2),
-    predicted_density          DECIMAL(6,2),
+    predicted_density          DECIMAL(6,2) NOT NULL,
     predicted_risk_score       INTEGER,
     economic_effect_analysis   TEXT,
     generated_report_path      VARCHAR(1000),
