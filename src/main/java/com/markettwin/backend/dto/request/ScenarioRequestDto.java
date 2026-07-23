@@ -1,10 +1,13 @@
 package com.markettwin.backend.dto.request;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+
+import java.util.List;
 
 public record ScenarioRequestDto(
         @NotNull
@@ -24,6 +27,12 @@ public record ScenarioRequestDto(
         Double eventIntensity,
 
         @NotNull @Min(1) @Max(1000)
-        Integer steps
+        Integer steps,
+
+        @Valid
+        List<PlacedObjectDto> objects,
+
+        @Valid
+        List<CorridorPolicyDto> corridorPolicies
 ) {
 }
