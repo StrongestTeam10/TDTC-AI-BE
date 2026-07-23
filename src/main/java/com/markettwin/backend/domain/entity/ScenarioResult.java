@@ -34,7 +34,7 @@ public class ScenarioResult {
     @Column(name = "predicted_max_density", precision = 6, scale = 2)
     private BigDecimal predictedMaxDensity;
 
-    @Column(name = "predicted_density", precision = 6, scale = 2)
+    @Column(name = "predicted_density", nullable = false, precision = 6, scale = 2)
     private BigDecimal predictedDensity;
 
     /** 예측 위험 점수. ERD상 INT 타입 */

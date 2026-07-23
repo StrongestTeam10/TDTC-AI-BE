@@ -5,8 +5,8 @@ spring:
     password: ${PRO_DB_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: none   # audevnt01m/h 테이블 제거 후에도 AcousticEvent/AcousticEventLog 엔티티를 유지하기 위해
-                       # validate에서 none으로 변경. 엔티티-스키마 불일치 조기 탐지 기능은 비활성화됨.
+      ddl-auto: validate   # 2026-07-23: AcousticEvent/RadarReading 등 테이블 없는 엔티티를 전부 삭제해서
+                           # validate로 복원함 (none으로 뒀던 임시 조치는 더 이상 불필요)
     show-sql: false
 
 # FastAPI 시뮬레이션 엔진 - 같은 VPC 내부 주소 사용 권장 (외부 미노출)

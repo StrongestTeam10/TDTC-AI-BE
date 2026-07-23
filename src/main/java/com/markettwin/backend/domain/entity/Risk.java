@@ -24,9 +24,6 @@ public class Risk {
     @Column(name = "risk_id")
     private Long riskId;
 
-    @Column(name = "market_id", nullable = false)
-    private Long marketId;
-
     @Column(name = "zone_id", nullable = false)
     private Long zoneId;
 

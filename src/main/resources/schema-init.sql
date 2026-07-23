@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS usrusrs01m (
 );
 
 -- =========================================
--- 3. 협장변경 (승인/변경 이력)
+-- 3. 현장 변경 (승인/변경 이력)
 -- =========================================
 CREATE TABLE IF NOT EXISTS entchan01h (
     change_id     BIGSERIAL PRIMARY KEY,
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS mrkfcts01m (
 );
 
 -- =========================================
--- 7. 위험 척수
+-- 7. 위험 점수
 -- =========================================
 CREATE TABLE IF NOT EXISTS mrkrisk01m (
     risk_id      BIGSERIAL PRIMARY KEY,
@@ -162,31 +162,8 @@ CREATE TABLE IF NOT EXISTS senlidr01h (
 );
 
 -- =========================================
--- 15. 레이더 센서 데이터
+-- (15-16. 레이더 센서 데이터/로그 테이블 - senradr01m/01h 제거됨)
 -- =========================================
-CREATE TABLE IF NOT EXISTS senradr01m (
-    crowd_density_id   BIGSERIAL PRIMARY KEY,
-    sensor_id          BIGINT NOT NULL REFERENCES sensens01m(sensor_id),
-    refl_intens        INTEGER NOT NULL,
-    updated_at         TIMESTAMP NOT NULL,
-    detect_cnt         INTEGER,
-    avg_speed          INTEGER,
-    status_level_code  VARCHAR(5)
-);
-
--- =========================================
--- 16. 레이더 센서 데이터 로그
--- =========================================
-CREATE TABLE IF NOT EXISTS senradr01h (
-    crowd_density_sq   BIGSERIAL PRIMARY KEY,
-    crowd_density_id   BIGINT NOT NULL REFERENCES senradr01m(crowd_density_id),
-    refl_intens        INTEGER NOT NULL,
-    updated_at         TIMESTAMP NOT NULL,
-    detect_cnt         INTEGER,
-    avg_speed          INTEGER,
-    status_level_code  VARCHAR(5),
-    created_at         TIMESTAMP
-);
 
 -- =========================================
 -- 17. 시나리오

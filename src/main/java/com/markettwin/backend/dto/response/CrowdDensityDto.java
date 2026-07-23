@@ -5,7 +5,6 @@ import java.time.Instant;
 
 public record CrowdDensityDto(
         Long crowdDensityId,
-        Long marketId,
         Long zoneId,
         Integer visitorCount,
         BigDecimal densityScore,
