@@ -22,9 +22,6 @@ public class Sensor {
     @Column(name = "sensor_id")
     private Long sensorId;
 
-    @Column(name = "market_id", nullable = false)
-    private Long marketId;
-
     @Column(name = "zone_id", nullable = false)
     private Long zoneId;
 

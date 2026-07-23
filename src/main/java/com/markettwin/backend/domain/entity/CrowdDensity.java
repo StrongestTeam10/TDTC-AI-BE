@@ -25,9 +25,6 @@ public class CrowdDensity {
     @Column(name = "crowd_density_id")
     private Long crowdDensityId;
 
-    @Column(name = "market_id", nullable = false)
-    private Long marketId;
-
     @Column(name = "zone_id", nullable = false)
     private Long zoneId;
 

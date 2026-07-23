@@ -56,7 +56,6 @@ public class DashboardService {
     private CrowdDensityDto toCrowdDensityDto(CrowdDensity density) {
         return new CrowdDensityDto(
                 density.getCrowdDensityId(),
-                density.getMarketId(),
                 density.getZoneId(),
                 density.getVisitorCount(),
                 density.getDensityScore(),
@@ -68,7 +67,6 @@ public class DashboardService {
     private RiskDto toRiskDto(Risk risk) {
         return new RiskDto(
                 risk.getRiskId(),
-                risk.getMarketId(),
                 risk.getZoneId(),
                 risk.getRiskScore(),
                 risk.getRiskLevel(),

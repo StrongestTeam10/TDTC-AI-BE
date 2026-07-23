@@ -1,0 +1,11 @@
+아래 8개 파일은 레이더/음향 센서 완전 제거로 삭제되었습니다.
+로컬/GitHub 저장소에서도 git rm으로 함께 삭제해주세요.
+
+src/main/java/com/markettwin/backend/repository/RadarReadingLogRepository.java
+src/main/java/com/markettwin/backend/repository/AcousticEventLogRepository.java
+src/main/java/com/markettwin/backend/repository/RadarReadingRepository.java
+src/main/java/com/markettwin/backend/repository/AcousticEventRepository.java
+src/main/java/com/markettwin/backend/domain/entity/AcousticEvent.java
+src/main/java/com/markettwin/backend/domain/entity/RadarReading.java
+src/main/java/com/markettwin/backend/domain/entity/RadarReadingLog.java
+src/main/java/com/markettwin/backend/domain/entity/AcousticEventLog.java
