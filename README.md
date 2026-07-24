@@ -4,6 +4,83 @@
 
 ## 변경 이력
 
+### 2026-07-24 (오브젝트 점유 반경 컬럼 추가 — SIM 장애물 회피용)
+- SIM이 격자 기반 이동으로 바뀌면서 매대/푸드트럭을 실제 장애물로 취급해 회피
+  경로를 계산하게 됨. 그 오브젝트가 차지하는 물리적 반경 데이터가 필요해서 추가
+- ✏️ `Facility.java`/`schema-init.sql`: `mrkfcts01m`에 `footprint_radius_m`(DOUBLE
+  PRECISION, nullable) 컬럼 추가. 값이 없으면 SIM이 임시 기본값(1.2m)으로 대체하므로
+  기존 데이터도 그대로 동작함
+- 기존에 이미 생성돼 있던 DB에도 반영되도록 `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` 포함
+
+### 2026-07-24 (예측 요청 필드 변경: inflowPerStep -> totalInflow)
+- SIM `PredictRequest`가 "스텝당 고정 인원" 대신 "총 인원(랜덤 분산)"으로 바뀐 것과
+  맞춰 `PredictRequestDto.inflowPerStep` → `totalInflow`로 변경
+
+### 2026-07-24 (통로 중심선 데이터 컬럼 추가 — SIM 동선 정확도 개선용)
+- SIM이 구역 간 실제 통로 모양(꺾인 골목 등)을 반영해 걷도록 하기 위한 데이터 컬럼
+- ✏️ `ZoneAdjacency.java`/`schema-init.sql`: `mrkadjc01m`에 `path_coordinates`(TEXT,
+  GeoJSON LineString) 컬럼 추가. NULL 허용 — 안 채워져 있으면 SIM이 자동으로 기존
+  방식(경계 중점 근사)으로 대체하므로 기존 데이터는 그대로 동작함
+- 기존에 이미 생성돼 있던 DB에도 반영되도록 `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`
+  포함
+- ⚠️ 아직 이 컬럼을 입력/편집하는 BE API(컨트롤러)는 없음 — 지금은 레이아웃 에디터가
+  아직 BE와 완전히 통합되기 전이라, 값 입력은 DB에 직접 SQL로 넣는 방식으로 진행
+  예정. 나중에 에디터-BE 통합 시 이 컬럼도 CRUD API에 포함시켜야 함
+
+### 2026-07-24 (WebClient 버퍼 한도 초과로 인한 502 수정)
+- **증상**: FE에서 예측 시뮬레이션(steps=30, 기본값)을 실행하면 502 발생. curl로 steps=10은
+  성공, PowerShell `Invoke-RestMethod`로도 steps=10은 성공했는데 FE 기본값(steps=30)에서만
+  재현됨
+- **원인**: `WebClientConfig`가 응답 버퍼 크기를 별도 설정하지 않아 Spring 기본값(256KB)을
+  그대로 썼음. 예측 스텝이 늘고 게이트 유입으로 에이전트 수가 누적되면 `frames` 응답
+  JSON이 256KB를 쉽게 넘어서 `DataBufferLimitException` → `SimulationEngineException` →
+  (의도된 동작으로) 502 응답까지 이어짐
+- ✏️ `WebClientConfig`: `ExchangeStrategies`로 응답 버퍼 한도를 10MB로 상향
+- ✏️ `GlobalExceptionHandler`: 예외를 콘솔에 전혀 로깅하지 않고 조용히 삼키던 문제도
+  같이 발견해서 `log.error(...)` 추가 (이번 디버깅이 오래 걸린 이유이기도 함 — 실제
+  원인이 콘솔에 하나도 안 찍혀서 추적이 어려웠음)
+- 참고: 502 자체는 원래 `GlobalExceptionHandler`가 `SimulationEngineException`을 의도적으로
+  502로 매핑하도록 설계돼 있던 것 (제가 새로 만든 동작 아님) — SIM 호출이 어떤 이유로든
+  실패하면 항상 502로 응답함
+
+### 2026-07-24 (예측 시뮬레이션 API 추가 — SIM `/simulate/predict` 연동)
+- SIM에 신규 추가된 `/simulate/predict`(실측 상태 + 게이트 신규 유입 기반 예측)를
+  호출하는 BE 계약 추가
+- 🆕 `PredictRequestDto`(marketId, capturedAt, steps, inflowPerStep, seed)
+- 🆕 `ZoneRiskPointDto`, `RiskTrendPointDto`(스텝별 위험도 추이), `PredictResultDto`
+- ✏️ `SimulationEngineClient`에 `predict()` 추가 (`POST /simulate/predict`, 타임아웃 60초 —
+  최대 1000스텝까지 갈 수 있어 시나리오(30초)보다 여유를 둠)
+- ✏️ `SimulationService`/`SimulationController`에 `predict()` 추가 → `POST /api/simulation/predict`
+- ✏️ `Facility.java`/`schema-init.sql`: `mrkfcts01m`에 `weight` 컬럼 추가
+  (GATE=유입 가중치, 그 외 시설=매력도 가중치). 기존에 이미 생성돼 있던 DB에도 반영되도록
+  `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`도 함께 추가함
+- ⚠️ 아직 미완료: 실제 매대(STALL) 시설 데이터 입력 — 재재님이 레이아웃 에디터로 직접
+  입력 예정. 그 전까지는 GATE 외 시설이 없어 `attraction`이 전부 0으로 계산됨 (예측은
+  동작하지만 매대 쪽으로 쏠리는 움직임은 안 보임)
+- 실제 gradle 빌드는 이 환경(네트워크 제약)에서 검증 못 함 — 로컬에서 빌드 확인 필요
+
+### 2026-07-24 (파이프라인 A 실제 구현 — SIM 실시간 호출)
+- **문제**: `DashboardService`가 SIM을 전혀 호출하지 않고 `CrowdDensityRepository`/
+  `RiskRepository`로 DB(`crddnst01m`, `mrkrisk01m`)를 직접 조회만 했음. 실제 센서 장비가
+  없어 시딩 데이터 갱신 코드가 전혀 없었기 때문에, "실시간 관제"가 아니라 마지막 수동
+  호출/시딩 시점의 잔여값을 보여주는 상태였음
+- **해결**: `DashboardService`가 `SimulationEngineClient.getSnapshot()`으로 SIM
+  `POST /simulate/snapshot`을 실제로 호출하도록 전면 재작성
+- 🆕 `SnapshotRequestDto`(marketId 필수, capturedAt, persistRisk, includeAgents) 추가
+- 🆕 `ZoneResultDto`(SIM `ZoneResult`와 1:1 매칭, 기존 `RiskBreakdownDto` 재사용) 추가
+- ✏️ `DashboardSnapshotDto` 구조 전면 교체: 기존 `snapshotTime/crowdDensities/risks/agents`
+  → `marketId/marketName/mode/step/overallRiskScore/zones/agents/persistedRiskRows`
+- ✏️ `SimulationEngineClient`에 `getSnapshot()` 메서드 추가 (`runScenario()`와 동일 패턴)
+- ✏️ `DashboardController` `/snapshot`에 `marketId`(필수), `persistRisk`, `includeAgents`
+  쿼리 파라미터 추가 (기존 `snapshotTime`은 `capturedAt`으로 이름 변경, SIM 계약과 일치)
+- ⚠️ 아직 미완료: FE(`api/client.ts`, `types`, `DashboardPage`, `useSimulationData`)가
+  여전히 `marketId`를 안 보내는 구계약 그대로임 — 별도 작업 필요
+- ⚠️ 아직 미완료: BE를 실제로 띄워서 SIM과 통합 테스트 (이번 변경은 SIM 스키마와의
+  정적 필드 대조만 완료, 실행 테스트는 재재님이 로컬에서 진행 예정)
+- 참고: 기존 `CrowdDensityDto`/`RiskDto`는 이제 어디서도 참조되지 않는 미사용 코드가 됨
+  (테이블 자체는 존재하므로 Acoustic/Radar 때처럼 강제 삭제 대상은 아니지만, 필요 없다면
+  추후 정리 가능)
+
 ### 2026-07-23 (레이더/음향 센서 완전 제거)
 - **결정**: 레이더 센서를 제거하기로 하면서, 지난번 "코드는 유지"로 남겨뒀던 음향 센서 관련
   코드도 이번에 함께 완전히 삭제함

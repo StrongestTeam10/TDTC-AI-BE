@@ -1,13 +1,8 @@
 package com.markettwin.backend.service;
 
-import com.markettwin.backend.domain.entity.CrowdDensity;
-import com.markettwin.backend.domain.entity.Risk;
-import com.markettwin.backend.dto.response.AgentStateDto;
-import com.markettwin.backend.dto.response.CrowdDensityDto;
+import com.markettwin.backend.client.SimulationEngineClient;
+import com.markettwin.backend.dto.request.SnapshotRequestDto;
 import com.markettwin.backend.dto.response.DashboardSnapshotDto;
-import com.markettwin.backend.dto.response.RiskDto;
-import com.markettwin.backend.repository.CrowdDensityRepository;
-import com.markettwin.backend.repository.RiskRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,60 +13,34 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DashboardService {
 
-    private final CrowdDensityRepository crowdDensityRepository;
-    private final RiskRepository riskRepository;
+    private final SimulationEngineClient simulationEngineClient;
 
-    public DashboardSnapshotDto getSnapshot(Instant snapshotTime) {
-        Instant targetTime = snapshotTime != null ? snapshotTime : Instant.now();
-
-        List<CrowdDensity> densities = snapshotTime != null
-                ? crowdDensityRepository.findByCapturedAt(snapshotTime)
-                : crowdDensityRepository.findTop100ByOrderByCapturedAtDesc();
-
-        List<CrowdDensityDto> crowdDensities = densities.stream()
-                .map(this::toCrowdDensityDto)
-                .toList();
-
-        List<RiskDto> risks = riskRepository
-                .findByDetectedAtLessThanEqualOrderByDetectedAtDesc(targetTime)
-                .stream()
-                .limit(50)
-                .map(this::toRiskDto)
-                .toList();
-
-        // 개별 에이전트 좌표는 CRDDNST01M(구역 단위 집계)만으로는 복원 불가.
-        // Vision AI 원본 트래킹 결과(개별 좌표)가 별도로 필요하므로 현재는 빈 배열.
-        // 시각화에 필요하면 CRDDNST01M을 구역 중심점에 인원수만큼 점으로 흩뿌리는 방식으로 근사하거나,
-        // Vision AI 원본 테이블이 ERD에 추가되어야 함 (현재 ERD엔 없음).
-        List<AgentStateDto> agents = List.of();
-
-        return new DashboardSnapshotDto(targetTime, crowdDensities, risks, agents);
+    /**
+     * 파이프라인 A: SIM /simulate/snapshot을 실제로 호출해 실시간 관제 스냅샷을 받아온다.
+     *
+     * 2026-07-24: 기존에는 CrowdDensityRepository/RiskRepository로 DB를 직접 조회했는데,
+     * 이는 실제 센서 장비가 없어 시딩 데이터 갱신 코드가 전혀 없는 상태에서 "마지막 수동
+     * 호출/시딩 시점의 잔여값"을 보여주는 것에 불과했다. SIM이 매 요청마다 실제로 시뮬레이션을
+     * 돌려 위험도를 산출하도록 전면 교체함.
+     */
+    public DashboardSnapshotDto getSnapshot(
+            Long marketId,
+            Instant capturedAt,
+            Boolean persistRisk,
+            Boolean includeAgents
+    ) {
+        SnapshotRequestDto request = new SnapshotRequestDto(
+                marketId,
+                capturedAt,
+                persistRisk != null ? persistRisk : Boolean.FALSE,
+                includeAgents != null ? includeAgents : Boolean.TRUE
+        );
+        return simulationEngineClient.getSnapshot(request);
     }
 
     public List<Instant> getAvailableTimestamps() {
-        // TODO: 실제로는 CRDDNST01M의 distinct captured_at 조회 쿼리로 대체
+        // TODO: 파이프라인 A가 SIM 실시간 호출 방식으로 바뀌면서 이 기능의 필요성 자체가
+        // 재검토 대상임. 현재는 이전 구현 그대로 빈 배열을 반환한다.
         return List.of();
-    }
-
-    private CrowdDensityDto toCrowdDensityDto(CrowdDensity density) {
-        return new CrowdDensityDto(
-                density.getCrowdDensityId(),
-                density.getZoneId(),
-                density.getVisitorCount(),
-                density.getDensityScore(),
-                density.getStatusLevel(),
-                density.getCapturedAt()
-        );
-    }
-
-    private RiskDto toRiskDto(Risk risk) {
-        return new RiskDto(
-                risk.getRiskId(),
-                risk.getZoneId(),
-                risk.getRiskScore(),
-                risk.getRiskLevel(),
-                risk.getReasonCode(),
-                risk.getDetectedAt()
-        );
     }
 }

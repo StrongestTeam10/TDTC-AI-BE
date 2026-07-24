@@ -74,8 +74,16 @@ CREATE TABLE IF NOT EXISTS mrkfcts01m (
     latitude       DECIMAL(10,8),
     longitude      DECIMAL(11,8),
     is_active      BOOLEAN DEFAULT TRUE,
+    -- 2026-07-24 추가: GATE=유입 가중치, STALL 등=매력도 가중치로 쓰이는 범용 weight
+    weight         DOUBLE PRECISION DEFAULT 1.0,
+    -- 2026-07-24 추가: 오브젝트(매대/푸드트럭 등) 실제 점유 반경(m). SIM 장애물 회피용.
+    footprint_radius_m DOUBLE PRECISION,
     updated_at     TIMESTAMP
 );
+
+-- 이미 생성되어 있던 DB(신규 컬럼 없이)에도 반영되도록 별도 ALTER도 함께 실행
+ALTER TABLE mrkfcts01m ADD COLUMN IF NOT EXISTS weight DOUBLE PRECISION DEFAULT 1.0;
+ALTER TABLE mrkfcts01m ADD COLUMN IF NOT EXISTS footprint_radius_m DOUBLE PRECISION;
 
 -- =========================================
 -- 7. 위험 점수
@@ -208,9 +216,16 @@ CREATE TABLE IF NOT EXISTS mrkadjc01m (
     path_width    DECIMAL(4,2),
     distance_m    DECIMAL(6,2),
     is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+    -- 2026-07-24 추가: 통로 중심선(GeoJSON LineString, WGS84 [경도,위도] 순서).
+    -- 레이아웃 에디터로 실제 통로를 따라 그린 선. NULL이면 SIM이 두 구역이 맞닿은
+    -- 경계 중점 1개로 근사해서 대체한다 (fallback, 정확도는 떨어짐).
+    path_coordinates TEXT,
     CONSTRAINT uq_mrkadjc01m_edge UNIQUE (from_zone_id, to_zone_id),
     CONSTRAINT ck_mrkadjc01m_no_self CHECK (from_zone_id <> to_zone_id)
 );
+
+-- 이미 생성되어 있던 DB(신규 컬럼 없이)에도 반영되도록 별도 ALTER도 함께 실행
+ALTER TABLE mrkadjc01m ADD COLUMN IF NOT EXISTS path_coordinates TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_mrkadjc01m_market_id ON mrkadjc01m(market_id);
 CREATE INDEX IF NOT EXISTS idx_mrkadjc01m_from_zone ON mrkadjc01m(from_zone_id);

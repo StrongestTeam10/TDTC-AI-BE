@@ -1,5 +1,7 @@
 package com.markettwin.backend.exception;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -12,9 +14,12 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(SimulationEngineException.class)
     public ResponseEntity<Map<String, Object>> handleSimulationEngineException(
             SimulationEngineException ex) {
+        log.error("시뮬레이션 엔진 호출 실패", ex);
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                 .body(errorBody(ex.getMessage()));
     }
@@ -32,6 +37,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneralException(Exception ex) {
+        // 2026-07-24: 이 핸들러가 예외를 조용히 삼켜서 콘솔에 아무 로그도 안 남는
+        // 문제가 있었음(디버깅 불가) -> 최소한 콘솔에는 실제 원인이 남도록 로깅 추가.
+        log.error("처리되지 않은 예외 발생", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(errorBody("서버 내부 오류가 발생했습니다."));
     }
