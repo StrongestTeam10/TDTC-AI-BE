@@ -24,6 +24,21 @@ public class GlobalExceptionHandler {
                 .body(errorBody(ex.getMessage()));
     }
 
+    @ExceptionHandler(DuplicateLoginIdException.class)
+    public ResponseEntity<Map<String, Object>> handleDuplicateLoginId(DuplicateLoginIdException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorBody(ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidCredentials(InvalidCredentialsException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorBody(ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidOrgCodeException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidOrgCode(InvalidOrgCodeException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody(ex.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationException(
             MethodArgumentNotValidException ex) {

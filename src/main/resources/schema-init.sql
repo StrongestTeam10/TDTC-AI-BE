@@ -7,11 +7,24 @@
 -- 1. 공통코드
 -- =========================================
 CREATE TABLE IF NOT EXISTS comcode01m (
-    code       VARCHAR(5) PRIMARY KEY,
+    code_cob   VARCHAR(3) NOT NULL,   -- 2026-07-24 추가: 공통코드분류
+    code       VARCHAR(5) NOT NULL,
     code_name  VARCHAR(50) NOT NULL UNIQUE,
     describe   VARCHAR(200),
-    rmk        VARCHAR(500)
+    rmk        VARCHAR(500),
+    PRIMARY KEY (code_cob, code)
 );
+
+-- 2026-07-24 추가: 기존에 이미 생성돼 있던 DB 마이그레이션
+-- (code_cob 없이 code 단독 PK였던 것을 (code_cob, code) 복합키로 변경)
+ALTER TABLE comcode01m ADD COLUMN IF NOT EXISTS code_cob VARCHAR(3);
+-- 기존 행은 code의 앞 3자(도메인 접두사 규칙)를 그대로 code_cob으로 채움
+UPDATE comcode01m SET code_cob = substring(code from 1 for 3) WHERE code_cob IS NULL;
+ALTER TABLE comcode01m ALTER COLUMN code_cob SET NOT NULL;
+-- 기존 PK(code 단독) 제약을 복합키로 교체. 제약명은 CREATE TABLE에서 인라인
+-- PRIMARY KEY로 생성했을 때 Postgres 기본 명명 규칙(<table>_pkey)을 따름
+ALTER TABLE comcode01m DROP CONSTRAINT IF EXISTS comcode01m_pkey;
+ALTER TABLE comcode01m ADD PRIMARY KEY (code_cob, code);
 
 -- =========================================
 -- 2. 사용자
@@ -26,8 +39,17 @@ CREATE TABLE IF NOT EXISTS usrusrs01m (
     created_at  TIMESTAMP NOT NULL,
     created_ip  VARCHAR(16) NOT NULL,
     updated_at  TIMESTAMP,
-    updated_ip  VARCHAR(16)
+    updated_ip  VARCHAR(16),
+    -- 2026-07-24 추가: 회원가입 화면의 개인정보 동의 이력(필수 2개 + 선택 1개)
+    agree_terms_at      TIMESTAMP,
+    agree_privacy_at    TIMESTAMP,
+    agree_marketing_at  TIMESTAMP
 );
+
+-- 기존에 이미 생성돼 있던 DB에도 반영되도록 (2026-07-24 추가)
+ALTER TABLE usrusrs01m ADD COLUMN IF NOT EXISTS agree_terms_at TIMESTAMP;
+ALTER TABLE usrusrs01m ADD COLUMN IF NOT EXISTS agree_privacy_at TIMESTAMP;
+ALTER TABLE usrusrs01m ADD COLUMN IF NOT EXISTS agree_marketing_at TIMESTAMP;
 
 -- =========================================
 -- 3. 현장 변경 (승인/변경 이력)

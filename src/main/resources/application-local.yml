@@ -20,3 +20,10 @@ simulation-engine:
 cors:
   allowed-origins:
     - http://localhost:5173
+
+# 2026-07-24 추가: 로그인 시 발급하는 JWT 서명 키. HS256은 최소 32바이트(256비트)
+# 이상 필요. 로컬 개발용 기본값을 넣어뒀지만, 이 값 그대로 배포하면 안 됨
+# (application-prod.yml은 환경변수 JWT_SECRET을 필수로 받도록 되어 있음).
+jwt:
+  secret: ${JWT_SECRET:tdtc-ai-local-dev-only-secret-key-please-change-1234567890}
+  expiration-ms: ${JWT_EXPIRATION_MS:3600000}   # 기본 1시간

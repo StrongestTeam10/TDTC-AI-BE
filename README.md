@@ -4,6 +4,92 @@
 
 ## 변경 이력
 
+### 2026-07-24 (기존 API 인증 필수화 - FE 토큰 연동 완료에 맞춰 SecurityConfig 강화)
+- 사용자 확인 사항: FE가 로그인 후 모든 API 호출에 JWT를 자동으로 붙이도록 연동
+  완료됨(FE `api/client.ts` 인터셉터) → 이번엔 기존 API도 인증을 필수로 잠금
+- ✏️ `config/SecurityConfig.java`: `anyRequest().permitAll()` → 아래처럼 좁힘
+  - `permitAll`: `/api/auth/**`, `/api/common-codes/**`(회원가입 화면이 로그인 전에
+    소속기관을 조회해야 해서), `/swagger-ui/**`, `/v3/api-docs/**`,
+    `/actuator/health`, `/actuator/info`
+  - 나머지 전체(`/api/markets`, `/api/dashboard/**`, `/api/simulation/**`,
+    `/api/spatial/**` 등): `authenticated()` — 토큰 없이 호출하면 401
+- 🆕 `security/RestAuthenticationEntryPoint.java`: 인증 안 된 요청이 보호된 API에
+  접근하면 Spring Security 기본 동작(403, 빈 본문) 대신 401 + JSON 본문
+  (`{timestamp, message: "로그인이 필요합니다."}`)으로 응답하도록 함 - FE가 이 401을
+  보고 로그인 상태를 자동 정리하도록 만들어둠(FE `auth/tokenStore.ts` 참고)
+- ✏️ `controller/AuthController.java`: `/api/auth/me`의 인증 여부 판별 로직 보정.
+  이제 `authorizeHttpRequests`가 익명 사용자에게도 기본적으로
+  `AnonymousAuthenticationToken`을 채워주기 때문에(그래야 `authenticated()` 규칙이
+  제대로 익명 사용자를 걸러냄), 기존 `authentication.isAuthenticated()`만 보는
+  체크로는 익명 사용자를 로그인 사용자로 착각할 수 있어서
+  `instanceof AnonymousAuthenticationToken` 체크를 추가함
+- ⚠️ **팀원 공유 필요**: 파이프라인 B(시나리오 시뮬레이션, `/api/simulation/run` 등)도
+  이제 토큰 없이 호출하면 401이 납니다. 팀원 쪽 FE/테스트 코드도 로그인 토큰을
+  붙이도록 안내 필요
+- 이번에도 `./gradlew build` 직접 검증은 못 했음(샌드박스 네트워크 제약) - 로컬
+  빌드 확인 부탁드립니다
+
+### 2026-07-24 (공통코드 복합키 반영: code_cob 추가)
+- 사용자 확인 사항: `comcode01m`에 `code_cob`(공통코드분류, VARCHAR(3)) 컬럼이
+  추가되면서 PK가 `code` 단독 → `(code_cob, code)` 복합키로 변경됨(ERD 이미지 기준)
+- 🆕 `domain/entity/CommonCodeId.java`: `(code_cob, code)` 복합키 클래스 (`@IdClass`)
+- ✏️ `domain/entity/CommonCode.java`: `@Id`를 `codeCob`/`code` 2개로 분리,
+  `@IdClass(CommonCodeId.class)` 적용
+- ✏️ `repository/CommonCodeRepository.java`: ID 타입 `String` → `CommonCodeId`로 변경,
+  `findByCodeCob`/`existsByCodeCobAndCode` 추가
+- ✏️ `service/CommonCodeService.java`: 처음에 임시로 썼던 `code.startsWith(domain)`
+  문자열 매칭을 실제 `code_cob` 컬럼 조회로 교체
+- ✏️ `service/AuthService.java`: 소속기관(`orgCode`) 검증도 `code_cob` 컬럼 기반
+  (`existsByCodeCobAndCode("ORG", orgCode)`)으로 교체
+- ✏️ `schema-init.sql`: `comcode01m` 테이블 정의에 `code_cob` 추가 + 기존 DB
+  마이그레이션용 `ALTER`(컬럼 추가 → 기존 행 `code` 앞 3자로 채움 → PK를
+  `(code_cob, code)`로 교체) 포함
+- ✏️ `comcode-seed.sql`: 모든 행에 `code_cob` 값 추가(각 도메인 접두사와 동일:
+  ROL/ORG/SEN/LVL/POL)
+- `./gradlew build`로 직접 검증은 못 했음(이전 항목과 동일한 샌드박스 네트워크
+  제약) — 로컬에서 빌드 확인 부탁드립니다. 특히 기존 DB에 `ALTER` 구문을 실행할
+  때, PK 제약 이름이 실제로 `comcode01m_pkey`가 맞는지 한 번 확인해주시면
+  좋겠습니다(Postgres 기본 명명 규칙을 가정하고 작성함)
+
+### 2026-07-24 (로그인/회원가입 API 구현 - Spring Security + JWT 최초 도입)
+- FE의 authStore mock 로그인을 대체할 실제 인증 API를 처음 구현함
+- 🆕 `POST /api/auth/signup`: 회원가입. FE SignupPage 입력값(아이디/비밀번호/이름/
+  소속기관/동의 항목)과 대응. 비밀번호는 BCrypt로 해시 저장, 비밀번호 조합 규칙
+  (8자 이상 + 영문 대/소문자·숫자·특수문자 모두 포함)을 FE와 동일하게 서버에서도
+  재검증. 소속기관(`orgCode`)은 `comcode01m`의 `ORG` 도메인 코드인지 확인 후 저장.
+  자가 가입 시 기본 권한은 `ROL03`(조회자, 최소 권한)로 고정 — 관리자/관제요원으로의
+  승격은 이번 범위에 없음(추후 별도 승인 절차 필요)
+- 🆕 `POST /api/auth/login`: 로그인. 아이디/비밀번호 검증 후 JWT 액세스 토큰 발급
+  (기본 만료 1시간, `jwt.expiration-ms`로 설정 가능)
+- 🆕 `GET /api/auth/me`: 토큰으로 로그인 상태 확인(선택적으로 FE에서 활용 가능)
+- 🆕 `GET /api/common-codes?domain=ORG`: 공통코드 조회 API. FE `constants/orgCode.ts`에
+  하드코딩돼 있던 소속기관 옵션을 실제 DB(`comcode01m`) 조회로 대체할 수 있게 함
+- ✏️ `User.java`/`schema-init.sql`: `usrusrs01m`에 동의 이력 컬럼 3개 추가
+  (`agree_terms_at`, `agree_privacy_at`, `agree_marketing_at`, 전부 nullable TIMESTAMP).
+  기존 DB에도 반영되도록 `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` 포함
+- 🆕 Spring Security 최초 도입: `security/JwtTokenProvider.java`(JWT 발급/검증),
+  `security/JwtAuthenticationFilter.java`(Authorization 헤더 검증), `config/SecurityConfig.java`
+- 🗑️ `config/CorsConfig.java` 삭제 → `SecurityConfig`의 `corsConfigurationSource` 빈으로 통합
+  (Spring Security 필터 단계 CORS 처리와 WebMvcConfigurer 방식이 중복/충돌할 수 있어서)
+- ⚠️ **중요한 범위 결정**: 지금 `SecurityConfig`는 전체 API를 `permitAll`로 열어둠
+  (로그인/회원가입 포함). 기존 대시보드/시뮬레이션/시장 API가 FE에서 아직 토큰을
+  붙여 호출하도록 연동되지 않았기 때문에, 지금 바로 잠그면 파이프라인 A/B가 전부
+  깨짐. **FE가 로그인 후 토큰을 모든 API 호출에 Authorization 헤더로 붙이도록
+  연동되면, 그 다음 작업으로 `anyRequest().permitAll()` → `anyRequest().authenticated()`로
+  좁히는 걸 권장함** (`SecurityConfig.java` 주석에도 명시)
+- ✏️ `build.gradle`: `spring-boot-starter-security`, `jjwt-api/impl/jackson:0.12.6` 추가
+- ✏️ `application-local.yml`/`application-prod.yml`: `jwt.secret`(로컬은 기본값 포함,
+  운영은 환경변수 `JWT_SECRET` 필수), `jwt.expiration-ms` 추가
+- ⚠️ **참고(기존 제약, 이번에 만든 건 아님)**: `usrusrs01m.created_ip`가 `VARCHAR(16)`인데,
+  운영 환경에서 IPv6 주소가 그대로 들어오면 16자를 넘겨 저장 실패할 수 있음. 지금
+  당장 문제는 아니지만 운영 배포 전 컬럼 길이 검토를 권장함
+- ⚠️ **이 환경(샌드박스)에서는 Maven Central/Gradle 배포 서버 접근이 막혀 있어서
+  실제 컴파일(`./gradlew build`)로 검증하지 못했습니다.** 코드 리뷰 수준으로는
+  문제를 못 찾았지만, 받으시면 로컬에서 `./gradlew build`를 꼭 한 번 돌려서 확인
+  부탁드립니다. 에러 나면 로그 그대로 붙여주시면 바로 봐드릴게요
+- FE 연동은 이번 작업 범위에 포함 안 함: `authStore.ts`는 여전히 mock 계정으로
+  동작 중이며, 실제 로그인/회원가입 API를 붙이는 건 별도 다음 작업으로 진행 필요
+
 ### 2026-07-24 (오브젝트 점유 반경 컬럼 추가 — SIM 장애물 회피용)
 - SIM이 격자 기반 이동으로 바뀌면서 매대/푸드트럭을 실제 장애물로 취급해 회피
   경로를 계산하게 됨. 그 오브젝트가 차지하는 물리적 반경 데이터가 필요해서 추가
