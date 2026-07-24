@@ -16,3 +16,9 @@ simulation-engine:
 cors:
   allowed-origins:
     - ${PRO_FRONTEND_ORIGIN}    # 예: https://d1234abc.cloudfront.net (추후 실제 도메인으로 교체)
+
+# 2026-07-24 추가: 운영 환경에서는 JWT_SECRET을 반드시 환경변수로 설정해야 함
+# (기본값 없음 - 안 정하면 기동 실패). 32바이트(256비트) 이상의 무작위 문자열 권장.
+jwt:
+  secret: ${JWT_SECRET}
+  expiration-ms: ${JWT_EXPIRATION_MS:3600000}
