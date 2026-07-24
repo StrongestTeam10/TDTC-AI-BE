@@ -1,0 +1,8 @@
+package com.markettwin.backend.exception;
+
+// 2026-07-24 추가 (게시판 기능)
+public class PostNotFoundException extends RuntimeException {
+    public PostNotFoundException(Long postId) {
+        super("게시글을 찾을 수 없습니다: " + postId);
+    }
+}

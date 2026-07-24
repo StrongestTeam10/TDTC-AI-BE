@@ -38,6 +38,13 @@ public class SignupRequestDto {
     @Size(max = 5)
     private String orgCode;
 
+    // 2026-07-24 추가(게시판): comcode01m의 MKT 도메인 코드(예: MKTMW) 중 하나여야 함.
+    // 게시판 목록 노출 범위("본인 담당 시장 글만 조회") 기준이 되는 필드라 필수로 받음.
+    // 실제 존재 여부는 orgCode와 동일하게 AuthService에서 한 번 더 확인함.
+    @NotBlank(message = "담당 시장은 필수입니다.")
+    @Size(max = 5)
+    private String marketCode;
+
     // 필수 동의 2개는 반드시 true여야 함(체크 안 하면 검증 실패)
     @AssertTrue(message = "서비스 이용약관에 동의해야 합니다.")
     private boolean agreeTerms;

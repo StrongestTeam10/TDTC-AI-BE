@@ -3,6 +3,166 @@
 이 파일은 Claude와의 작업 세션에서 변경된 내용을 기록합니다.
 각 항목은 zip으로 전달된 시점 기준입니다.
 
+### 2026-07-25 (게시판 파일 업로드 500 오류 - 예외 처리 범위 확대)
+- **증상**: 게시글 수정 화면에서 새 첨부파일과 함께 저장하면 `PUT /api/posts/{id}`가
+  500(서버 내부 오류)로 실패
+- **원인**: `S3FileStorageService.upload()`가 `S3Exception`(버킷은 있지만 요청 자체가
+  거부된 경우)만 잡고 있었는데, **AWS 자격증명이 아예 설정 안 돼 있거나
+  (`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` 미설정) 버킷이 존재하지 않는 경우엔
+  `SdkClientException`(별도 예외 계통)이 발생**해서 이 catch 블록을 그대로 빠져나가
+  `GlobalExceptionHandler`의 범용 500 처리로 떨어졌음. 로컬에 S3 자격증명/버킷
+  설정을 아직 안 하신 상태라면 거의 확실히 이 케이스임(README "게시판 첨부파일 S3
+  버킷 설정" 섹션 참고)
+- ✏️ `S3FileStorageService.java`: `catch (IOException | S3Exception e)` →
+  `catch (IOException | SdkException e)`로 범위 확대(`SdkException`이 `S3Exception`의
+  상위 타입이라 자격증명 오류까지 함께 잡힘). 로그 메시지에도 "AWS 자격증명과 버킷
+  설정을 확인하라"는 안내 추가, `delete()`도 동일하게 확대
+- **로컬에서 확인해주실 것**: 여전히 500이 나면 IntelliJ/터미널 콘솔에 찍히는 실제
+  스택트레이스를 확인해주세요 - `SdkClientException: Unable to load credentials`
+  류의 메시지가 보이면 AWS 자격증명 미설정이 맞고, `NoSuchBucket` 류면 버킷명이
+  실제와 다른 것입니다. 아래 순서로 확인:
+  1. S3 버킷이 실제로 생성돼 있는지, `application-local.yml`의 `aws.s3.bucket`
+     (또는 환경변수 `AWS_S3_BUCKET`)과 이름이 일치하는지
+  2. 로컬 환경변수 `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`가 설정돼 있는지
+     (또는 `aws configure`로 `~/.aws/credentials` 등록돼 있는지)
+  3. 버킷 리전이 `aws.region`(기본 `ap-northeast-2`)과 일치하는지
+
+### 2026-07-25 (게시판 카테고리 축소 - 질문과 답변/제안 삭제, 자유게시판으로 통합)
+- 사용자 확인 사항: 카테고리를 공지사항/자유게시판 2개로 줄이기로 함. 또한 화면에서
+  "유효하지 않은 게시판 카테고리 코드입니다: BCTNT" 오류가 났던 원인 문의 받음 —
+  **코드 버그가 아니라 DB 마이그레이션 미반영 문제였음**: `PostService`가 카테고리
+  코드를 `comcode01m`에서 조회해 검증하는데, 해당 계정의 DB에 BCT 도메인 자체가
+  아직 삽입 안 돼 있어서(= comcode-seed.sql의 BCT 부분을 아직 실행 안 함) 어떤
+  카테고리를 선택해도 검증에 실패하던 상황
+- ✏️ `comcode-seed.sql`: `BCTQA`(질문과 답변)/`BCTSG`(제안) 삭제, `BCTFR`(자유게시판)
+  추가 — 이제 `BCT` 도메인은 `BCTNT`(공지사항, 관리자 전용)/`BCTFR`(자유게시판) 2개만
+  존재. **기존에 이미 comcode-seed.sql을 한 번 실행해서 BCTQA/BCTSG가 들어가 있는
+  DB는 파일 하단에 추가된 마이그레이션 블록(UPDATE로 기존 게시글 카테고리 이관 →
+  DELETE로 옛 코드 제거 → INSERT ON CONFLICT DO NOTHING으로 BCTFR 추가)을 먼저
+  실행할 것 — 전체 INSERT문을 그대로 재실행하면 기존 ROL/ORG/... 행과 PK 중복
+  오류가 남**
+- ✏️ `schema-init.sql`: `brdpsts01m.category_code` 기본값 `BCTQA` → `BCTFR`로 변경.
+  이미 컬럼이 존재하는 DB는 `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`가 아무 동작도
+  안 하므로(컬럼이 있으면 건너뜀), `ALTER TABLE brdpsts01m ALTER COLUMN category_code
+  SET DEFAULT 'BCTFR'` 구문을 별도로 추가해서 기본값 자체도 갱신되도록 함
+- ✏️ `PostService.java`: `DEFAULT_CATEGORY_CODE`를 `BCTQA` → `BCTFR`로 변경.
+  `NOTICE_CATEGORY_CODE`("BCTNT", 관리자 전용)는 그대로 유지
+- **로컬에서 꼭 해주셔야 할 것**: Supabase SQL Editor에서 `comcode-seed.sql` 하단의
+  마이그레이션 블록(또는 신규 DB라면 파일 전체)을 실행해주세요. 실행 안 하면 카테고리
+  검증이 계속 실패합니다
+
+### 2026-07-25 (UI 설계서 반영 - 게시판 카테고리 탭 + 관리자 전용 시장 탭)
+- 사용자 확인 사항: 게시판 UI 설계서(AIVLE 화면 ID USR-05-26009~26012) 전달받고 3가지
+  결정: (1) 카테고리 탭(전체/공지사항/질문과 답변/제안) 실제 추가, (2) 시장 전환 탭은
+  관리자에게만 노출(일반 사용자는 기존대로 본인 담당 시장 자동 제한 유지),
+  (3) 글쓰기 화면 리치 텍스트 에디터 + 드래그앤드롭 업로드는 FE 작업(아래 참고)
+- 🆕 `brdpsts01m.category_code` 컬럼 추가 (`comcode01m` BCT 도메인, 기본값 `BCTQA`).
+  `is_notice`(관리자 상단 고정)와는 별개 개념 — 카테고리가 공지사항이 아니어도 고정될
+  수 있고, 공지사항 카테고리라고 자동으로 고정되지도 않음
+- ✏️ `comcode-seed.sql`: `BCT` 도메인 추가 — `BCTNT`(공지사항, **관리자만 작성 가능**),
+  `BCTQA`(질문과 답변), `BCTSG`(제안). "전체" 탭은 필터 없음을 뜻하는 UI 상태라 코드로
+  존재하지 않음
+- ✏️ `Post.java`: `categoryCode` 필드 추가
+- ✏️ `PostSpecs.java`: `categoryCodeEquals()` 추가
+- ✏️ `PostService.java`:
+  - `validateCategoryCode()`: 미지정 시 기본값(`BCTQA`)으로 채우고, `comcode01m` BCT
+    도메인에 실제 존재하는 코드인지 확인. `BCTNT`(공지사항)는 관리자가 아니면
+    `ForbiddenActionException`(카테고리만 공지사항으로 골라서 `is_notice` 권한 검증을
+    우회하는 것 방지)
+  - `list()`: 관리자는 `marketCodeFilter` 파라미터로 특정 시장만 볼 수 있고(설계서의
+    시장 탭), 파라미터가 없으면("전체") 전 시장을 다 봄. **일반 사용자가 이 파라미터를
+    보내더라도 서버가 무시하고 본인 `market_code`로 강제함** — 클라이언트를 신뢰하지
+    않기 위한 서버 측 이중 검증
+- ✏️ `PostController.java`: `GET /api/posts`에 `categoryCode`/`marketCode` 쿼리
+  파라미터 추가, `POST`/`PUT`에 `categoryCode` 폼 필드 추가
+- 🆕 `InvalidCategoryCodeException`(400) + `GlobalExceptionHandler` 핸들러 등록
+- ✏️ `PostSummaryDto`/`PostDetailDto`에 `categoryCode` 추가
+- ⚠️ **주의**: 이 변경 전에 이미 작성된 게시글은 `category_code`가 DB 기본값
+  `BCTQA`(질문과 답변)로 자동 채워짐(마이그레이션 시 별도 조치 불필요)
+- 이번에도 `./gradlew build` 직접 검증은 못 했음(샌드박스 네트워크 제약) - 로컬 빌드
+  확인 부탁드립니다
+
+### 2026-07-24 (회원가입 화면에 담당 시장 select 추가 - marketCode 자동 배정 폐기)
+- 사용자 확인 사항: 게시판 기능 구현 시 "지금은 시장이 1개뿐이라 자동 배정" 해뒀던
+  `market_code`를, 소속기관(`org_code`)과 동일하게 회원가입 화면에서 직접 선택하도록
+  변경. FE도 같은 세션에서 함께 반영(FE README 참고)
+- ✏️ `SignupRequestDto`: `marketCode` 필드 추가(`@NotBlank`, `comcode01m`의 `MKT`
+  도메인 코드 중 하나여야 함 - 실제 검증은 `AuthService`에서 수행)
+- ✏️ `AuthService`: 하드코딩돼 있던 `DEFAULT_MARKET_CODE`("MKTMW" 자동 배정) 제거.
+  `MARKET_CODE_COB`("MKT") 상수 + `validateMarketCode()` 추가(`validateOrgCode()`와
+  동일한 패턴) - 요청으로 받은 `marketCode`가 `comcode01m`에 실제 존재하는 코드인지
+  확인 후 그대로 `User.marketCode`에 저장
+- 🆕 `InvalidMarketCodeException`(400) + `GlobalExceptionHandler` 핸들러 등록
+  (`InvalidOrgCodeException`과 동일한 처리 방식)
+- ✏️ `User.java`/`schema-init.sql` 주석 갱신: "자동 배정" → "회원가입 화면에서
+  org_code처럼 select로 입력받음"으로 설명 수정 (컬럼 자체는 변경 없음)
+- ⚠️ **주의**: 이 변경 이전에 가입된 기존 계정은 `market_code`가 이미 `MKTMW`로
+  채워져 있어 영향 없음. 하지만 스키마 반영 전에 가입된(즉 `market_code`가 NULL인)
+  계정이 있다면 게시글(공지 제외) 작성이 막히므로, 필요 시
+  `UPDATE usrusrs01m SET market_code='MKTMW' WHERE market_code IS NULL;`로 일괄
+  보정해주세요
+- 이번에도 `./gradlew build` 직접 검증은 못 했음(샌드박스 네트워크 제약) - 로컬 빌드
+  확인 부탁드립니다
+
+### 2026-07-24 (게시판 기능 신규 구현 - 권한 분리, 공지 고정, 첨부파일 S3, 시장별 노출 제한)
+- 사용자 확인 사항: 단일 게시판(카테고리 없음) + 조회수/검색/좋아요 추가 + "담당 시장별
+  게시글 제한(공지는 모두 표시)" + 첨부파일 S3 저장. 사용자-시장 연결은 `usrusrs01m`에
+  `market_code` 컬럼 추가(공통코드 `MKT` 도메인, 현재는 망원시장 `MKTMW` 1건만 등록).
+  관리자(ROL01)는 시장 제한 없이 항상 전체 게시글을 보고 관리.
+- 🆕 DB 테이블 3개 (schema-init.sql 20~22번):
+  - `brdpsts01m`(게시글): `market_code`(공지는 NULL 허용, 시장 무관 노출), `is_notice`,
+    `view_count`, `like_count` 등
+  - `brdattc01d`(첨부파일): 파일 바이너리는 S3에 저장하고 여기는 메타데이터 + S3
+    오브젝트 키만 보관. `post_id` ON DELETE CASCADE
+  - `brdlike01d`(좋아요): `(post_id, user_id)` UNIQUE로 중복 좋아요 방지
+- ✏️ `usrusrs01m`에 `market_code VARCHAR(5)` 컬럼 추가 (`ALTER TABLE ... ADD COLUMN IF
+  NOT EXISTS` 포함). 자가가입 시 `AuthService`가 현재 유일한 시장(`MKTMW`)으로 자동
+  배정함 — **시장이 여러 개로 늘어나면 회원가입 화면에 `org_code`처럼 시장 선택 select를
+  추가하는 걸 권장** (지금은 FE 회원가입 화면에 반영 안 함, 별도 작업 필요)
+- ✏️ `comcode-seed.sql`: `MKT`(담당 시장) 도메인 신규 + `MKTMW`(망원시장) 1건 추가
+- 🆕 엔티티 3종: `Post`(BRDPSTS01M), `PostAttachment`(BRDATTC01D), `PostLike`(BRDLIKE01D)
+- 🆕 리포지토리 3종 + `PostSpecs`(JPA Specification 기반 동적 필터 - 시장 범위/공지
+  제외/검색어(제목·내용·작성자))
+- 🆕 DTO 5종: `AttachmentDto`, `PostSummaryDto`, `PostDetailDto`, `PageResponseDto<T>`,
+  `PostListResponseDto`(공지 고정 목록 + 페이징 목록을 함께 담음)
+- 🆕 `PostService`: 목록(공지 상단 고정 + 페이징)/상세(조회수 증가)/생성/수정/삭제/좋아요
+  토글/다운로드 URL 발급. 권한 규칙:
+  - 수정/삭제: 관리자 전체 가능, 그 외는 본인 작성 글만 (`ForbiddenActionException`)
+  - 공지 고정(`is_notice`): 관리자만 설정/해제 가능
+  - 목록/상세 노출 범위: 관리자는 전체, 그 외는 본인 `market_code` 글 + 공지 전체.
+    다른 시장 글은 403이 아니라 404로 응답(다른 시장에 어떤 글이 있는지 자체를 노출하지
+    않기 위함)
+- 🆕 `PostController`(`/api/posts/**`): 목록/상세/생성/수정/삭제/좋아요 토글/첨부파일
+  다운로드(302 리다이렉트로 S3 presigned URL 발급). 생성/수정은 파일 업로드를 함께
+  받아야 해서 JSON이 아니라 multipart/form-data로 받음
+- 🆕 `CurrentUserProvider`: SecurityContext(loginId)로부터 User 엔티티 전체를 조회하는
+  공통 헬퍼 (기존 `AuthController#me`에 있던 로직을 재사용 가능하게 분리)
+- 🆕 `S3Config`/`FileStorageService`(인터페이스)/`S3FileStorageService`: 업로드는 BE가
+  직접 `putObject`, 다운로드는 presigned GET URL(5분 유효)을 발급해 클라이언트가 S3에서
+  직접 받도록 함(BE가 파일을 스트리밍하지 않아 대용량 첨부에도 서버 메모리 부담 없음).
+  자격증명은 코드/설정에 넣지 않고 AWS 기본 자격증명 체인(환경변수/`~/.aws/credentials`/
+  EC2·ECS 인스턴스 role) 사용
+- ✏️ `build.gradle`: `software.amazon.awssdk:bom`, `software.amazon.awssdk:s3` 추가
+- ✏️ `application.yml`: `spring.servlet.multipart` 용량 제한 추가(개당 20MB/요청당 50MB,
+  프로젝트 정책에 맞게 조정 가능한 임시값)
+- ✏️ `application-local.yml`/`application-prod.yml`: `aws.region`/`aws.s3.bucket` 추가.
+  **로컬에서 게시판 첨부파일을 테스트하려면 S3 버킷을 직접 만들고, 로컬 환경변수로
+  `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`를 설정하고, `AWS_S3_BUCKET`을 실제
+  버킷명으로 맞춰야 함** (운영은 `AWS_S3_BUCKET` 환경변수 필수, 기본값 없음)
+- 🆕 예외 4종 + `GlobalExceptionHandler` 핸들러: `PostNotFoundException`(404),
+  `AttachmentNotFoundException`(404), `ForbiddenActionException`(403),
+  `FileStorageException`(500)
+- ⚠️ **S3 버킷 CORS 설정 필수**: 다운로드가 presigned URL로 브라우저가 S3에 직접
+  접근하는 구조라, 버킷에 CORS(허용 Origin: FE 도메인, GET, `Content-Disposition` 헤더
+  노출)를 설정하지 않으면 FE 다운로드가 실패함 (README "게시판 첨부파일 S3 버킷 설정"
+  섹션에 실제 설정값 정리해둠)
+- ⚠️ 알려진 성능 한계: 목록/상세 변환 시 게시글마다 첨부파일 개수·작성자 이름을 개별
+  조회함(N+1). 이 프로젝트 규모(빅프로젝트 시연용)에서는 문제없다고 판단해 우선
+  단순하게 구현 — 트래픽이 커지면 배치 조회(IN 절)로 최적화 필요
+- 이번에도 `./gradlew build` 직접 검증은 못 했음(샌드박스 네트워크 제약) - 로컬 빌드
+  확인 부탁드립니다. 특히 AWS SDK BOM 버전(2.28.16)이 최신인지 한 번 확인해주시면
+  좋겠습니다
+
 ### 2026-07-24 (로그인/회원가입 API 구현 - Spring Security + JWT 최초 도입)
 - FE의 authStore mock 로그인을 대체할 실제 인증 API를 처음 구현함
 - 🆕 `POST /api/auth/signup`: 회원가입. FE SignupPage 입력값(아이디/비밀번호/이름/

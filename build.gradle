@@ -38,6 +38,11 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
+    // 2026-07-24 추가: 게시판 첨부파일 업로드/다운로드(S3) - S3Client(업로드/삭제),
+    // S3Presigner(다운로드용 임시 서명 URL 발급)에 사용
+    implementation platform('software.amazon.awssdk:bom:2.28.16')
+    implementation 'software.amazon.awssdk:s3'
+
     // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

@@ -27,3 +27,15 @@ cors:
 jwt:
   secret: ${JWT_SECRET:tdtc-ai-local-dev-only-secret-key-please-change-1234567890}
   expiration-ms: ${JWT_EXPIRATION_MS:3600000}   # 기본 1시간
+
+# 2026-07-24 추가: 게시판 첨부파일 저장용 S3. 자격증명은 여기 넣지 않고
+# AWS 기본 자격증명 체인(환경변수 AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY 또는
+# ~/.aws/credentials)을 그대로 사용함(S3Config 참고).
+# 로컬에서 board 기능을 테스트하려면:
+#   1) S3 버킷을 하나 만들고
+#   2) 아래 AWS_S3_BUCKET 환경변수(또는 기본값)를 그 버킷명으로 맞추고
+#   3) 로컬 환경에 AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY를 설정할 것
+aws:
+  region: ${AWS_REGION:ap-northeast-2}
+  s3:
+    bucket: ${AWS_S3_BUCKET:tdtc-ai-board-attachments-dev}
