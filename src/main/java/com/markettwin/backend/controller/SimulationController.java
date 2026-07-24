@@ -1,6 +1,8 @@
 package com.markettwin.backend.controller;
 
+import com.markettwin.backend.dto.request.PredictRequestDto;
 import com.markettwin.backend.dto.request.ScenarioRequestDto;
+import com.markettwin.backend.dto.response.PredictResultDto;
 import com.markettwin.backend.dto.response.ScenarioResultDto;
 import com.markettwin.backend.service.SimulationService;
 import jakarta.validation.Valid;
@@ -20,5 +22,10 @@ public class SimulationController {
     @PostMapping("/run")
     public ScenarioResultDto runScenario(@Valid @RequestBody ScenarioRequestDto request) {
         return simulationService.runScenario(request);
+    }
+
+    @PostMapping("/predict")
+    public PredictResultDto predict(@Valid @RequestBody PredictRequestDto request) {
+        return simulationService.predict(request);
     }
 }

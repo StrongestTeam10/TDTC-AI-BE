@@ -48,4 +48,12 @@ public class ZoneAdjacency {
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;
+
+    /**
+     * 2026-07-24 추가: 통로 중심선(GeoJSON LineString, WGS84 [경도,위도] 순서).
+     * 레이아웃 에디터로 실제 통로를 따라 그린 선. null이면 SIM이 두 구역이 맞닿은
+     * 경계 중점 1개로 근사해서 대체한다(정확도는 떨어짐).
+     */
+    @Column(name = "path_coordinates", columnDefinition = "TEXT")
+    private String pathCoordinates;
 }

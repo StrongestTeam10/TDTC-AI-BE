@@ -21,10 +21,13 @@ public class DashboardController {
 
     @GetMapping("/snapshot")
     public DashboardSnapshotDto getSnapshot(
+            @RequestParam Long marketId,
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant snapshotTime
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant capturedAt,
+            @RequestParam(required = false, defaultValue = "false") Boolean persistRisk,
+            @RequestParam(required = false, defaultValue = "true") Boolean includeAgents
     ) {
-        return dashboardService.getSnapshot(snapshotTime);
+        return dashboardService.getSnapshot(marketId, capturedAt, persistRisk, includeAgents);
     }
 
     @GetMapping("/timestamps")
