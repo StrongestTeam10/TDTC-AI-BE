@@ -43,13 +43,19 @@ CREATE TABLE IF NOT EXISTS usrusrs01m (
     -- 2026-07-24 추가: 회원가입 화면의 개인정보 동의 이력(필수 2개 + 선택 1개)
     agree_terms_at      TIMESTAMP,
     agree_privacy_at    TIMESTAMP,
-    agree_marketing_at  TIMESTAMP
+    agree_marketing_at  TIMESTAMP,
+    -- 2026-07-24 추가(게시판): 사용자가 담당하는 시장 코드(comcode01m MKT 도메인).
+    -- 게시판 목록 조회 시 "본인 담당 시장 게시글만 노출"의 기준 컬럼.
+    -- nullable인 이유: 관리자(ROL01)는 시장 제한 없이 전체를 보므로 시장 소속이
+    -- 필수가 아님. 회원가입 화면에서 org_code와 동일하게 select로 입력받음.
+    market_code VARCHAR(5)
 );
 
 -- 기존에 이미 생성돼 있던 DB에도 반영되도록 (2026-07-24 추가)
 ALTER TABLE usrusrs01m ADD COLUMN IF NOT EXISTS agree_terms_at TIMESTAMP;
 ALTER TABLE usrusrs01m ADD COLUMN IF NOT EXISTS agree_privacy_at TIMESTAMP;
 ALTER TABLE usrusrs01m ADD COLUMN IF NOT EXISTS agree_marketing_at TIMESTAMP;
+ALTER TABLE usrusrs01m ADD COLUMN IF NOT EXISTS market_code VARCHAR(5);
 
 -- =========================================
 -- 3. 현장 변경 (승인/변경 이력)
@@ -251,6 +257,79 @@ ALTER TABLE mrkadjc01m ADD COLUMN IF NOT EXISTS path_coordinates TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_mrkadjc01m_market_id ON mrkadjc01m(market_id);
 CREATE INDEX IF NOT EXISTS idx_mrkadjc01m_from_zone ON mrkadjc01m(from_zone_id);
+
+-- =========================================
+-- 20. 게시글 (2026-07-24 추가 - 게시판 기능)
+-- =========================================
+-- 권한 규칙(서비스 레이어에서 강제):
+--   - 작성: 로그인한 모든 사용자
+--   - 수정/삭제: 관리자(ROL01)는 전체, 그 외는 본인 작성 글만
+--   - 공지 고정(is_notice): 관리자만 true로 설정 가능
+--   - 카테고리(category_code)의 BCTNT(공지사항)는 관리자만 선택 가능(그 외 BCTFR은 전체 허용)
+--   - 목록 노출 범위: 관리자는 전체 시장, 그 외는 본인 market_code 글 + 공지(is_notice=true, 시장 무관 항상 노출)
+CREATE TABLE IF NOT EXISTS brdpsts01m (
+    post_id      BIGSERIAL PRIMARY KEY,
+    -- 공지(is_notice=true)는 시장 무관 항상 노출되므로 market_code가 NULL이어도 됨.
+    -- 일반 게시글(is_notice=false)은 작성자의 market_code를 그대로 저장(서비스에서 채움).
+    market_code  VARCHAR(5),
+    writer_id    BIGINT NOT NULL REFERENCES usrusrs01m(user_id),
+    title        VARCHAR(200) NOT NULL,
+    content      TEXT NOT NULL,
+    is_notice    BOOLEAN NOT NULL DEFAULT FALSE,
+    -- 2026-07-24 추가(UI 설계서 반영): 게시판 상단 카테고리 탭(전체/공지사항/자유게시판)
+    -- 필터 기준. comcode01m BCT 도메인 코드(BCTNT/BCTFR) 중 하나. "전체" 탭은
+    -- 저장값이 아니라 "필터 없음"을 의미하는 UI 상태라 여기 값으로 존재하지 않음.
+    -- is_notice(관리자 상단 고정)와는 별개 개념 - 카테고리가 공지사항이 아니어도 고정될 수 있고,
+    -- 공지사항 카테고리라고 자동으로 고정되지도 않음.
+    -- 2026-07-25 변경: 카테고리를 공지사항/자유게시판 2개로 축소(질문과 답변/제안 삭제).
+    category_code VARCHAR(5) NOT NULL DEFAULT 'BCTFR',
+    view_count   INTEGER NOT NULL DEFAULT 0,
+    like_count   INTEGER NOT NULL DEFAULT 0,
+    created_at   TIMESTAMP NOT NULL,
+    updated_at   TIMESTAMP
+);
+
+-- 기존에 이미 생성돼 있던 DB에도 반영되도록 (2026-07-24 추가)
+ALTER TABLE brdpsts01m ADD COLUMN IF NOT EXISTS category_code VARCHAR(5) NOT NULL DEFAULT 'BCTFR';
+-- 2026-07-25 추가: 컬럼이 이미 존재하는 DB는 위 ADD COLUMN IF NOT EXISTS가 아무 동작도
+-- 안 하므로(컬럼이 이미 있으면 건너뜀), DEFAULT 값 자체를 별도로 갱신해줘야 함
+-- (BCTQA(질문과 답변) -> BCTFR(자유게시판), 카테고리 축소 반영).
+ALTER TABLE brdpsts01m ALTER COLUMN category_code SET DEFAULT 'BCTFR';
+
+CREATE INDEX IF NOT EXISTS idx_brdpsts01m_market_code ON brdpsts01m(market_code);
+CREATE INDEX IF NOT EXISTS idx_brdpsts01m_is_notice ON brdpsts01m(is_notice);
+CREATE INDEX IF NOT EXISTS idx_brdpsts01m_category_code ON brdpsts01m(category_code);
+CREATE INDEX IF NOT EXISTS idx_brdpsts01m_created_at ON brdpsts01m(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_brdpsts01m_writer_id ON brdpsts01m(writer_id);
+
+-- =========================================
+-- 21. 게시글 첨부파일 (2026-07-24 추가 - 게시판 기능)
+-- =========================================
+-- 실제 파일 바이너리는 S3에 저장하고, 이 테이블은 메타데이터 + S3 오브젝트 키만 보관.
+CREATE TABLE IF NOT EXISTS brdattc01d (
+    attachment_id  BIGSERIAL PRIMARY KEY,
+    post_id        BIGINT NOT NULL REFERENCES brdpsts01m(post_id) ON DELETE CASCADE,
+    original_name  VARCHAR(255) NOT NULL,
+    s3_key         VARCHAR(500) NOT NULL,
+    file_size      BIGINT NOT NULL,
+    content_type   VARCHAR(100),
+    created_at     TIMESTAMP NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_brdattc01d_post_id ON brdattc01d(post_id);
+
+-- =========================================
+-- 22. 게시글 좋아요 (2026-07-24 추가 - 게시판 기능)
+-- =========================================
+CREATE TABLE IF NOT EXISTS brdlike01d (
+    like_id     BIGSERIAL PRIMARY KEY,
+    post_id     BIGINT NOT NULL REFERENCES brdpsts01m(post_id) ON DELETE CASCADE,
+    user_id     BIGINT NOT NULL REFERENCES usrusrs01m(user_id),
+    created_at  TIMESTAMP NOT NULL,
+    CONSTRAINT uq_brdlike01d_post_user UNIQUE (post_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_brdlike01d_post_id ON brdlike01d(post_id);
 
 -- =========================================
 -- 실제 시장 공간 데이터는 seed-market-data.sql 로 분리되어 있음

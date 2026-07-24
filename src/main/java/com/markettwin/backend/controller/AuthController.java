@@ -68,6 +68,7 @@ public class AuthController {
                 .name(user.getName())
                 .rulesCode(user.getRulesCode())
                 .orgCode(user.getOrgCode())
+                .marketCode(user.getMarketCode())
                 .build();
 
         return ResponseEntity.ok(summary);

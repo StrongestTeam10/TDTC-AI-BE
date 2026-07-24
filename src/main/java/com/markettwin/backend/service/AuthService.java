@@ -8,6 +8,7 @@ import com.markettwin.backend.dto.response.SignupResponseDto;
 import com.markettwin.backend.dto.response.UserSummaryDto;
 import com.markettwin.backend.exception.DuplicateLoginIdException;
 import com.markettwin.backend.exception.InvalidCredentialsException;
+import com.markettwin.backend.exception.InvalidMarketCodeException;
 import com.markettwin.backend.exception.InvalidOrgCodeException;
 import com.markettwin.backend.repository.CommonCodeRepository;
 import com.markettwin.backend.repository.UserRepository;
@@ -37,6 +38,10 @@ public class AuthService {
     // 조회(existsByCodeCobAndCode)로 교체함.
     private static final String ORG_CODE_COB = "ORG";
 
+    // 2026-07-24 추가(게시판): comcode01m.code_cob 값(MKT 도메인). ORG_CODE_COB와
+    // 동일한 패턴으로 signup 요청의 marketCode가 실제 존재하는 코드인지 검증함.
+    private static final String MARKET_CODE_COB = "MKT";
+
     private final UserRepository userRepository;
     private final CommonCodeRepository commonCodeRepository;
     private final PasswordEncoder passwordEncoder;
@@ -45,6 +50,7 @@ public class AuthService {
     @Transactional
     public SignupResponseDto signup(SignupRequestDto request, String clientIp) {
         validateOrgCode(request.getOrgCode());
+        validateMarketCode(request.getMarketCode());
 
         if (userRepository.existsByLoginId(request.getLoginId())) {
             throw new DuplicateLoginIdException(request.getLoginId());
@@ -58,6 +64,7 @@ public class AuthService {
                 .name(request.getName())
                 .rulesCode(DEFAULT_ROLE_CODE)
                 .orgCode(request.getOrgCode())
+                .marketCode(request.getMarketCode())
                 .createdAt(now)
                 .createdIp(clientIp)
                 .agreeTermsAt(now)
@@ -99,6 +106,14 @@ public class AuthService {
         }
     }
 
+    private void validateMarketCode(String marketCode) {
+        boolean valid = marketCode != null
+                && commonCodeRepository.existsByCodeCobAndCode(MARKET_CODE_COB, marketCode);
+        if (!valid) {
+            throw new InvalidMarketCodeException(marketCode);
+        }
+    }
+
     private UserSummaryDto toSummary(User user) {
         return UserSummaryDto.builder()
                 .userId(user.getUserId())
@@ -106,6 +121,7 @@ public class AuthService {
                 .name(user.getName())
                 .rulesCode(user.getRulesCode())
                 .orgCode(user.getOrgCode())
+                .marketCode(user.getMarketCode())
                 .build();
     }
 }
