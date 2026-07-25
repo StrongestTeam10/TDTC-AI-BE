@@ -1,6 +1,7 @@
 package com.markettwin.backend.controller;
 
 import com.markettwin.backend.dto.response.MarketDto;
+import com.markettwin.backend.dto.response.ZoneAdjacencyDto;
 import com.markettwin.backend.dto.response.ZoneDto;
 import com.markettwin.backend.service.MarketService;
 import lombok.RequiredArgsConstructor;
@@ -26,5 +27,14 @@ public class MarketController {
     @GetMapping("/{marketId}/zones")
     public List<ZoneDto> getZones(@PathVariable Long marketId) {
         return marketService.getZones(marketId);
+    }
+
+    /**
+     * 2026-07-25 추가: 지도에 통로(구역 간 연결)를 선으로 그리고 클릭으로
+     * 폐쇄/개방/일방통행 정책을 지정할 수 있도록 통로 목록을 반환한다.
+     */
+    @GetMapping("/{marketId}/corridors")
+    public List<ZoneAdjacencyDto> getCorridors(@PathVariable Long marketId) {
+        return marketService.getCorridors(marketId);
     }
 }
