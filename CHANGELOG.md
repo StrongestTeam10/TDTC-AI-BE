@@ -3,6 +3,7 @@
 이 파일은 Claude와의 작업 세션에서 변경된 내용을 기록합니다.
 각 항목은 zip으로 전달된 시점 기준입니다.
 
+
 ### 2026-07-25 (게시판 파일 업로드 500 오류 - 예외 처리 범위 확대)
 - **증상**: 게시글 수정 화면에서 새 첨부파일과 함께 저장하면 `PUT /api/posts/{id}`가
   500(서버 내부 오류)로 실패
@@ -154,7 +155,7 @@
   `FileStorageException`(500)
 - ⚠️ **S3 버킷 CORS 설정 필수**: 다운로드가 presigned URL로 브라우저가 S3에 직접
   접근하는 구조라, 버킷에 CORS(허용 Origin: FE 도메인, GET, `Content-Disposition` 헤더
-  노출)를 설정하지 않으면 FE 다운로드가 실패함 (README "게시판 첨부파일 S3 버킷 설정"
+  노출)를 설정하지 않으면 FE 다운로드가 실패함 (하단 "게시판 첨부파일 S3 버킷 설정"
   섹션에 실제 설정값 정리해둠)
 - ⚠️ 알려진 성능 한계: 목록/상세 변환 시 게시글마다 첨부파일 개수·작성자 이름을 개별
   조회함(N+1). 이 프로젝트 규모(빅프로젝트 시연용)에서는 문제없다고 판단해 우선
@@ -162,6 +163,53 @@
 - 이번에도 `./gradlew build` 직접 검증은 못 했음(샌드박스 네트워크 제약) - 로컬 빌드
   확인 부탁드립니다. 특히 AWS SDK BOM 버전(2.28.16)이 최신인지 한 번 확인해주시면
   좋겠습니다
+
+### 2026-07-24 (기존 API 인증 필수화 - FE 토큰 연동 완료에 맞춰 SecurityConfig 강화)
+- 사용자 확인 사항: FE가 로그인 후 모든 API 호출에 JWT를 자동으로 붙이도록 연동
+  완료됨(FE `api/client.ts` 인터셉터) → 이번엔 기존 API도 인증을 필수로 잠금
+- ✏️ `config/SecurityConfig.java`: `anyRequest().permitAll()` → 아래처럼 좁힘
+  - `permitAll`: `/api/auth/**`, `/api/common-codes/**`(회원가입 화면이 로그인 전에
+    소속기관을 조회해야 해서), `/swagger-ui/**`, `/v3/api-docs/**`,
+    `/actuator/health`, `/actuator/info`
+  - 나머지 전체(`/api/markets`, `/api/dashboard/**`, `/api/simulation/**`,
+    `/api/spatial/**` 등): `authenticated()` — 토큰 없이 호출하면 401
+- 🆕 `security/RestAuthenticationEntryPoint.java`: 인증 안 된 요청이 보호된 API에
+  접근하면 Spring Security 기본 동작(403, 빈 본문) 대신 401 + JSON 본문
+  (`{timestamp, message: "로그인이 필요합니다."}`)으로 응답하도록 함 - FE가 이 401을
+  보고 로그인 상태를 자동 정리하도록 만들어둠(FE `auth/tokenStore.ts` 참고)
+- ✏️ `controller/AuthController.java`: `/api/auth/me`의 인증 여부 판별 로직 보정.
+  이제 `authorizeHttpRequests`가 익명 사용자에게도 기본적으로
+  `AnonymousAuthenticationToken`을 채워주기 때문에(그래야 `authenticated()` 규칙이
+  제대로 익명 사용자를 걸러냄), 기존 `authentication.isAuthenticated()`만 보는
+  체크로는 익명 사용자를 로그인 사용자로 착각할 수 있어서
+  `instanceof AnonymousAuthenticationToken` 체크를 추가함
+- ⚠️ **팀원 공유 필요**: 파이프라인 B(시나리오 시뮬레이션, `/api/simulation/run` 등)도
+  이제 토큰 없이 호출하면 401이 납니다. 팀원 쪽 FE/테스트 코드도 로그인 토큰을
+  붙이도록 안내 필요
+- 이번에도 `./gradlew build` 직접 검증은 못 했음(샌드박스 네트워크 제약) - 로컬
+  빌드 확인 부탁드립니다
+
+### 2026-07-24 (공통코드 복합키 반영: code_cob 추가)
+- 사용자 확인 사항: `comcode01m`에 `code_cob`(공통코드분류, VARCHAR(3)) 컬럼이
+  추가되면서 PK가 `code` 단독 → `(code_cob, code)` 복합키로 변경됨(ERD 이미지 기준)
+- 🆕 `domain/entity/CommonCodeId.java`: `(code_cob, code)` 복합키 클래스 (`@IdClass`)
+- ✏️ `domain/entity/CommonCode.java`: `@Id`를 `codeCob`/`code` 2개로 분리,
+  `@IdClass(CommonCodeId.class)` 적용
+- ✏️ `repository/CommonCodeRepository.java`: ID 타입 `String` → `CommonCodeId`로 변경,
+  `findByCodeCob`/`existsByCodeCobAndCode` 추가
+- ✏️ `service/CommonCodeService.java`: 처음에 임시로 썼던 `code.startsWith(domain)`
+  문자열 매칭을 실제 `code_cob` 컬럼 조회로 교체
+- ✏️ `service/AuthService.java`: 소속기관(`orgCode`) 검증도 `code_cob` 컬럼 기반
+  (`existsByCodeCobAndCode("ORG", orgCode)`)으로 교체
+- ✏️ `schema-init.sql`: `comcode01m` 테이블 정의에 `code_cob` 추가 + 기존 DB
+  마이그레이션용 `ALTER`(컬럼 추가 → 기존 행 `code` 앞 3자로 채움 → PK를
+  `(code_cob, code)`로 교체) 포함
+- ✏️ `comcode-seed.sql`: 모든 행에 `code_cob` 값 추가(각 도메인 접두사와 동일:
+  ROL/ORG/SEN/LVL/POL)
+- `./gradlew build`로 직접 검증은 못 했음(이전 항목과 동일한 샌드박스 네트워크
+  제약) — 로컬에서 빌드 확인 부탁드립니다. 특히 기존 DB에 `ALTER` 구문을 실행할
+  때, PK 제약 이름이 실제로 `comcode01m_pkey`가 맞는지 한 번 확인해주시면
+  좋겠습니다(Postgres 기본 명명 규칙을 가정하고 작성함)
 
 ### 2026-07-24 (로그인/회원가입 API 구현 - Spring Security + JWT 최초 도입)
 - FE의 authStore mock 로그인을 대체할 실제 인증 API를 처음 구현함
