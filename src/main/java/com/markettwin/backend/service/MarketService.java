@@ -1,11 +1,14 @@
 package com.markettwin.backend.service;
 
+import com.markettwin.backend.domain.entity.Facility;
 import com.markettwin.backend.domain.entity.Market;
 import com.markettwin.backend.domain.entity.Zone;
 import com.markettwin.backend.domain.entity.ZoneAdjacency;
+import com.markettwin.backend.dto.response.GateDto;
 import com.markettwin.backend.dto.response.MarketDto;
 import com.markettwin.backend.dto.response.ZoneAdjacencyDto;
 import com.markettwin.backend.dto.response.ZoneDto;
+import com.markettwin.backend.repository.FacilityRepository;
 import com.markettwin.backend.repository.MarketRepository;
 import com.markettwin.backend.repository.ZoneAdjacencyRepository;
 import com.markettwin.backend.repository.ZoneRepository;
@@ -21,6 +24,7 @@ public class MarketService {
     private final MarketRepository marketRepository;
     private final ZoneRepository zoneRepository;
     private final ZoneAdjacencyRepository zoneAdjacencyRepository;
+    private final FacilityRepository facilityRepository;
 
     public List<MarketDto> getMarkets() {
         return marketRepository.findAll().stream()
@@ -42,6 +46,17 @@ public class MarketService {
     public List<ZoneAdjacencyDto> getCorridors(Long marketId) {
         return zoneAdjacencyRepository.findByMarketId(marketId).stream()
                 .map(this::toAdjacencyDto)
+                .toList();
+    }
+
+    /**
+     * 2026-07-25 추가: 지도에 게이트(출입구) 아이콘을 표시하고 클릭으로 열림/닫힘을
+     * 토글할 수 있도록, facility_type='GATE'인 시설 목록을 반환한다.
+     */
+    public List<GateDto> getGates(Long marketId) {
+        return facilityRepository.findByMarketId(marketId).stream()
+                .filter(f -> "GATE".equalsIgnoreCase(f.getFacilityType()))
+                .map(this::toGateDto)
                 .toList();
     }
 
@@ -70,6 +85,16 @@ public class MarketService {
                 adjacency.getToZoneId(),
                 adjacency.getPathCoordinates(),
                 adjacency.getIsActive()
+        );
+    }
+
+    private GateDto toGateDto(Facility facility) {
+        return new GateDto(
+                facility.getFacilityId(),
+                facility.getName(),
+                facility.getLatitude(),
+                facility.getLongitude(),
+                facility.getWeight()
         );
     }
 }

@@ -1,5 +1,6 @@
 package com.markettwin.backend.controller;
 
+import com.markettwin.backend.dto.response.GateDto;
 import com.markettwin.backend.dto.response.MarketDto;
 import com.markettwin.backend.dto.response.ZoneAdjacencyDto;
 import com.markettwin.backend.dto.response.ZoneDto;
@@ -36,5 +37,14 @@ public class MarketController {
     @GetMapping("/{marketId}/corridors")
     public List<ZoneAdjacencyDto> getCorridors(@PathVariable Long marketId) {
         return marketService.getCorridors(marketId);
+    }
+
+    /**
+     * 2026-07-25 추가: 지도에 게이트(출입구) 아이콘을 표시하고 클릭으로
+     * 열림/닫힘을 토글할 수 있도록 게이트 목록을 반환한다.
+     */
+    @GetMapping("/{marketId}/gates")
+    public List<GateDto> getGates(@PathVariable Long marketId) {
+        return marketService.getGates(marketId);
     }
 }
