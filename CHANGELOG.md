@@ -3,6 +3,31 @@
 이 파일은 Claude와의 작업 세션에서 변경된 내용을 기록합니다.
 각 항목은 zip으로 전달된 시점 기준입니다.
 
+### 2026-07-26 (게시글 수정 화면을 열면 조회수가 올라가던 버그 수정)
+- **증상**: FE `BoardWritePage`(수정 화면)가 기존 값을 불러올 때 상세 화면과 동일한
+  `GET /api/posts/{id}`를 재사용하는데, 이 엔드포인트는 호출될 때마다 조회수를 1 증가시킴.
+  즉 게시글을 "수정하러 열기만" 해도 조회수가 올라갔고, FE StrictMode 이중 실행까지
+  겹치면 한 번 열 때 조회수가 2씩 올라갔음
+- ✏️ `PostController.getDetail()`: `countView`(기본값 `true`) 쿼리 파라미터 추가
+- ✏️ `PostService.getDetail(Long, User, boolean)`: `countView`가 `true`일 때만 조회수 증가
+  (기존 2-arg 시그니처를 3-arg로 변경, 호출부는 `PostController` 1곳뿐이라 영향 범위 없음)
+- FE에서 상세 화면(`BoardDetailPage`)은 기존대로 조회수 증가(`countView` 기본값 `true`),
+  수정 화면(`BoardWritePage`)만 `countView=false`로 호출하도록 분리
+### 2026-07-26 (게시판 목록 조회 N+1 쿼리 최적화)
+- **문제**: `PostService.toSummary(Post)`가 게시글 1건마다 `attachmentRepository.findByPostId()`(첨부파일
+  개수 확인용)와 `userRepository.findById()`(작성자 이름 확인용)를 개별 호출 — 목록 화면 1회 진입 시
+  `1(목록 쿼리) + 1(공지 쿼리) + 게시글수 × 2`만큼 쿼리 발생(N+1)
+- 🆕 `PostAttachmentRepository.countByPostIdIn(List<Long>)`: 게시글 ID 목록을 받아 첨부파일 개수를
+  `GROUP BY`로 한 번에 조회하는 쿼리 추가
+- 🆕 `UserRepository.findNamesByIds(List<Long>)`: 사용자 ID 목록을 받아 `(userId, name)`만 한 번에
+  조회하는 쿼리 추가(User 엔티티 전체를 안 불러옴)
+- ✏️ `PostService.list()`: 공지 목록 + 페이징 목록의 게시글 ID/작성자 ID를 모아 위 두 배치 쿼리를
+  각 1번씩만 호출하도록 변경. 게시글 수와 무관하게 목록 조회 쿼리 수가 고정됨(대략 4~5개)
+- ✏️ `PostService.toSummary(Post, Map, Map)`: 개별 쿼리 대신 배치 조회된 Map에서 값을 꺼내 쓰도록 시그니처 변경
+- `toDetail()`(상세 조회, 게시글 1건만 다룸)은 N+1 대상이 아니므로 변경하지 않음
+- 컴파일 검증: 샌드박스 네트워크 제약으로 `./gradlew build` 직접 실행은 못 했음(기존과 동일) — 괄호/중괄호
+  균형 등 정적 점검만 했으니 로컬에서 빌드 확인 부탁드립니다
+
 
 ### 2026-07-25 (게시판 파일 업로드 500 오류 - 예외 처리 범위 확대)
 - **증상**: 게시글 수정 화면에서 새 첨부파일과 함께 저장하면 `PUT /api/posts/{id}`가
