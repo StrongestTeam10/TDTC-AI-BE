@@ -46,9 +46,15 @@ public class PostController {
     }
 
     @GetMapping("/{postId}")
-    public PostDetailDto getDetail(@PathVariable Long postId) {
+    public PostDetailDto getDetail(
+            @PathVariable Long postId,
+            // 2026-07-26 추가: 수정 화면(BoardWritePage)이 기존 값을 불러올 때도 이 API를
+            // 재사용하는데, 그 경우엔 "조회"가 아니라 "편집 준비"이므로 조회수를 올리면 안 됨.
+            // 기본값 true로 둬서 기존 상세 화면 호출은 그대로 동작하고, 편집 화면만 false로 넘김.
+            @RequestParam(required = false, defaultValue = "true") boolean countView
+    ) {
         User currentUser = currentUserProvider.getCurrentUser();
-        return postService.getDetail(postId, currentUser);
+        return postService.getDetail(postId, currentUser, countView);
     }
 
     @PostMapping(consumes = "multipart/form-data")

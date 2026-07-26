@@ -31,7 +31,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 2026-07-24 추가 (게시판 기능)
@@ -41,9 +44,9 @@ import java.util.List;
  *  - 수정/삭제: 관리자는 전체, 그 외는 본인 작성 글만
  *  - 공지 고정(notice): 관리자만 설정/해제 가능
  *
- * ⚠️ 알려진 성능 한계: toSummary/toDetail에서 게시글마다 첨부파일 개수·작성자 이름을
- * 개별 조회한다(N+1). 게시판 트래픽이 커지면 배치 조회(IN 절)로 최적화가 필요하지만,
- * 이 프로젝트 규모(빅프로젝트 시연용)에서는 문제되지 않는다고 판단해 우선 단순하게 구현함.
+ * 2026-07-26: 목록 조회의 N+1 문제(게시글마다 첨부파일 개수·작성자 이름을 개별
+ * 조회하던 것)를 배치 조회(IN 절, batchAttachmentCounts/batchWriterNames)로 해결함.
+ * toDetail은 게시글 1건만 다루므로 N+1 대상이 아니라 그대로 유지.
  */
 @Service
 @RequiredArgsConstructor
@@ -75,9 +78,7 @@ public class PostService {
         int safePage = Math.max(page, 0);
 
         // 공지: 시장/카테고리 무관 항상 전체 노출, 페이징 없이 최신순
-        List<PostSummaryDto> pinned = postRepository.findByNoticeTrueOrderByCreatedAtDesc().stream()
-                .map(this::toSummary)
-                .toList();
+        List<Post> pinnedPosts = postRepository.findByNoticeTrueOrderByCreatedAtDesc();
 
         Specification<Post> spec = Specification.where(PostSpecs.isNotNotice());
         if (isAdmin(currentUser)) {
@@ -101,19 +102,60 @@ public class PostService {
         Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Post> resultPage = postRepository.findAll(spec, pageable);
 
+        // 2026-07-26: 공지 + 페이지 게시글을 합친 ID 목록으로 첨부파일 개수·작성자 이름을
+        // 각각 쿼리 1번씩(총 2번)만 배치 조회한다. 이전에는 게시글마다 개별 조회(N+1)했음.
+        List<Post> allPosts = new ArrayList<>(pinnedPosts);
+        allPosts.addAll(resultPage.getContent());
+        Map<Long, Integer> attachmentCounts = batchAttachmentCounts(allPosts);
+        Map<Long, String> writerNames = batchWriterNames(allPosts);
+
+        List<PostSummaryDto> pinned = pinnedPosts.stream()
+                .map(post -> toSummary(post, attachmentCounts, writerNames))
+                .toList();
+
         return PostListResponseDto.builder()
                 .pinned(pinned)
-                .page(PageResponseDto.from(resultPage.map(this::toSummary)))
+                .page(PageResponseDto.from(resultPage.map(post -> toSummary(post, attachmentCounts, writerNames))))
                 .build();
     }
 
+    // 2026-07-26 추가: 게시글 목록의 첨부파일 개수를 IN 절 1번으로 일괄 조회
+    private Map<Long, Integer> batchAttachmentCounts(List<Post> posts) {
+        List<Long> postIds = posts.stream().map(Post::getPostId).distinct().toList();
+        if (postIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<Long, Integer> counts = new HashMap<>();
+        for (Object[] row : attachmentRepository.countByPostIdIn(postIds)) {
+            counts.put((Long) row[0], ((Long) row[1]).intValue());
+        }
+        return counts;
+    }
+
+    // 2026-07-26 추가: 게시글 목록의 작성자 이름을 IN 절 1번으로 일괄 조회
+    private Map<Long, String> batchWriterNames(List<Post> posts) {
+        List<Long> writerIds = posts.stream().map(Post::getWriterId).distinct().toList();
+        if (writerIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<Long, String> names = new HashMap<>();
+        for (Object[] row : userRepository.findNamesByIds(writerIds)) {
+            names.put((Long) row[0], (String) row[1]);
+        }
+        return names;
+    }
+
     @Transactional
-    public PostDetailDto getDetail(Long postId, User currentUser) {
+    public PostDetailDto getDetail(Long postId, User currentUser, boolean countView) {
         Post post = getPostOrThrow(postId);
         assertVisible(post, currentUser);
 
-        post.setViewCount(post.getViewCount() + 1);
-        postRepository.save(post);
+        // 2026-07-26 변경: 편집 화면에서 기존 값을 불러오는 호출(countView=false)은
+        // 조회수를 올리지 않도록 분기. 상세 화면에서의 일반 조회(countView=true, 기본값)만 증가.
+        if (countView) {
+            post.setViewCount(post.getViewCount() + 1);
+            postRepository.save(post);
+        }
 
         return toDetail(post, currentUser);
     }
@@ -325,11 +367,9 @@ public class PostService {
         return resolved;
     }
 
-    private PostSummaryDto toSummary(Post post) {
-        int attachmentCount = attachmentRepository.findByPostId(post.getPostId()).size();
-        String writerName = userRepository.findById(post.getWriterId())
-                .map(User::getName)
-                .orElse("(알수없음)");
+    private PostSummaryDto toSummary(Post post, Map<Long, Integer> attachmentCounts, Map<Long, String> writerNames) {
+        int attachmentCount = attachmentCounts.getOrDefault(post.getPostId(), 0);
+        String writerName = writerNames.getOrDefault(post.getWriterId(), "(알수없음)");
 
         return PostSummaryDto.builder()
                 .postId(post.getPostId())
