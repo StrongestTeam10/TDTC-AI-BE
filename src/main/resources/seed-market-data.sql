@@ -5,8 +5,14 @@
 -- =========================================
 
 -- 1) 시장 (중심 좌표는 전체 폴리곤 centroid)
-INSERT INTO mrkaddr01m (market_name, latitude, longitude) VALUES
-    ('망원시장', 37.556338, 126.906131);
+-- 2026-07-27 변경: market_code(comcode01m MKT 도메인, 'MKTMW') 추가 - 시장별 권한 분리 기준
+INSERT INTO mrkaddr01m (market_name, latitude, longitude, market_code) VALUES
+    ('망원시장', 37.556338, 126.906131, 'MKTMW');
+
+-- 2026-07-27 마이그레이션: 이 파일을 이미 한 번 실행해서 망원시장 행이 market_code
+-- NULL 상태로 이미 존재하는 기존 DB를 위한 보정. 신규 DB는 위 INSERT에 이미
+-- 반영되어 있어 아래 UPDATE는 대상이 없어 아무 일도 하지 않는다(멱등).
+UPDATE mrkaddr01m SET market_code = 'MKTMW' WHERE market_name = '망원시장' AND market_code IS NULL;
 
 -- 2) 구역 3개 (출입구 위치 기준 남/중앙/북 분할)
 INSERT INTO mrkaddr01d (market_id, zone_name, polygon_coordinates) VALUES

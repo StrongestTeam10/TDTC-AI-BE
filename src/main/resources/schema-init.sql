@@ -78,8 +78,15 @@ CREATE TABLE IF NOT EXISTS mrkaddr01m (
     market_id    BIGSERIAL PRIMARY KEY,
     market_name  VARCHAR(50) NOT NULL,
     latitude     DECIMAL(10,8),
-    longitude    DECIMAL(11,8)
+    longitude    DECIMAL(11,8),
+    -- 2026-07-27 추가: 시장/구역별 권한 분리(상인회·지자체는 본인 담당 시장만 조회,
+    -- 관리자는 전체 조회 + 시장 전환)용. usrusrs01m.market_code와 동일한 comcode01m
+    -- MKT 도메인 코드.
+    market_code  VARCHAR(5)
 );
+
+-- 이미 생성되어 있던 DB(신규 컬럼 없이)에도 반영되도록 별도 ALTER도 함께 실행
+ALTER TABLE mrkaddr01m ADD COLUMN IF NOT EXISTS market_code VARCHAR(5);
 
 -- =========================================
 -- 5. 시장 구역 위치 좌표

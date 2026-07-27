@@ -41,6 +41,7 @@ INSERT INTO comcode01m (code_cob, code, code_name, describe, rmk) VALUES
 -- 지금은 seed-market-data.sql에 실제 데이터가 있는 망원시장 1개뿐이라 이 값 하나만 등록.
 -- 시장이 늘어나면 mrkaddr01m에 새 시장을 추가할 때 여기도 함께 추가할 것.
 ('MKT', 'MKTMW', '망원시장',   'usrusrs01m.market_code / brdpsts01m.market_code - 담당 시장 구분', ''),
+('MKT', 'MKTHD', '해운대시장',   'usrusrs01m.market_code / brdpsts01m.market_code - 담당 시장 구분', ''),
 
 -- ---------- BCT: 게시판 카테고리 (brdpsts01m.category_code) - 약어형 ----------
 -- 2026-07-24 추가(UI 설계서 반영): 게시판 상단 카테고리 탭. "전체" 탭은 필터 없음을

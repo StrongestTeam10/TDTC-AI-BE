@@ -24,8 +24,8 @@ public class Scenario {
     @Column(name = "scenario_id")
     private Long scenarioId;
 
-    @Column(name = "change_id")
-    private Long changeId;
+    @Column(name = "user_id")
+    private Long userId;
 
     @Column(name = "scenario_name", nullable = false, length = 100)
     private String scenarioName;

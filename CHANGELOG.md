@@ -3,6 +3,37 @@
 이 파일은 Claude와의 작업 세션에서 변경된 내용을 기록합니다.
 각 항목은 zip으로 전달된 시점 기준입니다.
 
+### 2026-07-27 (파이프라인 A 대시보드 - 시장/구역별 권한 분리)
+- **요청**: 상인회/지자체는 본인 담당 구역(시장)만, 관리자는 전체 + 시장 전환이
+  가능하게(게시판의 시장 권한 체계와 동일하게) 대시보드에도 적용
+- 🆕 `exception/MarketNotFoundException.java`: marketId로 시장을 못 찾을 때(404)
+- ✏️ `domain/entity/Market.java`: `market_code`(comcode01m MKT 도메인) 필드 추가.
+  `usrusrs01m.market_code`/`brdpsts01m.market_code`와 동일한 코드 체계를 시장
+  엔티티에도 부여해 소유권을 판정
+  - **DB 반영 필요**: `ALTER TABLE mrkaddr01m ADD COLUMN IF NOT EXISTS market_code VARCHAR(5);`
+    (schema-init.sql에 이미 반영됨, ddl-auto가 validate라 컬럼 없으면 서버 기동
+    실패함 - 로컬 DB에 먼저 적용 후 기동할 것)
+  - `seed-market-data.sql`도 함께 갱신(신규 INSERT에 `market_code='MKTMW'` 반영 +
+    기존 DB용 `UPDATE ... WHERE market_code IS NULL` 마이그레이션 추가) - ERD 문서도
+    이 필드 추가에 맞춰 갱신 필요
+- ✏️ `repository/MarketRepository.java`: `findByMarketCode(String)` 추가
+- ✏️ `service/MarketService.java`:
+  - `getMarkets(User)`: 관리자(ROL01)는 `findAll()`, 그 외는 `findByMarketCode(본인
+    marketCode)`만 반환
+  - `getZones(Long marketId, User)`: 조회 전 `getAccessibleMarket()`으로 접근 권한
+    검증(본인 담당 시장 아니면 403)
+  - `getAccessibleMarket(Long marketId, User)` 신규 공개 메서드: marketId 존재 검증
+    (404) + 소유권 검증(403). DashboardService에서도 재사용
+- ✏️ `controller/MarketController.java`, `controller/DashboardController.java`:
+  `CurrentUserProvider`로 로그인 사용자 조회 후 서비스에 전달
+- ✏️ `service/DashboardService.java`: `getSnapshot()`에 `User currentUser` 파라미터
+  추가, SIM 호출 전 `MarketService.getAccessibleMarket()`으로 요청받은 marketId가
+  본인 담당 시장인지 서버에서 재검증(클라이언트가 marketId를 조작해 다른 시장을
+  조회하는 것 방지 - PostService가 게시판에서 하던 것과 동일한 원칙)
+- ✏️ `exception/GlobalExceptionHandler.java`: `MarketNotFoundException` 핸들러(404) 등록
+- 정적 점검(중괄호 균형 등) 통과 확인. 이 샌드박스는 Maven Central 접근이 막혀
+  `./gradlew build` 컴파일 검증은 직접 부탁드립니다
+
 ### 2026-07-26 (게시글 수정 화면을 열면 조회수가 올라가던 버그 수정)
 - **증상**: FE `BoardWritePage`(수정 화면)가 기존 값을 불러올 때 상세 화면과 동일한
   `GET /api/posts/{id}`를 재사용하는데, 이 엔드포인트는 호출될 때마다 조회수를 1 증가시킴.
