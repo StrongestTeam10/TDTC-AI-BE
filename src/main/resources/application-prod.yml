@@ -16,3 +16,17 @@ simulation-engine:
 cors:
   allowed-origins:
     - ${PRO_FRONTEND_ORIGIN}    # 예: https://d1234abc.cloudfront.net (추후 실제 도메인으로 교체)
+
+# 2026-07-24 추가: 운영 환경에서는 JWT_SECRET을 반드시 환경변수로 설정해야 함
+# (기본값 없음 - 안 정하면 기동 실패). 32바이트(256비트) 이상의 무작위 문자열 권장.
+jwt:
+  secret: ${JWT_SECRET}
+  expiration-ms: ${JWT_EXPIRATION_MS:3600000}
+
+# 2026-07-24 추가: 게시판 첨부파일 저장용 S3 (운영). 자격증명은 환경변수/EC2·ECS
+# 인스턴스 role의 기본 자격증명 체인을 사용하고 여기 직접 넣지 않음(S3Config 참고).
+# AWS_S3_BUCKET은 운영 배포 전 반드시 실제 버킷명으로 설정해야 함(기본값 없음).
+aws:
+  region: ${AWS_REGION:ap-northeast-2}
+  s3:
+    bucket: ${AWS_S3_BUCKET}
