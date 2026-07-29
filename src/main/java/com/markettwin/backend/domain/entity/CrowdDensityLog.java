@@ -40,4 +40,15 @@ public class CrowdDensityLog {
 
     @Column(name = "captured_at", nullable = false)
     private Instant capturedAt;
+
+    @Column(name = "analysis_mode", length = 10)
+    @Builder.Default
+    private String analysisMode = "LIVE";
+
+    @Column(name = "video_id")
+    private Long videoId;
+
+    @Column(name = "frame_id")
+    private Integer frameId;
+
 }
