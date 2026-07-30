@@ -28,8 +28,8 @@ public class EmergencyAlert {
     @Column(name = "alert_type", length = 50)
     private String alertType;
 
-    @Column(name = "s3_clip_url", columnDefinition = "text")
-    private String s3ClipUrl;
+    @Column(name = "clip_id", nullable = false)
+    private Long clipId;
 
     @Column(name = "is_resolved")
     @Builder.Default

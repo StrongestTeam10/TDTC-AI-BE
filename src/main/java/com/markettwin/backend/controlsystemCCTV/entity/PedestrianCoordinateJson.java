@@ -5,38 +5,35 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import java.math.BigDecimal;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.Instant;
 
 @Entity
-@Table(name = "mktsmry01s")
+@Table(name = "pedaggr01h")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MarketSummary {
+public class PedestrianCoordinateJson {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "summary_id")
-    private Long summaryId;
+    @Column(name = "coord_id")
+    private Long coordId;
 
-    @Column(name = "market_id", nullable = false)
-    private Long marketId;
+    @Column(name = "zone_id", nullable = false)
+    private Long zoneId;
 
     @Column(name = "frame_id", nullable = false)
     private Integer frameId;
 
-    @Column(name = "total_cctv_count")
-    private Integer totalCctvCount;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "pixels_json", columnDefinition = "jsonb")
+    private String pixelsJson;
 
-    @Column(name = "avg_density_score", precision = 5, scale = 2)
-    private BigDecimal avgDensityScore;
-
-    @Column(name = "max_density_score", precision = 5, scale = 2)
-    private BigDecimal maxDensityScore;
-
-    @Column(name = "max_risk_score", precision = 5, scale = 2)
-    private BigDecimal maxRiskScore;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "bev_xyz_json", columnDefinition = "jsonb")
+    private String bevXyzJson;
 
     @Column(name = "captured_at", nullable = false)
     @Builder.Default
