@@ -38,4 +38,12 @@ public class Risk {
 
     @Column(name = "detected_at", nullable = false)
     private Instant detectedAt;
+
+    @Column(name = "s3_clip_url", columnDefinition = "text")
+    private String s3ClipUrl;
+
+    @Column(name = "frame_id")
+    private Integer frameId;
+
+
 }
