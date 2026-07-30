@@ -14,6 +14,18 @@ import java.time.Instant;
 
 /**
  * SIMRSLT01D - 시나리오 예측 결과
+ *
+ * 2026-07-27 추가: maxDensityZoneId/maxDensityZoneName/evacuatedCount 3개 필드.
+ * 보고서에서 "중앙통로에서 최대 X명/㎡" 같은 문장이나 "위험 인원이 N명 발생했다"는
+ * 서술을 하려면 밀집도 숫자만으론 부족해서, 어느 구역인지 + 실제 대피 인원수를
+ * 같이 저장한다. DB 컬럼도 이 3개를 추가하는 마이그레이션을 거쳤음
+ * (simrslt01d.max_density_zone_id/max_density_zone_name/evacuated_count).
+ *
+ * 2026-07-27 수정: flowDirection에 @JdbcTypeCode(SqlTypes.JSON) 추가.
+ * columnDefinition="jsonb"만으로는 Hibernate가 실제 저장 시 문자열(character
+ * varying)로 취급해서 "column is of type jsonb but expression is of type
+ * character varying" 에러가 났음 - 이 어노테이션이 있어야 Hibernate가 값을
+ * 실제로 jsonb로 변환해서 보낸다.
  */
 @Entity
 @Table(name = "simrslt01d")
@@ -52,9 +64,19 @@ public class ScenarioResult {
     @Column(name = "avg_stay_time")
     private Duration avgStayTime;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "flow_direction", columnDefinition = "jsonb")
     private String flowDirection;
 
     @Column(name = "executed_at", nullable = false)
     private Instant executedAt;
+
+    @Column(name = "max_density_zone_id")
+    private Long maxDensityZoneId;
+
+    @Column(name = "max_density_zone_name", length = 50)
+    private String maxDensityZoneName;
+
+    @Column(name = "evacuated_count")
+    private Integer evacuatedCount;
 }
