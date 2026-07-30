@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import com.markettwin.backend.controlsystemCCTV.entity.PedestrianCoordinateJson;
+
 import java.util.List;
 
 @RestController
@@ -30,6 +32,16 @@ public class AiIntegrationController {
             @RequestParam(required = false) Long videoId) {
 
         return controlSystemService.getCoordinates(zoneId, frameId, analysisMode, videoId);
+    }
+
+    @GetMapping("/coordinates-json")
+    public List<PedestrianCoordinateJson> getJsonCoordinates(
+            @RequestParam Long zoneId,
+            @RequestParam Integer frameId,
+            @RequestParam(defaultValue = "LIVE") String analysisMode,
+            @RequestParam(required = false) Long videoId) {
+
+        return controlSystemService.getJsonCoordinates(zoneId, frameId, analysisMode, videoId);
     }
 
 }

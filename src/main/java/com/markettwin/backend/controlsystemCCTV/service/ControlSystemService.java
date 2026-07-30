@@ -9,6 +9,9 @@ import com.markettwin.backend.controlsystemCCTV.repository.PostReportRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.markettwin.backend.controlsystemCCTV.entity.PedestrianCoordinateJson;
+import com.markettwin.backend.controlsystemCCTV.repository.PedestrianCoordinateJsonRepository;
+
 
 import java.time.LocalDate;
 import java.util.List;
@@ -21,6 +24,7 @@ public class ControlSystemService {
     private final EmergencyAlertRepository emergencyAlertRepository;
     private final PostReportRepository postReportRepository;
     private final PedestrianCoordinateRepository coordRepository;
+    private final PedestrianCoordinateJsonRepository jsonCoordRepository;
 
     public List<EmergencyAlert> getUnresolvedAlerts() {
         return emergencyAlertRepository.findByIsResolvedFalse();
@@ -32,6 +36,10 @@ public class ControlSystemService {
 
     public List<PedestrianCoordinate> getCoordinates(Long zoneId, Integer frameId, String analysisMode, Long videoId) {
         return coordRepository.findByZoneIdAndFrameIdAndAnalysisModeAndVideoId(zoneId, frameId, analysisMode, videoId);
+    }
+
+    public List<PedestrianCoordinateJson> getJsonCoordinates(Long zoneId, Integer frameId, String analysisMode, Long videoId) {
+        return jsonCoordRepository.findByZoneIdAndFrameIdAndAnalysisModeAndVideoId(zoneId, frameId, analysisMode, videoId);
     }
 
 }
