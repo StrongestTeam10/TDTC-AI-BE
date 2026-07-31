@@ -26,12 +26,12 @@ public class SimulationIntegrationController {
      */
     @GetMapping("/coordinates/frame")
     public ResponseEntity<Map<String, Object>> getCoordinatesForFrame(
-            @RequestParam Long zoneId,
+            @RequestParam Long clipId,
             @RequestParam Integer frameId,
-            @RequestParam(defaultValue = "LIVE") String analysisMode,
-            @RequestParam(required = false) Long videoId) {
+            @RequestParam(required = false) Integer videoId) {
 
-        List<PedestrianCoordinateJson> results = controlSystemService.getJsonCoordinates(zoneId, frameId, analysisMode, videoId);
+        List<PedestrianCoordinateJson> results = controlSystemService.getJsonCoordinates(clipId, frameId, videoId);
+
 
         if (results == null || results.isEmpty()) {
             return ResponseEntity.notFound().build();

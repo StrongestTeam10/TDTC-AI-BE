@@ -44,4 +44,7 @@ public class VideoClip {
 
     @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
+
+    @Column(name = "factor_id")
+    private Long factorId;
 }

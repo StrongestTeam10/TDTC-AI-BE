@@ -25,12 +25,12 @@ public class AiIntegrationController {
 
     @GetMapping("/coordinates-json")
     public List<PedestrianCoordinateJson> getJsonCoordinates(
-            @RequestParam Long zoneId,
+            @RequestParam Long clipId,
             @RequestParam Integer frameId,
-            @RequestParam(defaultValue = "LIVE") String analysisMode,
-            @RequestParam(required = false) Long videoId) {
+            @RequestParam(required = false) Integer videoId) {
 
-        return controlSystemService.getJsonCoordinates(zoneId, frameId, analysisMode, videoId);
+        return controlSystemService.getJsonCoordinates(clipId, frameId, videoId);
     }
 
 }
+
