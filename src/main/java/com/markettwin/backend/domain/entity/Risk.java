@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 
 /**
- * MRKRISK01M - 위험 척수
+ * MRKRISK01M - 위험 점수
  */
 @Entity
 @Table(name = "mrkrisk01m")
@@ -39,11 +39,11 @@ public class Risk {
     @Column(name = "detected_at", nullable = false)
     private Instant detectedAt;
 
-    @Column(name = "s3_clip_url", columnDefinition = "text")
-    private String s3ClipUrl;
-
-    @Column(name = "frame_id")
+    @Column(name = "frame_id", nullable = false)
     private Integer frameId;
 
+    @Column(name = "total_count", nullable = false)
+    @Builder.Default
+    private Integer totalCount = 0;
 
 }
