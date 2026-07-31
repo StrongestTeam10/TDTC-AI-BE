@@ -26,12 +26,13 @@ public class ControlSystemService {
         return emergencyAlertRepository.findByIsResolvedFalse();
     }
 
-    public List<PostReport> getReportsByDate(LocalDate date, String analysisMode, Long videoId) {
-        return postReportRepository.findByTargetDateAndAnalysisModeAndVideoId(date, analysisMode, videoId);
+    public List<PostReport> getReportsByDate(LocalDate date, Integer videoId) {
+        return postReportRepository.findByTargetDateAndVideoId(date, videoId);
     }
 
-    public List<PedestrianCoordinateJson> getJsonCoordinates(Long zoneId, Integer frameId, String analysisMode, Long videoId) {
-        return jsonCoordRepository.findByZoneIdAndFrameIdAndAnalysisModeAndVideoId(zoneId, frameId, analysisMode, videoId);
+    public List<PedestrianCoordinateJson> getJsonCoordinates(Long clipId, Integer frameId, Integer videoId) {
+        return jsonCoordRepository.findByClipIdAndFrameIdAndVideoId(clipId, frameId, videoId);
     }
+
 
 }

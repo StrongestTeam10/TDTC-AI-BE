@@ -21,9 +21,6 @@ public class PedestrianCoordinateJson {
     @Column(name = "coord_id")
     private Long coordId;
 
-    @Column(name = "zone_id", nullable = false)
-    private Long zoneId;
-
     @Column(name = "frame_id", nullable = false)
     private Integer frameId;
 
@@ -39,10 +36,9 @@ public class PedestrianCoordinateJson {
     @Builder.Default
     private Instant capturedAt = Instant.now();
 
-    @Column(name = "analysis_mode", length = 10)
-    @Builder.Default
-    private String analysisMode = "LIVE";
-
     @Column(name = "video_id")
-    private Long videoId;
+    private Integer videoId;
+
+    @Column(name = "clip_id", nullable = false)
+    private Long clipId;
 }

@@ -43,10 +43,6 @@ public class ExternalFactor {
     @Builder.Default
     private Instant updatedAt = Instant.now();
 
-    @Column(name = "analysis_mode", length = 10)
-    @Builder.Default
-    private String analysisMode = "LIVE";
-
     @Column(name = "video_id")
-    private Long videoId;
+    private Integer videoId;
 }

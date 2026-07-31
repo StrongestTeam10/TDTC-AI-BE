@@ -20,8 +20,8 @@ public class PostReport {
     @Column(name = "report_id")
     private Long reportId;
 
-    @Column(name = "zone_id", nullable = false)
-    private Long zoneId;
+    @Column(name = "alert_id", nullable = false)
+    private Long alertId;
 
     @Column(name = "target_date", nullable = false)
     private LocalDate targetDate;
@@ -36,10 +36,6 @@ public class PostReport {
     @Builder.Default
     private Instant createdAt = Instant.now();
 
-    @Column(name = "analysis_mode", length = 10)
-    @Builder.Default
-    private String analysisMode = "LIVE";
-
     @Column(name = "video_id")
-    private Long videoId;
+    private Integer videoId;
 }
