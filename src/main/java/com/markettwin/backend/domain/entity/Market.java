@@ -31,10 +31,7 @@ public class Market {
     @Column(name = "longitude", precision = 11, scale = 8)
     private java.math.BigDecimal longitude;
 
-    // 2026-07-27 추가: 담당 시장/구역별 권한 분리(상인회·지자체는 본인 담당 시장만
-    // 조회, 관리자는 전체 + 시장 전환)를 위해 usrusrs01m.market_code / brdpsts01m.market_code와
-    // 동일한 comcode01m MKT 도메인 코드를 mrkaddr01m에도 부여함. 게시판이 marketCode(comcode)
-    // 문자열로 직접 필터링하는 것과 같은 방식으로, 대시보드도 이 필드로 마켓 소유권을 판정한다.
-    @Column(name = "market_code", length = 5)
+    // 2026-07-27 추가(ERD 반영): 시장 구분 코드(comcode01m MKT 도메인)
+    @Column(name = "market_code", nullable = false, length = 5)
     private String marketCode;
 }

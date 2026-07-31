@@ -5,14 +5,10 @@
 -- =========================================
 
 -- 1) 시장 (중심 좌표는 전체 폴리곤 centroid)
--- 2026-07-27 변경: market_code(comcode01m MKT 도메인, 'MKTMW') 추가 - 시장별 권한 분리 기준
+-- 2026-07-27 변경: market_code(comcode01m MKT 도메인) 추가 - schema-init.sql에서
+-- 이 컬럼이 NOT NULL(기본값 없음)이 되므로 반드시 명시해야 함
 INSERT INTO mrkaddr01m (market_name, latitude, longitude, market_code) VALUES
     ('망원시장', 37.556338, 126.906131, 'MKTMW');
-
--- 2026-07-27 마이그레이션: 이 파일을 이미 한 번 실행해서 망원시장 행이 market_code
--- NULL 상태로 이미 존재하는 기존 DB를 위한 보정. 신규 DB는 위 INSERT에 이미
--- 반영되어 있어 아래 UPDATE는 대상이 없어 아무 일도 하지 않는다(멱등).
-UPDATE mrkaddr01m SET market_code = 'MKTMW' WHERE market_name = '망원시장' AND market_code IS NULL;
 
 -- 2) 구역 3개 (출입구 위치 기준 남/중앙/북 분할)
 INSERT INTO mrkaddr01d (market_id, zone_name, polygon_coordinates) VALUES
@@ -20,7 +16,9 @@ INSERT INTO mrkaddr01d (market_id, zone_name, polygon_coordinates) VALUES
     (1, '중앙 구역', '{"type": "Polygon", "coordinates": [[[126.90622874, 37.55593148], [126.906048, 37.55648106], [126.90599006, 37.55651093], [126.90595347, 37.55650381], [126.90593667, 37.55655544], [126.90596942, 37.55656227], [126.90597027, 37.55656358], [126.90619452, 37.55656358], [126.90619762, 37.55655453], [126.90615026, 37.55654396], [126.90611378, 37.5564949], [126.90629782, 37.5559444], [126.90636331, 37.55591469], [126.90640913, 37.55592453], [126.90641962, 37.55589589], [126.90620359, 37.55589589], [126.90622874, 37.55593148]]]}'),
     (1, '북측 구역', '{"type": "Polygon", "coordinates": [[[126.90600432, 37.55661628], [126.90573999, 37.55742259], [126.90580113, 37.5574351], [126.90607413, 37.55661682], [126.90614809, 37.55658763], [126.90618368, 37.55659514], [126.90619452, 37.55656358], [126.90597027, 37.55656358], [126.90600432, 37.55661628]]]}');
 
--- 3) 출입구 6개 (MRKFCTS01M에 latitude/longitude 컬럼 추가 필요)
+-- 3) 출입구 6개
+-- 2026-07-27 확정: MRKEXIT01D는 삭제하고, 출입구는 MRKFCTS01M(facility_type='GATE')
+-- 하나로 통합 관리하기로 결정.
 INSERT INTO mrkfcts01m (market_id, facility_type, name, latitude, longitude, is_active, updated_at) VALUES
     (1, 'GATE', 'Gate 1 (South)', 37.55527435, 126.90647659, TRUE, NOW()),
     (1, 'GATE', 'Gate W1', 37.55586876, 126.90615896, TRUE, NOW()),
@@ -30,9 +28,11 @@ INSERT INTO mrkfcts01m (market_id, facility_type, name, latitude, longitude, is_
     (1, 'GATE', 'Gate 2 (North)', 37.55744969, 126.90575803, TRUE, NOW());
 
 -- 4) 구역 인접 관계 (선형 골목: Z1 <-> Z2 <-> Z3, 양방향이므로 각 2행)
-INSERT INTO mrkadjc01m (market_id, from_zone_id, to_zone_id, path_width, distance_m, is_active) VALUES
-    (1, 1, 2, 6.55, 71.8, TRUE),
-    (1, 2, 1, 6.55, 71.8, TRUE),
-    (1, 2, 3, 6.4, 81.4, TRUE),
-    (1, 3, 2, 6.4, 81.4, TRUE);
+-- 2026-07-27 변경: market_id 컬럼 제거됨(from_zone_id/to_zone_id로 이미 시장을 알 수 있음)
+-- (2026-07-27: 한때 mrkadjc01m -> mrkadjs01m 리네임을 검토했으나 오기로 확인되어 mrkadjc01m 유지)
+INSERT INTO mrkadjc01m (from_zone_id, to_zone_id, path_width, distance_m, is_active) VALUES
+    (1, 2, 6.55, 71.8, TRUE),
+    (2, 1, 6.55, 71.8, TRUE),
+    (2, 3, 6.4, 81.4, TRUE),
+    (3, 2, 6.4, 81.4, TRUE);
 

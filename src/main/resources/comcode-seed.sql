@@ -7,6 +7,7 @@
 --   - 약어형: 값들이 대등한 범주라 순서가 없는 도메인
 -- schema-init.sql 실행 후 아무 때나 실행 가능 (다른 테이블을 참조하지 않음)
 -- =========================================
+DELETE FROM comcode01m;
 
 INSERT INTO comcode01m (code_cob, code, code_name, describe, rmk) VALUES
 
@@ -20,9 +21,11 @@ INSERT INTO comcode01m (code_cob, code, code_name, describe, rmk) VALUES
 ('ORG', 'ORGGV', '지자체',     'usrusrs01m.org_code - 지방자치단체/구청',                 ''),
 ('ORG', 'ORGMA', '상인회',     'usrusrs01m.org_code - 시장상인회',                        ''),
 
--- ---------- SEN: 센서 종류 (sensens01m.sensor_type_code) - 약어형 ----------
-('SEN', 'SENLD', '라이다',     'sensens01m.sensor_type_code - LiDAR 센서',                'senlidr01m/h 연계'),
-('SEN', 'SENCC', 'CCTV',       'sensens01m.sensor_type_code - Vision AI/CCTV 센서',       '향후 확장용'),
+-- ---------- SEN 도메인(sensens01m.sensor_type_code용) 삭제 안내 ----------
+-- 2026-07-27: sensens01m/senlidr01m/senlidr01h/crddnst01m/crddnst01h 5개 테이블이
+-- ERD 최종본에서 빠지면서 함께 제거함(schema-init.sql의 DROP TABLE 참고).
+-- 기존 DB에서는 schema-init.sql의 DELETE FROM comcode01m WHERE code_cob = 'SEN'가
+-- 처리하므로, 여기서는 처음부터 INSERT하지 않음(신선한 DB 기준).
 
 -- ---------- LVL: 위험도 레벨 (senlidr01m/h.status_level_code) - 순번형 ----------
 ('LVL', 'LVL01', 'LOW',        'status_level_code - 원활, 밀집도 0.72명/m2 미만',         'risk.py DENSITY_COMFORTABLE 이하'),
@@ -52,6 +55,10 @@ INSERT INTO comcode01m (code_cob, code, code_name, describe, rmk) VALUES
 -- 블록을 먼저 실행할 것(이 INSERT문만 다시 실행하면 안 됨 - PK 중복 오류 발생).
 ('BCT', 'BCTNT', '공지사항',   'brdpsts01m.category_code - 공지사항 카테고리 (관리자만 작성 가능)', ''),
 ('BCT', 'BCTFR', '자유게시판', 'brdpsts01m.category_code - 자유게시판 카테고리',                    '');
+
+-- ---------- ENT 도메인(mrkexit01d.entrance_type_code용) 삭제 안내 ----------
+-- 2026-07-27: mrkexit01d 테이블 자체를 만든 당일 삭제(mrkfcts01m의 GATE 시설로
+-- 출입구를 통합 관리하기로 결정)했으므로 ENT 도메인 코드는 처음부터 추가하지 않음.
 
 -- =========================================
 -- 마이그레이션(2026-07-25): 카테고리 공지사항/자유게시판 2개로 축소
