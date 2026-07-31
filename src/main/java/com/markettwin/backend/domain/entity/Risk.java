@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 
 /**
- * MRKRISK01M - 위험 척수
+ * MRKRISK01M - 위험 점수
  */
 @Entity
 @Table(name = "mrkrisk01m")
@@ -24,8 +24,6 @@ public class Risk {
     @Column(name = "risk_id")
     private Long riskId;
 
-    @Column(name = "zone_id", nullable = false)
-    private Long zoneId;
 
     @Column(name = "risk_score", nullable = false)
     private Float riskScore;
@@ -38,4 +36,12 @@ public class Risk {
 
     @Column(name = "detected_at", nullable = false)
     private Instant detectedAt;
+
+    @Column(name = "total_count", nullable = false)
+    @Builder.Default
+    private Integer totalCount = 0;
+
+    @Column(name = "coord_id", nullable = false)
+    private Long coordId;
+
 }
