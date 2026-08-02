@@ -234,7 +234,8 @@ public class ReportService {
     }
 
     private Baseline loadBaseline(Market market) {
-        return baselineRepository.findByMarketIdAndIsActiveTrue(market.getMarketId())
+        return baselineRepository
+                .findFirstByMarketIdAndIsActiveTrueOrderByBaselineIdDesc(market.getMarketId())
                 .orElseThrow(() -> new ReportDataException(
                         "비교할 현행안이 없습니다: marketId=" + market.getMarketId()
                                 + " (" + market.getMarketName() + "). "
