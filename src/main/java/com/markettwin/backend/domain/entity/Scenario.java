@@ -32,8 +32,8 @@ public class Scenario {
     @Column(name = "scenario_id")
     private Long scenarioId;
 
-    @Column(name = "change_id")
-    private Long changeId;
+    // 2026-07-31: change_id 컬럼이 DB에서 제거되어 매핑도 함께 삭제.
+    // 보고서는 시나리오별로 생성하며, 비교 기준은 시장의 현행안(simbsln01m)에서 찾는다.
 
     @Column(name = "scenario_name", nullable = false, length = 100)
     private String scenarioName;
