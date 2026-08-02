@@ -64,4 +64,12 @@ public class Facility {
 
     @Column(name = "updated_at")
     private Instant updatedAt;
+
+    /**
+     * 매력도(weight) 업데이트 및 갱신 시간 기록
+     */
+    public void updateWeight(Double weight) {
+        this.weight = weight;
+        this.updatedAt = Instant.now();
+    }
 }
