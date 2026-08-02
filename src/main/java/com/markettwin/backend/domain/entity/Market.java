@@ -30,4 +30,8 @@ public class Market {
 
     @Column(name = "longitude", precision = 11, scale = 8)
     private java.math.BigDecimal longitude;
+
+    // 2026-07-27 추가(ERD 반영): 시장 구분 코드(comcode01m MKT 도메인)
+    @Column(name = "market_code", nullable = false, length = 5)
+    private String marketCode;
 }

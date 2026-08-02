@@ -60,6 +60,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody(ex.getMessage()));
     }
 
+    // 2026-07-27 추가 (시장/구역별 권한 분리)
+    @ExceptionHandler(MarketNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleMarketNotFound(MarketNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody(ex.getMessage()));
+    }
+
     @ExceptionHandler(ForbiddenActionException.class)
     public ResponseEntity<Map<String, Object>> handleForbiddenAction(ForbiddenActionException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorBody(ex.getMessage()));

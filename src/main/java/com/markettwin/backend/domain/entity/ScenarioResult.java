@@ -43,6 +43,11 @@ public class ScenarioResult {
     @Column(name = "scenario_id", nullable = false)
     private Long scenarioId;
 
+    // 2026-07-27 추가(ERD 반영): 같은 시장의 현행안 결과(BaselineResult)와 짝지어서
+    // "대안이 현행안 대비 얼마나 나아졌는지" 비교 보고서를 만들기 위한 참조
+    @Column(name = "baseline_result_id")
+    private Long baselineResultId;
+
     @Column(name = "predicted_max_density", precision = 6, scale = 2)
     private BigDecimal predictedMaxDensity;
 
@@ -58,6 +63,10 @@ public class ScenarioResult {
 
     @Column(name = "generated_report_path", length = 1000)
     private String generatedReportPath;
+
+    // 2026-07-27 추가(ERD 반영)
+    @Column(name = "report_title", length = 200)
+    private String reportTitle;
 
     // PostgreSQL INTERVAL 타입 매핑 (Hibernate 6.2+)
     @JdbcTypeCode(SqlTypes.INTERVAL_SECOND)
