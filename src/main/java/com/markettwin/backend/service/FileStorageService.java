@@ -19,6 +19,27 @@ public interface FileStorageService {
     String upload(MultipartFile file, String keyPrefix);
 
     /**
+     * 메모리에 있는 바이트 배열을 업로드한다. (MultipartFile이 아닌 생성 결과물(보고서 업로드용))
+     */
+    String upload(byte[] content, String contentType, String keyPrefix);
+
+    /**
+     * 2026-07-30 추가 (보고서 기능)
+     * 보고서 전용 버킷에 업로드하고 키를 반환한다.
+     *
+     * 게시판 첨부파일과 버킷을 나눈 이유: 사용자 업로드물과 시스템 생성물은 보존 기간과
+     * 접근 주체가 달라, 수명주기 규칙과 권한을 각각 걸 수 있게 두는 편이 낫다.
+     * 아래 generateReportDownloadUrl과 같은 버킷을 바라봐야 하므로 짝으로 존재한다.
+     */
+    String uploadReport(byte[] content, String contentType, String keyPrefix);
+
+    /**
+     * 2026-07-30 추가 (보고서 기능)
+     * 보고서 전용 버킷 객체의 임시 다운로드 URL을 발급한다.
+     */
+    URL generateReportDownloadUrl(String key, String originalFileName, Duration ttl);
+
+    /**
      * 저장소에서 파일을 삭제한다. 이미 없는 키를 삭제해도 예외를 던지지 않는다(멱등).
      */
     void delete(String key);

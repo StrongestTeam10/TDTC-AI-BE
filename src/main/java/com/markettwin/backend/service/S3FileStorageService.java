@@ -40,6 +40,13 @@ public class S3FileStorageService implements FileStorageService {
     @Value("${aws.s3.bucket}")
     private String bucket;
 
+    /**
+     * 2026-07-30 추가: 보고서 전용 버킷.
+     * 미설정 시 aws.s3.bucket 값이 그대로 들어와 기존 동작(단일 버킷)을 유지한다.
+     */
+    @Value("${aws.s3.report-bucket:${aws.s3.bucket}}")
+    private String reportBucket;
+
     @Override
     public String upload(MultipartFile file, String keyPrefix) {
         // 원본 파일명 충돌/특수문자 문제를 피하려고 실제 저장 키는 UUID로 생성하고,
@@ -68,6 +75,58 @@ public class S3FileStorageService implements FileStorageService {
         }
     }
 
+    /**
+     * 메모리에 있는 바이트 배열을 업로드한다. 시뮬레이션 보고서(DOCX)처럼 BE가 직접
+     * 만들어낸 결과물용. MultipartFile이 존재하지 않아 오버로드로 분리했다.
+     */
+    @Override
+    public String upload(byte[] content, String contentType, String keyPrefix) {
+        String key = keyPrefix + "/" + UUID.randomUUID();
+
+        try {
+            PutObjectRequest request = PutObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(key)
+                    .contentType(contentType)
+                    .build();
+
+            // 내용이 이미 메모리에 있어 길이를 알 수 있으므로 fromBytes를 쓴다.
+            // (fromInputStream은 스트림과 별개로 길이를 따로 넘겨줘야 한다)
+            s3Client.putObject(request, RequestBody.fromBytes(content));
+            return key;
+        } catch (SdkException e) {
+            log.error("S3 업로드 실패: bucket={}, key={}", bucket, key, e);
+            throw new FileStorageException("파일 업로드에 실패했습니다. S3 설정을 확인해주세요.");
+        }
+    }
+
+    /**
+     * 2026-07-30 추가 (보고서 기능)
+     * 위 upload(byte[], ...)와 동작이 같고 대상 버킷만 reportBucket이다.
+     *
+     * 기존 메서드를 공통화하지 않고 별도로 둔 이유: 게시판 첨부파일 경로는 이미 검증된
+     * 코드라 손대지 않는 편이 안전하고, 두 저장소의 정책(수명주기·권한)이 앞으로
+     * 갈라질 수 있어 각자 독립적으로 바뀔 여지를 남겨둔다.
+     */
+    @Override
+    public String uploadReport(byte[] content, String contentType, String keyPrefix) {
+        String key = keyPrefix + "/" + UUID.randomUUID();
+
+        try {
+            PutObjectRequest request = PutObjectRequest.builder()
+                    .bucket(reportBucket)
+                    .key(key)
+                    .contentType(contentType)
+                    .build();
+
+            s3Client.putObject(request, RequestBody.fromBytes(content));
+            return key;
+        } catch (SdkException e) {
+            log.error("S3 보고서 업로드 실패: bucket={}, key={}", reportBucket, key, e);
+            throw new FileStorageException("보고서 업로드에 실패했습니다. S3 설정을 확인해주세요.");
+        }
+    }
+
     @Override
     public void delete(String key) {
         try {
@@ -92,6 +151,30 @@ public class S3FileStorageService implements FileStorageService {
 
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                 .bucket(bucket)
+                .key(key)
+                .responseContentDisposition(contentDisposition)
+                .build();
+
+        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                .signatureDuration(ttl)
+                .getObjectRequest(getObjectRequest)
+                .build();
+
+        return s3Presigner.presignGetObject(presignRequest).url();
+    }
+
+    /**
+     * 2026-07-30 추가 (보고서 기능)
+     * 위 generatePresignedDownloadUrl과 동작이 같고 대상 버킷만 reportBucket이다.
+     */
+    @Override
+    public URL generateReportDownloadUrl(String key, String originalFileName, Duration ttl) {
+        String encodedName = java.net.URLEncoder.encode(originalFileName, StandardCharsets.UTF_8)
+                .replace("+", "%20");
+        String contentDisposition = "attachment; filename*=UTF-8''" + encodedName;
+
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(reportBucket)
                 .key(key)
                 .responseContentDisposition(contentDisposition)
                 .build();
