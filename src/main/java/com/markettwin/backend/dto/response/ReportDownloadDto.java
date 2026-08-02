@@ -12,10 +12,10 @@ package com.markettwin.backend.dto.response;
 public record ReportDownloadDto(
         Long scenarioId,
 
-        /** 만료 시간이 있는 presigned URL. 만료되면 이 API를 다시 호출하면 된다. */
+        // 만료 시간이 있는 presigned URL. 만료되면 이 API를 다시 호출하면 된다.
         String downloadUrl,
 
-        /** URL 유효 시간(초). 클라이언트가 만료 시점을 판단할 수 있게 함께 준다. */
+        // URL 유효 시간(초). 클라이언트가 만료 시점을 판단할 수 있게 함께 준다.
         long expiresInSeconds
 ) {
 }

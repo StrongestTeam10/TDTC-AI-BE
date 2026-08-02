@@ -23,7 +23,7 @@ public record ReportBundleDto(
         ReportMetaDto reportMeta,
         MarketInfoDto market,
 
-        /** 구역 번호를 이름으로 바꿔 쓰기 위한 대조표. 비면 SIM이 "N구역"으로 표기한다. */
+        // 구역 번호를 이름으로 바꿔 쓰기 위한 대조표. 비면 SIM이 "N구역"으로 표기한다.
         List<ZoneInfoDto> zones,
 
         ScenarioRowDto baselineScenario,

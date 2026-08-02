@@ -19,14 +19,11 @@ public record ScenarioResultRowDto(
         String economicEffectAnalysis,
         String generatedReportPath,
 
-        /**
-         * ⚠️ 반드시 String이어야 한다.
-         *
-         * 엔티티는 java.time.Duration인데, Jackson 설정에 따라 숫자(초)로 직렬화될 수 있다.
-         * SIM의 _duration_to_minutes()는 숫자를 "분"으로 해석하므로, 30분 체류가
-         * 1800분으로 둔갑한 보고서가 아무 에러 없이 나온다.
-         * Duration.toString()으로 ISO-8601("PT30M")을 못박아 이 경로를 차단한다.
-         */
+        // ⚠️ 반드시 String이어야 한다.
+        // 엔티티는 java.time.Duration인데, Jackson 설정에 따라 숫자(초)로 직렬화될 수 있다.
+        // SIM의 _duration_to_minutes()는 숫자를 "분"으로 해석하므로, 30분 체류가
+        // 1800분으로 둔갑한 보고서가 아무 에러 없이 나온다.
+        // Duration.toString()으로 ISO-8601("PT30M")을 못박아 이 경로를 차단한다.
         String avgStayTime,
 
         String flowDirection,

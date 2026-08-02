@@ -19,14 +19,10 @@ public interface FileStorageService {
     String upload(MultipartFile file, String keyPrefix);
 
     /**
-     * 메모리에 있는 바이트 배열을 업로드한다. (MultipartFile이 아닌 생성 결과물(보고서 업로드용))
-     */
-    String upload(byte[] content, String contentType, String keyPrefix);
-
-    /**
      * 2026-07-30 추가 (보고서 기능)
      * 보고서 전용 버킷에 업로드하고 키를 반환한다.
      *
+     * 업로드된 파일이 아니라 BE가 만들어낸 결과물이라 MultipartFile이 없어 바이트로 받는다.
      * 게시판 첨부파일과 버킷을 나눈 이유: 사용자 업로드물과 시스템 생성물은 보존 기간과
      * 접근 주체가 달라, 수명주기 규칙과 권한을 각각 걸 수 있게 두는 편이 낫다.
      * 아래 generateReportDownloadUrl과 같은 버킷을 바라봐야 하므로 짝으로 존재한다.

@@ -13,24 +13,19 @@ import jakarta.validation.constraints.Size;
  */
 public record ReportGenerateRequestDto(
 
-        /**
-         * 보고서로 만들 대안 시나리오(simscnr01m).
-         * 비교할 현행안은 이 시나리오의 market_id로 BE가 찾는다.
-         */
+        // 보고서로 만들 대안 시나리오(simscnr01m).
+        // 비교할 현행안은 이 시나리오의 market_id로 BE가 찾는다.
         @NotNull
         Long scenarioId,
 
-        /**
-         * null이면 SIM이 "OO시장 OO 디지털 트윈 시뮬레이션 결과 보고서" 형태로 자동 생성한다.
-         *
-         * 길이를 simrslt01d.report_title(VARCHAR(200))에 맞춰 제한한다. 이 값이 그대로
-         * 문서 제목이 되고 생성 후 DB에 저장되는데, 넘치면 S3 업로드까지 끝난 뒤
-         * DB 갱신에서 실패해 참조 없는 파일만 남는다.
-         */
+        // null이면 SIM이 "OO시장 OO 디지털 트윈 시뮬레이션 결과 보고서" 형태로 자동 생성한다.
+        // 길이를 simrslt01d.report_title(VARCHAR(200))에 맞춰 제한한다. 이 값이 그대로
+        // 문서 제목이 되고 생성 후 DB에 저장되는데, 넘치면 S3 업로드까지 끝난 뒤
+        // DB 갱신에서 실패해 참조 없는 파일만 남는다.
         @Size(max = 200)
         String reportTitle,
 
-        /** 보고서가 답해야 할 질문. null이면 SIM 기본 문구가 쓰인다. */
+        // 보고서가 답해야 할 질문. null이면 SIM 기본 문구가 쓰인다.
         String decisionQuestion
 ) {
 }

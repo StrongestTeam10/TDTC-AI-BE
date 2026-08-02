@@ -33,7 +33,6 @@ public interface ReportQueryRepository extends Repository<ScenarioResult, Long> 
         String getMarketName();
         Integer getAgentCount();
         String getPolicyTypeCode();
-        Long getResultId();
         /** 시나리오 등록 시각(UTC). 표시용 시나리오명 조립에 쓴다. */
         Instant getRegDatetime();
         Instant getExecutedAt();
@@ -50,7 +49,6 @@ public interface ReportQueryRepository extends Repository<ScenarioResult, Long> 
                    s.agent_count          AS agentCount,
                    s.policy_type_code     AS policyTypeCode,
                    s.reg_datetime         AS regDatetime,
-                   r.result_id            AS resultId,
                    r.executed_at          AS executedAt,
                    r.report_title         AS reportTitle,
                    r.generated_report_path AS storageKey
@@ -77,7 +75,7 @@ public interface ReportQueryRepository extends Repository<ScenarioResult, Long> 
                    report_title = :reportTitle
              WHERE result_id = :resultId
             """, nativeQuery = true)
-    int updateReportInfo(@Param("resultId") Long resultId,
+    void updateReportInfo(@Param("resultId") Long resultId,
                          @Param("storageKey") String storageKey,
                          @Param("reportTitle") String reportTitle);
 }

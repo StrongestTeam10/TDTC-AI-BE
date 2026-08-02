@@ -82,7 +82,7 @@ public class ReportService {
     }
 
     /**
-     * @Transactional을 일부러 붙이지 않았다.
+     * {@code @Transactional}을 일부러 붙이지 않았다.
      *
      * SIM 호출은 RAG 검색 + LLM 생성 + 차트 렌더까지 포함해 수 분이 걸릴 수 있다.
      * 트랜잭션으로 감싸면 그동안 DB 커넥션을 붙잡고 있어서, 동시 요청이 몇 건만 겹쳐도
