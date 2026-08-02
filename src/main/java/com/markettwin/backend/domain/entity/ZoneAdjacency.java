@@ -7,12 +7,19 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 /**
  * MRKADJC01M - 시장 구역 인접 관계 (통로 연결 그래프)
  *
  * Mesa NetworkGrid 구성 및 유동인구 이동 경로 계산의 기반 데이터.
  * from_zone_id -> to_zone_id 방향으로 저장하며, 양방향 통로는 두 행으로 표현한다.
+ *
+ * 2026-07-27 변경: market_id 컬럼 제거(from_zone_id/to_zone_id가 속한 구역을 통해
+ * mrkaddr01d.market_id로 알 수 있어 중복이었음 - MarketService.getCorridors() 등에서
+ * 시장별로 조회할 땐 이제 ZoneAdjacencyRepository가 Zone과 조인해서 필터링함).
+ * createdAt 추가.
+ * (한때 테이블명을 mrkadjs01m으로 리네임했으나 오기로 확인되어 mrkadjc01m 유지.)
  */
 @Entity
 @Table(name = "mrkadjc01m")
@@ -26,9 +33,6 @@ public class ZoneAdjacency {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "adjacency_id")
     private Long adjacencyId;
-
-    @Column(name = "market_id", nullable = false)
-    private Long marketId;
 
     @Column(name = "from_zone_id", nullable = false)
     private Long fromZoneId;
@@ -56,4 +60,7 @@ public class ZoneAdjacency {
      */
     @Column(name = "path_coordinates", columnDefinition = "TEXT")
     private String pathCoordinates;
+
+    @Column(name = "created_at")
+    private Instant createdAt;
 }

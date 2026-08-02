@@ -3,6 +3,45 @@
 이 파일은 Claude와의 작업 세션에서 변경된 내용을 기록합니다.
 각 항목은 zip으로 전달된 시점 기준입니다.
 
+### 2026-07-31 (3차 - pedaggr01h JSON 형식 주석 정정)
+- ✏️ `schema-init.sql`의 `pedaggr01h.pixels_json`/`bev_xyz_json` 주석: "JSON 배열"
+  가정을 실제 적재 데이터로 확인된 객체 형태(`{"person_1":{...}, ...}`)로 수정.
+  SIM 쪽 파싱 로직(`fetch_latest_pedestrian_frames`/`count_people_in_frame`)도 이
+  형식에 맞춰 함께 구현됨 - `TDTC-AI-SIM` CHANGELOG 참고
+
+### 2026-07-31 (2차 - mrkadjc01m 마무리 확인 + 센서 5종 실제 삭제)
+- `mrkadjc01m`의 `market_id` 삭제 건: BE는 이미 정상이었음(`ZoneAdjacency` 엔티티에
+  `marketId` 필드 없음, `ZoneAdjacencyRepository`가 Zone과 조인해 시장별 조회를
+  구현해뒀음) — BE 쪽 추가 변경 없음. SIM 쪽 수정은 `TDTC-AI-SIM` CHANGELOG 참고
+- 🗑️ 센서 5종(`CrowdDensity`/`CrowdDensityLog`/`Sensor`/`LidarReading`/`LidarReadingLog`)
+  엔티티 + Repository 5종 + `CrowdDensityDto` 삭제 확정 실행. `DashboardService`는 이미
+  SIM 실시간 호출 방식으로 전면 교체되어 있어(2026-07-24) 실사용 코드 없음을 확인 후 삭제
+  (주석 1곳에 옛 클래스명이 히스토리로 남아있으나 코드 의존성은 없음)
+  - 삭제 후 `domain.entity`/`repository`/`dto.response` 어디에도 참조 없음을 grep으로 재확인
+
+### 2026-07-31 (mrkadjs01m → mrkadjc01m 되돌림 + CCTV 엔티티 중복 정리)
+- **원인**: 직전 세션에서 `mrkadjc01m` → `mrkadjs01m` 리네임을 확정 지시로 반영했으나,
+  재재님이 오기(誤記)였음을 확인 — ERD 최종본 기준 정본은 `mrkadjc01m`. DB는 재재님이
+  직접 정리 완료(별도 SQL 불필요), 코드만 되돌림
+- ✏️ `ZoneAdjacency.java`: `@Table(name = "mrkadjs01m")` → `"mrkadjc01m"`, 관련 Javadoc 수정
+- ✏️ `schema-init.sql`: `mrkadjs01m` 리네임 마이그레이션(DO 블록) 제거, `CREATE TABLE mrkadjc01m`으로
+  직접 정의. 제약명(`uq_/ck_mrkadjc01m_*`), 인덱스명(`idx_mrkadjc01m_from_zone`)도 함께 되돌림
+- ✏️ `seed-market-data.sql`: `INSERT INTO mrkadjs01m` → `INSERT INTO mrkadjc01m`
+- 확인: SIM 저장소(`repository.py`/`space.py`/`gridspace.py`)는 이미 `mrkadjc01m`으로 되어 있어
+  수정 불필요(리네임이 SIM에는 반영된 적 없었던 것으로 보임)
+- 🗑️ CCTV 엔티티 중복 정리: `domain.entity` 패키지의 `ExternalFactor`/`VideoClip`/`EmergencyAlert`/
+  `PostAnalysisReport`/`PedestrianCoordinate` 5종과 대응 Repository 5종 삭제. 팀원이 별도
+  작성한 `controlsystemCCTV.entity`/`controlsystemCCTV.repository` 쪽을 정본으로 채택
+  (두 패키지가 완전히 독립적이라 다른 코드에 영향 없음을 확인 후 삭제)
+- **확인 필요(미해결, 이번 커밋에 미반영)**:
+  1. ERD 최종본 USRUSRS01M 표에는 `market_code` 컬럼이 없는데 `User.java`에는 있음
+     (게시판 기능 때 추가됨) — ERD 문서가 최신화 안 된 것으로 보임
+  2. `schema-init.sql`이 센서 5개 테이블(`crddnst01m/h`, `sensens01m`, `senlidr01m/h`)을
+     DROP하는데, 대응 엔티티(`CrowdDensity`/`CrowdDensityLog`/`Sensor`/`LidarReading`/
+     `LidarReadingLog`) 5종과 Repository 5종이 아직 삭제되지 않고 `DashboardService`에서도
+     실사용 중 — `ddl-auto: validate`라 서버 기동 실패 가능성 있음. 인계 문서에는 "삭제 완료"로
+     기록돼 있으나 실제 로컬 소스에는 반영 안 된 상태로 보여 별도 확인 요청드립니다
+
 ### 2026-07-26 (게시글 수정 화면을 열면 조회수가 올라가던 버그 수정)
 - **증상**: FE `BoardWritePage`(수정 화면)가 기존 값을 불러올 때 상세 화면과 동일한
   `GET /api/posts/{id}`를 재사용하는데, 이 엔드포인트는 호출될 때마다 조회수를 1 증가시킴.
