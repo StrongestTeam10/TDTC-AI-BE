@@ -26,6 +26,44 @@ Wrapper를 생성해두면 이후에는 로컬에 Gradle이 설치되어 있지 
 Spring Boot는 Mesa 시뮬레이션을 직접 실행하지 않고, `SimulationEngineClient`를 통해
 별도의 FastAPI 마이크로서비스를 호출합니다.
 
+## 정책 보고서 생성 (2026-07-31 추가)
+
+시뮬레이션 결과를 그 시장의 **현행안**과 비교한 정책 보고서(DOCX)를 만듭니다.
+
+```text
+POST /api/simulation/reports  { "scenarioId": 47 }
+    ↓
+BE가 scenarioId의 market_id로 같은 시장의 현행안을 찾아
+시장·구역·시나리오·결과를 JSON 한 덩어리로 조립
+    ↓
+SIM POST /simulation/reports/file  (RAG 검색 + LLM 본문 생성, 1~3분)
+    ↓
+DOCX 바이트 + X-Report-Title 헤더 수신
+    ↓
+S3 업로드 → simrslt01d에 경로·제목 기록 → presigned URL 반환
+```
+
+| 엔드포인트 | 용도 |
+|---|---|
+| `POST /api/simulation/reports` | 보고서 생성. 응답에 `downloadUrl` 포함 |
+| `GET /api/simulation/reports/{scenarioId}/download` | 만료된 다운로드 URL 재발급 |
+| `GET /api/simulation/scenarios/my` | 내가 실행한 시뮬레이션 이력 (보고서 유무 포함) |
+
+설계상 정해둔 것:
+
+- **SIM은 DB를 직접 보지 않습니다.** BE가 필요한 행을 전부 읽어 JSON으로 실어 보냅니다.
+- **보고서 1건 = 현행안 1개 vs 시나리오 1개.** SIM은 대안 N개를 받을 수 있지만 BE가 1개로
+  제한합니다. `simrslt01d.generated_report_path`가 단일 컬럼이라 한 시나리오가 여러 보고서에
+  속하면 이력을 표현할 수 없습니다.
+- **현행안 결과를 `agent_count`로 좁히지 않습니다.** 야시장 개장처럼 정책이 방문객 수를
+  늘리는 경우가 정상이기 때문입니다. 대신 보고서에 시나리오별 투입 인구를 표시하고,
+  인구수가 다르면 분석 가정에 주의 문구를 자동으로 넣습니다.
+- **다운로드는 presigned URL(유효 10분)로 브라우저가 S3에 직접 접근합니다.**
+  302 리다이렉트 대신 JSON으로 URL을 돌려주는 이유는 `ReportController`의 주석 참고
+  (브라우저 이동 시 Authorization 헤더 누락 / fetch는 S3 CORS에 막힘).
+- 재발급은 S3 키만 다시 서명하는 것이라 보고서를 다시 만들지 않습니다
+  (재생성은 RAG + LLM까지 다시 도는 수 분짜리 작업입니다).
+
 ## 폴더 구조
 - `config/` : CORS, WebClient(FastAPI 호출용) 설정
 - `controller/` : REST API 엔드포인트 (프론트엔드 `src/api/client.ts`와 계약 일치)
@@ -35,6 +73,8 @@ Spring Boot는 Mesa 시뮬레이션을 직접 실행하지 않고, `SimulationEn
 - `repository/` : Spring Data JPA 리포지토리
 - `dto/request`, `dto/response/` : API 요청/응답 DTO (프론트엔드 타입과 필드명 일치 필수)
 - `exception/` : 전역 예외 처리
+- `security/` : JWT 필터, 현재 로그인 사용자 조회(`CurrentUserProvider`)
+- `scheduler/` : 정기 실행 작업 (상점 매력도 갱신)
 
 ## 환경변수 (운영, `application-prod.yml`)
 - `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` : RDS PostgreSQL 접속 정보
@@ -42,6 +82,9 @@ Spring Boot는 Mesa 시뮬레이션을 직접 실행하지 않고, `SimulationEn
 - `FRONTEND_ORIGIN` : CloudFront 도메인 (CORS 허용)
 - `AWS_REGION`, `AWS_S3_BUCKET` : 게시판 첨부파일 저장용 S3 (2026-07-24 추가). 자격증명은
   환경변수로 직접 넣지 않고 EC2/ECS 인스턴스 role의 기본 자격증명 체인을 사용
+  - `AWS_S3_REPORT_BUCKET` : 보고서 DOCX 저장용 S3 (2026-07-31 추가). 사용자 업로드물과
+  시스템 생성물은 보존 정책이 달라 버킷 분리. **설정하지 않으면 `AWS_S3_BUCKET`
+  으로 폴백**되어 게시판 첨부파일과 같은 버킷에 섞이므로 운영에서는 반드시 지정 필요
 
 ## 게시판 첨부파일 S3 버킷 설정 (2026-07-24 추가, 필수)
 파일 업로드(`PutObject`)는 BE 서버가 직접 호출하지만, **다운로드는 presigned URL로
@@ -81,6 +124,7 @@ export DB_PASSWORD=postgres
 - [ ] `gradle wrapper` 실행 후 wrapper 파일 커밋 (이 저장소는 wrapper 미포함 상태)
 - [ ] Spring Security 인증/인가 (현재 미적용 — B2G 요건상 필수 검토, `USRUSRS01M` 테이블과 연동)
 - [ ] DB 마이그레이션 도구(Flyway/Liquibase) 도입 여부 결정 — SQL Editor 수동 실행 방식은 임시 조치
+- [ ] 테스트 코드 — `src/test`가 아직 없음
 
 ## ⚠️ ERD 대비 구현 시 의도적으로 조정한 부분
 - `COMCODE01M.desc` → `code_desc`로 변경 (DESC는 SQL 예약어라 컬럼명 충돌 위험 방지)
