@@ -12,6 +12,7 @@ import com.markettwin.backend.dto.response.PredictResultDto;
 import com.markettwin.backend.dto.response.ScenarioResultDto;
 import com.markettwin.backend.repository.ScenarioRepository;
 import com.markettwin.backend.repository.ScenarioResultRepository;
+import com.markettwin.backend.security.CurrentUserProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +32,11 @@ import java.time.Instant;
  * derivePolicyTypeCode()가 요청 내용 기준 대표값 하나를 자동 선택해 채운다
  * (화재 > 음향이상 > 통로정책 있음 > 없음 순 우선순위). 실제 상세 내용은
  * virtualConfig에 요청 전체가 JSON으로 그대로 남아있으니 정보 손실은 없다.
+ *
+ * 2026-08-XX 수정: user_id가 저장 로직에서 채워지지 않고 있던 문제 수정.
+ * 이 API(/api/simulation/**)는 이미 인증 필수(SecurityConfig의 authenticated())라
+ * 로그인된 사용자가 항상 있으므로, CurrentUserProvider(게시판 기능 때 만든 공통
+ * 헬퍼)로 SecurityContext에서 현재 로그인 사용자를 조회해 userId를 채운다.
  */
 @Service
 @RequiredArgsConstructor
@@ -40,6 +46,7 @@ public class SimulationService {
     private final ScenarioRepository scenarioRepository;
     private final ScenarioResultRepository scenarioResultRepository;
     private final ObjectMapper objectMapper;
+    private final CurrentUserProvider currentUserProvider;
 
     public ScenarioResultDto runScenario(ScenarioRequestDto request) {
         Scenario scenario = saveScenario(request);
@@ -53,6 +60,7 @@ public class SimulationService {
         String spaceModData = toJson(request.objects());
 
         Scenario scenario = Scenario.builder()
+                .userId(currentUserProvider.getCurrentUser().getUserId())
                 .marketId(request.marketId())
                 // 2026-07-27: 시나리오 이름을 사용자가 직접 입력하는 필드가 아직
                 // FE/DTO에 없어서, 실행 시각 기반으로 자동 생성한다. 나중에 FE에서
