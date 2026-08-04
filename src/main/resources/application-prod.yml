@@ -23,8 +23,10 @@ jwt:
   secret: ${JWT_SECRET}
   expiration-ms: ${JWT_EXPIRATION_MS:3600000}
 
-# 2026-07-24 추가: 게시판 첨부파일 저장용 S3 (운영). 자격증명은 환경변수/EC2·ECS
-# 인스턴스 role의 기본 자격증명 체인을 사용하고 여기 직접 넣지 않음(S3Config 참고).
+# 2026-07-24 추가, 2026-08-04 재변경: 게시판 첨부파일 저장용 S3 (운영). 자격증명은
+# 환경변수/EC2·ECS 인스턴스 role의 기본 자격증명 체인을 사용하고 여기 직접 넣지
+# 않음(S3Config 참고). 게시판 첨부파일과 보고서를 버킷 하나로 통합했으므로
+# AWS_S3_BUCKET과 AWS_S3_REPORT_BUCKET을 같은 버킷명(tdtc-ai-report)으로 설정할 것.
 # AWS_S3_BUCKET은 운영 배포 전 반드시 실제 버킷명으로 설정해야 함(기본값 없음).
 aws:
   region: ${AWS_REGION:ap-northeast-2}

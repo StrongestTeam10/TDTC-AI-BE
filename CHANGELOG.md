@@ -3,6 +3,81 @@
 이 파일은 Claude와의 작업 세션에서 변경된 내용을 기록합니다.
 각 항목은 zip으로 전달된 시점 기준입니다.
 
+### 2026-08-04 (4차 - S3 실버킷 연동, 테스트 완료)
+- 게시판 첨부파일 저장소를 실제 운영 버킷에 연결. 자격증명은 코드/설정 파일에
+  두지 않고 AWS 기본 자격증명 체인(환경변수 `AWS_ACCESS_KEY_ID`/
+  `AWS_SECRET_ACCESS_KEY`)을 그대로 사용 - `S3Config.java`는 변경 없음
+- 처음엔 게시판 전용 버킷(`tdtc-ai-board`)으로 연결했다가, 재재님 결정으로 보고서
+  버킷(`tdtc-ai-report`)과 통합함(둘 다 같은 앱이 관리하는 버킷이라 하나로 합침).
+  같은 버킷 안에서 `board/`, `reports/` 키 접두사로만 구분(`PostService.
+  ATTACHMENT_KEY_PREFIX` / `ReportService.KEY_PREFIX`) - 서로 겹치지 않음
+- ✏️ `application-local.yml`, `application-prod.yml`: `aws.s3.bucket` 기본값을
+  `tdtc-ai-report`로 통일(로컬은 기본값 제공, 운영은 기존처럼 `AWS_S3_BUCKET`
+  필수 - 기본값 없음)
+- ✏️ `PostService.java`: `ATTACHMENT_KEY_PREFIX`를 `board-attachments` →
+  `upload/board-attachments` → 최종 `board`로 변경(실제 버킷 구조에 맞춤).
+  과거 접두사로 이미 올라간 첨부파일은 DB에 저장된 실제 key를 그대로 쓰므로
+  다운로드에 영향 없음
+- **재재님 테스트 완료** (업로드/다운로드 확인됨)
+
+### 2026-08-04 (3차 - 시설 관리(상점 위치 등록) 기능 + 지난 세션 사진 업로드 기능 편입)
+- **요청**: store-location-prototype.html(손그림 와이어프레임)을 실제 사이트에 들어갈
+  화면으로 재구현. mrkfcts01m CRUD API가 이번에 처음 생김(지금까지는 시드 데이터로만
+  존재했고 등록/수정/삭제 API가 없었음)
+- **권한 규칙(재재님 확정)**: 관리자(ROL01) 또는 상인회(usrusrs01m.org_code='ORGMA')만
+  시설을 조회/등록/수정/삭제할 수 있음. 그 외 역할(관제요원 ROL02, 조회자 ROL03 등)은
+  API 호출 자체가 403 - FE가 탭을 숨기는 것과는 별개로 서버가 매번 재검증함
+- 🆕 `FacilityController`/`FacilityService`: `GET/POST/PUT/DELETE /api/facilities`.
+  시장 범위 검증은 기존 `MarketService.getAccessibleMarket`을 그대로 재사용(게시판/
+  대시보드와 동일하게 관리자는 전체, 그 외는 본인 담당 시장만)
+- ✏️ `mrkfcts01m`에 `rmk`(비고, VARCHAR(500)) 컬럼 신규 추가 - "층/위치 메모"를 별도
+  컬럼으로 만들지 않고 하나의 비고란으로 합쳐서 이 컬럼에 저장(재재님 결정)
+- ✏️ `Facility` 엔티티: `rmk` 필드, `updateDetails()` mutator 추가
+- **지난 세션에 만들어두고 보류했던 상점 외관 사진 업로드 기능을 이번에 정식 편입**:
+  `FacilityPhoto`/`ExifGpsExtractor`/`FacilityPhotoService`/`FacilityPhotoController`,
+  `mrkfcph01d` 테이블, `comcode01m` `DIR` 도메인(방향) 전부 그대로 가져옴. 단
+  `FacilityPhotoService`의 접근 제어를 기존 "관리자 또는 본인 담당 시장이면 역할
+  무관 접근 가능"에서 "관리자 또는 상인회(본인 담당 시장에 한해)"로 좁힘 -
+  `FacilityService`와 동일한 기준으로 통일
+- `build.gradle`에 `metadata-extractor` 의존성 추가(사진 EXIF 추출용, 지난 세션과 동일)
+
+**DB 마이그레이션 필요** (기존 DB에 순서대로 실행):
+```sql
+ALTER TABLE mrkfcts01m ADD COLUMN IF NOT EXISTS rmk VARCHAR(500);
+
+CREATE TABLE IF NOT EXISTS mrkfcph01d (
+    photo_id             BIGSERIAL PRIMARY KEY,
+    facility_id          BIGINT NOT NULL REFERENCES mrkfcts01m(facility_id) ON DELETE CASCADE,
+    direction_code       VARCHAR(5) NOT NULL,
+    s3_key               VARCHAR(500) NOT NULL,
+    original_name        VARCHAR(255) NOT NULL,
+    exif_latitude         DECIMAL(10,8),
+    exif_longitude         DECIMAL(11,8),
+    corrected_latitude    DECIMAL(10,8) NOT NULL,
+    corrected_longitude   DECIMAL(11,8) NOT NULL,
+    captured_at           TIMESTAMP,
+    uploaded_by           BIGINT NOT NULL REFERENCES usrusrs01m(user_id),
+    created_at            TIMESTAMP NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_mrkfcph01d_facility_id ON mrkfcph01d(facility_id);
+CREATE INDEX IF NOT EXISTS idx_mrkfcph01d_direction_code ON mrkfcph01d(direction_code);
+
+INSERT INTO comcode01m (code_cob, code, code_name, describe, rmk)
+VALUES
+    ('DIR', 'DIRNO', '북', 'mrkfcph01d.direction_code - 시설 외관 사진 방향(북)', ''),
+    ('DIR', 'DIREA', '동', 'mrkfcph01d.direction_code - 시설 외관 사진 방향(동)', ''),
+    ('DIR', 'DIRSO', '남', 'mrkfcph01d.direction_code - 시설 외관 사진 방향(남)', ''),
+    ('DIR', 'DIRWE', '서', 'mrkfcph01d.direction_code - 시설 외관 사진 방향(서)', '')
+ON CONFLICT (code_cob, code) DO NOTHING;
+```
+**ERD 갱신 필요**: `mrkfcts01m.rmk` 컬럼, `mrkfcph01d` 테이블, `comcode01m` `DIR` 도메인 반영.
+
+**참고**: `facility_type`은 DB에 별도 코드 테이블 없이 자유 문자열(VARCHAR(50))이지만,
+`MarketService.getGates()`가 `"GATE".equalsIgnoreCase(facilityType)`로 게이트를
+판별하는 기존 로직이 있어 FE 선택지도 영문 대문자 값(STALL/RESTAURANT/RESTROOM/GATE/
+OTHER)으로 맞춤 - 프로토타입의 한글 값("상점","출입구" 등)을 그대로 썼다면 게이트
+탐지 로직이 깨졌을 것.
+
 ### 2026-08-04 (비밀번호 찾기 BE 구현 - FE ForgotPasswordPage/ResetPasswordPage 대응)
 - **본인확인 방식**: 이메일/휴대폰 컬럼이 `usrusrs01m`에 없어 이메일 인증코드 방식은
   제외. 아이디+이름+소속기관+담당시장 4개 필드가 모두 일치하는지만 확인(재재님 결정 -
