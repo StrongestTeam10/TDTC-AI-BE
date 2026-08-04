@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface FacilityRepository extends JpaRepository<Facility, Long> {
     List<Facility> findByMarketId(Long marketId);
+    List<Facility> findByFacilityType(String facilityType);
 }

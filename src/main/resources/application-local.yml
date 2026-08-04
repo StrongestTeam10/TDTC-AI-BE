@@ -42,3 +42,6 @@ aws:
   region: ${AWS_REGION:ap-northeast-2}
   s3:
     bucket: ${AWS_S3_BUCKET:tdtc-ai-board-attachments-dev}
+    # 2026-07-31 추가: 보고서는 게시판 첨부파일과 다른 버킷에 저장한다.
+    # 사용자 업로드물과 시스템 생성물은 보존 정책이 달라 분리했다.
+    report-bucket: ${AWS_S3_REPORT_BUCKET:tdtc-ai-report}
