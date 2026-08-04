@@ -4,10 +4,12 @@ import java.time.Instant;
 
 public record RiskDto(
         Long riskId,
-        Long zoneId,
+        Long coordId,
         Float riskScore,
         String riskLevel,
         String reasonCode,
-        Instant detectedAt
+        Instant detectedAt,
+        Integer totalCount, // 👈 추가
+        String videoUrl
 ) {
 }
