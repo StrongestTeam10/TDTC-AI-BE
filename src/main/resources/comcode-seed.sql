@@ -61,6 +61,22 @@ INSERT INTO comcode01m (code_cob, code, code_name, describe, rmk) VALUES
 -- 출입구를 통합 관리하기로 결정)했으므로 ENT 도메인 코드는 처음부터 추가하지 않음.
 
 -- =========================================
+-- 신규 도메인(2026-08-04): DIR - 시설 외관 사진 방향 (mrkfcph01d.direction_code) - 약어형
+-- 상점 외관 직접 촬영 데이터 수집 파이프라인. EXIF 방향값은 신뢰 불가라 촬영자가
+-- 직접 라벨링하는 값. schema-init.sql 실행 후 언제든 재실행 가능(위 DELETE FROM
+-- comcode01m 블록 이후에 이미 다른 테이블이 만들어져 있으므로 이 파일 하단에 targeted
+-- INSERT로 추가함 - 기존 comcode 데이터를 건드리지 않기 위해 전체 재실행 대신
+-- ON CONFLICT DO NOTHING 사용).
+-- =========================================
+INSERT INTO comcode01m (code_cob, code, code_name, describe, rmk)
+VALUES
+    ('DIR', 'DIRNO', '북', 'mrkfcph01d.direction_code - 시설 외관 사진 방향(북)', ''),
+    ('DIR', 'DIREA', '동', 'mrkfcph01d.direction_code - 시설 외관 사진 방향(동)', ''),
+    ('DIR', 'DIRSO', '남', 'mrkfcph01d.direction_code - 시설 외관 사진 방향(남)', ''),
+    ('DIR', 'DIRWE', '서', 'mrkfcph01d.direction_code - 시설 외관 사진 방향(서)', '')
+ON CONFLICT (code_cob, code) DO NOTHING;
+
+-- =========================================
 -- 마이그레이션(2026-07-25): 카테고리 공지사항/자유게시판 2개로 축소
 -- 이미 comcode-seed.sql을 한 번 실행해서 BCTQA/BCTSG가 이미 들어가 있는 기존 DB에서만
 -- 아래를 실행할 것 (신규 DB는 위 INSERT문에 이미 BCTFR만 반영돼 있어 실행 불필요).
