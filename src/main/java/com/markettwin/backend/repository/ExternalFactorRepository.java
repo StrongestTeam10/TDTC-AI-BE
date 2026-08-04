@@ -1,6 +1,6 @@
-package com.markettwin.backend.controlsystemCCTV.repository;
+package com.markettwin.backend.repository;
 
-import com.markettwin.backend.controlsystemCCTV.entity.ExternalFactor;
+import com.markettwin.backend.domain.entity.ExternalFactor;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ExternalFactorRepository extends JpaRepository<ExternalFactor, Long> {

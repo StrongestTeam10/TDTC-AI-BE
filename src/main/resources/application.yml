@@ -22,3 +22,15 @@ management:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+
+
+aws:
+  video:
+    bucket: tdtc-ai-cctv
+
+emergency:
+  target-phone: "119"
+
+ai:
+  secret-key: "tdtc-super-secret-key-2026"
+

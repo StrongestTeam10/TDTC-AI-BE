@@ -1,6 +1,6 @@
-package com.markettwin.backend.controlsystemCCTV.repository;
+package com.markettwin.backend.repository;
 
-import com.markettwin.backend.controlsystemCCTV.entity.PedestrianCoordinateJson;
+import com.markettwin.backend.domain.entity.PedestrianCoordinateJson;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 

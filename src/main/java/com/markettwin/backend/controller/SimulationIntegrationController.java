@@ -1,7 +1,7 @@
-package com.markettwin.backend.controlsystemCCTV.controller;
+package com.markettwin.backend.controller;
 
-import com.markettwin.backend.controlsystemCCTV.entity.PedestrianCoordinateJson;
-import com.markettwin.backend.controlsystemCCTV.service.ControlSystemService;
+import com.markettwin.backend.domain.entity.PedestrianCoordinateJson;
+import com.markettwin.backend.service.ControlSystemService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
