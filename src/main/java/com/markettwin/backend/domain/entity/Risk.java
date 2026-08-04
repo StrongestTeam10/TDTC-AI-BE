@@ -51,4 +51,7 @@ public class Risk {
 
     @Column(name = "total_count")
     private Integer totalCount;
+
+    @Column(name = "video_url", length = 1000)
+    private String videoUrl;
 }
