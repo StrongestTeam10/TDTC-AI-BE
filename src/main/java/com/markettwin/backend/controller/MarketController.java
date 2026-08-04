@@ -1,5 +1,6 @@
 package com.markettwin.backend.controller;
 
+import com.markettwin.backend.dto.response.BuildingDto;
 import com.markettwin.backend.dto.response.GateDto;
 import com.markettwin.backend.domain.entity.User;
 import com.markettwin.backend.dto.response.MarketDto;
@@ -55,5 +56,13 @@ public class MarketController {
     @GetMapping("/{marketId}/gates")
     public List<GateDto> getGates(@PathVariable Long marketId) {
         return marketService.getGates(marketId);
+    }
+
+    /**
+     * 2026-08-XX 추가: 지도에 상가/건물 폴리곤(3D 느낌의 형태)을 표시하기 위한 목록.
+     */
+    @GetMapping("/{marketId}/buildings")
+    public List<BuildingDto> getBuildings(@PathVariable Long marketId) {
+        return marketService.getBuildings(marketId);
     }
 }
