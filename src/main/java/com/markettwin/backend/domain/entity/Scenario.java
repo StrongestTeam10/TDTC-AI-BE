@@ -36,7 +36,7 @@ public class Scenario {
     private Long scenarioId;
 
     // 시나리오를 실행한 사용자. 실행 이력 조회(/api/simulation/scenarios/my)의 기준이다.
-    // 시나리오 저장 로직이 아직 이 값을 채우지 않아 NULL이 남을 수 있다.
+    // SimulationService.saveScenario()가 CurrentUserProvider로 채운다(2026-08-XX부터).
     @Column(name = "user_id")
     private Long userId;
 

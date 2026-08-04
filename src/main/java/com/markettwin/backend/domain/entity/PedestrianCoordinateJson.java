@@ -1,4 +1,4 @@
-package com.markettwin.backend.controlsystemCCTV.entity;
+package com.markettwin.backend.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -37,7 +37,7 @@ public class PedestrianCoordinateJson {
     private Instant capturedAt = Instant.now();
 
     @Column(name = "video_id")
-    private Integer videoId;
+    private Long videoId;
 
     @Column(name = "clip_id", nullable = false)
     private Long clipId;

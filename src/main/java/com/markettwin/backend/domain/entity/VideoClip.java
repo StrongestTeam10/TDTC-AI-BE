@@ -1,4 +1,4 @@
-package com.markettwin.backend.controlsystemCCTV.entity;
+package com.markettwin.backend.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
