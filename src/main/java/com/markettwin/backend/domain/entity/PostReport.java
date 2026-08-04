@@ -1,4 +1,4 @@
-package com.markettwin.backend.controlsystemCCTV.entity;
+package com.markettwin.backend.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -37,5 +37,5 @@ public class PostReport {
     private Instant createdAt = Instant.now();
 
     @Column(name = "video_id")
-    private Integer videoId;
+    private Long videoId;
 }

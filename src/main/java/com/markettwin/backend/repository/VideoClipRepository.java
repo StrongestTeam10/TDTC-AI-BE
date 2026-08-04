@@ -1,6 +1,6 @@
-package com.markettwin.backend.controlsystemCCTV.repository;
+package com.markettwin.backend.repository;
 
-import com.markettwin.backend.controlsystemCCTV.entity.VideoClip;
+import com.markettwin.backend.domain.entity.VideoClip;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

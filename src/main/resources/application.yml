@@ -27,3 +27,13 @@ naver:
   client:
     id: ${NAVER_CLIENT_ID:your_client_id}
     secret: ${NAVER_CLIENT_SECRET:your_client_secret}
+
+aws:
+  video:
+    bucket: tdtc-ai-cctv
+
+emergency:
+  target-phone: "119"
+
+ai:
+  secret-key: "tdtc-super-secret-key-2026"
