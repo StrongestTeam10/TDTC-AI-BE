@@ -11,6 +11,12 @@ public record PredictResultDto(
         Instant requestedAt,
         List<List<AgentStateDto>> frames,
         List<RiskTrendPointDto> riskTrend,
-        Double finalOverallRiskScore
+        Double finalOverallRiskScore,
+        Integer agentCount,
+        Double averageDensity,
+        Double maxDensity,
+        Long maxDensityZoneId,
+        String maxDensityZoneName,
+        Integer evacuatedCount
 ) {
 }

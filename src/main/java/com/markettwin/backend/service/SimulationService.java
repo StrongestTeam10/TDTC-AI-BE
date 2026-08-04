@@ -5,11 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.markettwin.backend.client.SimulationEngineClient;
 import com.markettwin.backend.domain.entity.Scenario;
 import com.markettwin.backend.domain.entity.ScenarioResult;
+import com.markettwin.backend.domain.entity.Baseline;
+import com.markettwin.backend.domain.entity.BaselineResult;
 import com.markettwin.backend.dto.request.EventTriggerDto;
 import com.markettwin.backend.dto.request.PredictRequestDto;
 import com.markettwin.backend.dto.request.ScenarioRequestDto;
 import com.markettwin.backend.dto.response.PredictResultDto;
 import com.markettwin.backend.dto.response.ScenarioResultDto;
+import com.markettwin.backend.repository.BaselineRepository;
+import com.markettwin.backend.repository.BaselineResultRepository;
 import com.markettwin.backend.repository.ScenarioRepository;
 import com.markettwin.backend.repository.ScenarioResultRepository;
 import com.markettwin.backend.security.CurrentUserProvider;
@@ -45,6 +49,8 @@ public class SimulationService {
     private final SimulationEngineClient simulationEngineClient;
     private final ScenarioRepository scenarioRepository;
     private final ScenarioResultRepository scenarioResultRepository;
+    private final BaselineRepository baselineRepository;
+    private final BaselineResultRepository baselineResultRepository;
     private final ObjectMapper objectMapper;
     private final CurrentUserProvider currentUserProvider;
 
@@ -127,6 +133,31 @@ public class SimulationService {
     }
 
     public PredictResultDto predict(PredictRequestDto request) {
-        return simulationEngineClient.predict(request);
+        PredictResultDto result = simulationEngineClient.predict(request);
+
+        baselineRepository.findFirstByMarketIdAndIsActiveTrueOrderByBaselineIdDesc(request.marketId())
+                .ifPresent(baseline -> saveBaselineResult(baseline.getBaselineId(), result));
+
+        return result;
+    }
+
+    private void saveBaselineResult(Long baselineId, PredictResultDto result) {
+        BaselineResult entity = BaselineResult.builder()
+                .baselineId(baselineId)
+                .agentCount(result.agentCount() != null ? result.agentCount() : 0)
+                .predictedMaxDensity(toBigDecimal(result.maxDensity()))
+                .predictedDensity(toBigDecimal(result.averageDensity()))
+                .predictedRiskScore(
+                        result.finalOverallRiskScore() != null
+                                ? (int) Math.round(result.finalOverallRiskScore())
+                                : null
+                )
+                .executedAt(Instant.now())
+                .maxDensityZoneId(result.maxDensityZoneId())
+                .maxDensityZoneName(result.maxDensityZoneName())
+                .evacuatedCount(result.evacuatedCount())
+                .build();
+
+        baselineResultRepository.save(entity);
     }
 }

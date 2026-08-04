@@ -3,6 +3,32 @@
 이 파일은 Claude와의 작업 세션에서 변경된 내용을 기록합니다.
 각 항목은 zip으로 전달된 시점 기준입니다.
 
+### 2026-08-04 (비밀번호 찾기 BE 구현 - FE ForgotPasswordPage/ResetPasswordPage 대응)
+- **본인확인 방식**: 이메일/휴대폰 컬럼이 `usrusrs01m`에 없어 이메일 인증코드 방식은
+  제외. 아이디+이름+소속기관+담당시장 4개 필드가 모두 일치하는지만 확인(재재님 결정 -
+  지금 있는 필드만 사용, 스키마 변경 없음). DB 마이그레이션 불필요
+- 🆕 `POST /api/auth/verify-identity`: 4개 필드로 계정 존재 여부 확인. 계정 존재
+  여부를 HTTP 상태코드로 노출하지 않기 위해 예외 대신 `{verified: boolean}` 200
+  응답으로 통일(로그인 실패를 `InvalidCredentialsException` 하나로 묶은 것과 같은 이유)
+- 🆕 `POST /api/auth/reset-password`: 4개 필드 + 새 비밀번호를 받아 **서버가 다시 한 번**
+  4개 필드 일치를 재검증한 뒤 비밀번호 변경. FE가 verify-identity 단계를 생략하고
+  이 API를 바로 호출해도(라우터 state 조작 등) 여기서 막힘 - FE 검증에만 의존하지
+  않는 방어적 설계. 새 비밀번호는 `SignupRequestDto`와 동일한 정책(8자 이상 + 대/소문자·
+  숫자·특수문자 포함) 서버 검증
+- 별도 `SecurityConfig` 변경 없음 - `/api/auth/**`가 이미 permitAll
+- 🆕 `UserRepository.findByLoginIdAndNameAndOrgCodeAndMarketCode` - verify-identity/
+  reset-password 둘 다 동일 조건을 써서 두 시점 판정 기준이 어긋나지 않게 함
+- 🆕 `User.updatePassword(encodedPassword, clientIp)`: 비밀번호 변경 시 `updated_at`/
+  `updated_ip`도 함께 갱신(이전까지 두 컬럼 모두 실제 갱신 로직 없이 컬럼만 존재했음)
+- 🆕 DTO: `VerifyIdentityRequestDto`, `VerifyIdentityResponseDto`, `ResetPasswordRequestDto`
+- 🆕 `IdentityVerificationFailedException`(400) - reset-password 재검증 실패 시에만 사용
+  (verify-identity는 예외를 던지지 않음)
+- ✏️ `AuthService`/`AuthController`: 위 2개 엔드포인트 및 서비스 메서드 추가
+- ✏️ `GlobalExceptionHandler`: `IdentityVerificationFailedException` 핸들러 추가
+
+**참고**: 지난 세션에 구현했던 상점 외관 사진 업로드 기능(`mrkfcph01d` 등)은 이번
+zip에 포함하지 않음(보류 중 - 재재님 요청).
+
 ### 2026-07-31 (3차 - pedaggr01h JSON 형식 주석 정정)
 - ✏️ `schema-init.sql`의 `pedaggr01h.pixels_json`/`bev_xyz_json` 주석: "JSON 배열"
   가정을 실제 적재 데이터로 확인된 객체 형태(`{"person_1":{...}, ...}`)로 수정.

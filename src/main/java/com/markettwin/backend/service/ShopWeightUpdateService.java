@@ -56,6 +56,7 @@ public class ShopWeightUpdateService {
                     buzzCounts.put(stall, response.total());
                 }
 
+                log.info("Naver API Response for shop '{}': {}", shopName, response);
             } catch (WebClientResponseException e) {
                 log.warn("Failed to fetch Naver API for shop: {}, status: {}", shopName, e.getStatusCode());
                 // 에러 발생 상점은 buzzCounts 에 넣지 않고 Skip (기존 weight 유지)
@@ -114,6 +115,7 @@ public class ShopWeightUpdateService {
 
             stall.updateWeight(weight);
             updatedStalls.add(stall);
+            log.info("Calculated weight for stall '{}': {}", stall.getName(), weight);
         }
 
         // 4. 저장 단계 (트랜잭션 분리)

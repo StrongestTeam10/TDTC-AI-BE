@@ -71,4 +71,10 @@ public class User {
     // MKT 도메인 코드로 존재하는지 검증함.
     @Column(name = "market_code", length = 5)
     private String marketCode;
+    // 2026-08-04 추가 (비밀번호 찾기): 재설정 시 비밀번호 + 변경 이력(시각/IP)을 함께 갱신
+    public void updatePassword(String encodedPassword, String clientIp) {
+        this.password = encodedPassword;
+        this.updatedAt = Instant.now();
+        this.updatedIp = clientIp;
+    }
 }

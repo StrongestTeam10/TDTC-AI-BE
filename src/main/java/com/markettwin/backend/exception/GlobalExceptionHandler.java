@@ -60,6 +60,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody(ex.getMessage()));
     }
 
+    // 2026-08-04 추가 (비밀번호 찾기)
+    @ExceptionHandler(IdentityVerificationFailedException.class)
+    public ResponseEntity<Map<String, Object>> handleIdentityVerificationFailed(
+            IdentityVerificationFailedException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody(ex.getMessage()));
+    }
+
     // 2026-07-27 추가 (시장/구역별 권한 분리)
     @ExceptionHandler(MarketNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleMarketNotFound(MarketNotFoundException ex) {
