@@ -2,11 +2,15 @@ package com.markettwin.backend.service;
 
 import com.markettwin.backend.domain.entity.User;
 import com.markettwin.backend.dto.request.LoginRequestDto;
+import com.markettwin.backend.dto.request.ResetPasswordRequestDto;
 import com.markettwin.backend.dto.request.SignupRequestDto;
+import com.markettwin.backend.dto.request.VerifyIdentityRequestDto;
 import com.markettwin.backend.dto.response.LoginResponseDto;
 import com.markettwin.backend.dto.response.SignupResponseDto;
 import com.markettwin.backend.dto.response.UserSummaryDto;
+import com.markettwin.backend.dto.response.VerifyIdentityResponseDto;
 import com.markettwin.backend.exception.DuplicateLoginIdException;
+import com.markettwin.backend.exception.IdentityVerificationFailedException;
 import com.markettwin.backend.exception.InvalidCredentialsException;
 import com.markettwin.backend.exception.InvalidMarketCodeException;
 import com.markettwin.backend.exception.InvalidOrgCodeException;
@@ -96,6 +100,30 @@ public class AuthService {
                 .expiresInSeconds(jwtTokenProvider.getValiditySeconds())
                 .user(toSummary(user))
                 .build();
+    }
+
+    // 2026-08-04 추가 (비밀번호 찾기)
+    // 아이디+이름+소속기관+담당시장 4개가 모두 일치하는 계정이 있는지만 확인하고,
+    // 존재 여부를 예외가 아니라 응답 필드(verified)로 알림(계정 존재 여부를 HTTP
+    // 상태코드로 노출하지 않기 위함).
+    public VerifyIdentityResponseDto verifyIdentity(VerifyIdentityRequestDto request) {
+        boolean verified = userRepository.findByLoginIdAndNameAndOrgCodeAndMarketCode(
+                request.getLoginId(), request.getName(), request.getOrgCode(), request.getMarketCode()
+        ).isPresent();
+
+        return VerifyIdentityResponseDto.builder().verified(verified).build();
+    }
+
+    // 2026-08-04 추가 (비밀번호 찾기)
+    // FE가 verify-identity 단계를 건너뛰고 이 API를 바로 호출했더라도, 여기서 다시
+    // 한 번 4개 필드 일치 여부를 검증한다(FE 라우터 state 조작에 대한 방어).
+    @Transactional
+    public void resetPassword(ResetPasswordRequestDto request, String clientIp) {
+        User user = userRepository.findByLoginIdAndNameAndOrgCodeAndMarketCode(
+                request.getLoginId(), request.getName(), request.getOrgCode(), request.getMarketCode()
+        ).orElseThrow(IdentityVerificationFailedException::new);
+
+        user.updatePassword(passwordEncoder.encode(request.getNewPassword()), clientIp);
     }
 
     private void validateOrgCode(String orgCode) {
