@@ -31,17 +31,16 @@ jwt:
   secret: ${JWT_SECRET:tdtc-ai-local-dev-only-secret-key-please-change-1234567890}
   expiration-ms: ${JWT_EXPIRATION_MS:3600000}   # 기본 1시간
 
-# 2026-07-24 추가: 게시판 첨부파일 저장용 S3. 자격증명은 여기 넣지 않고
-# AWS 기본 자격증명 체인(환경변수 AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY 또는
-# ~/.aws/credentials)을 그대로 사용함(S3Config 참고).
-# 로컬에서 board 기능을 테스트하려면:
-#   1) S3 버킷을 하나 만들고
-#   2) 아래 AWS_S3_BUCKET 환경변수(또는 기본값)를 그 버킷명으로 맞추고
-#   3) 로컬 환경에 AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY를 설정할 것
+# 2026-07-24 추가, 2026-08-04 재변경: 게시판 첨부파일 저장용 S3. 자격증명은
+# 여기 넣지 않고 AWS 기본 자격증명 체인(환경변수 AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY
+# 또는 ~/.aws/credentials)을 그대로 사용함(S3Config 참고).
+# 2026-08-04: 게시판 첨부파일과 보고서를 버킷 하나(tdtc-ai-report)로 통합하기로 함
+# (기존엔 "사용자 업로드물 vs 시스템 생성물, 보존정책이 다르다"는 이유로 버킷을
+# 분리했었는데, 재재님 결정으로 다시 합침). 같은 버킷 안에서 board/, reports/로
+# 폴더(키 접두사)만 나눠서 충돌 없이 구분함(PostService.ATTACHMENT_KEY_PREFIX,
+# ReportService.KEY_PREFIX 참고).
 aws:
   region: ${AWS_REGION:ap-northeast-2}
   s3:
-    bucket: ${AWS_S3_BUCKET:tdtc-ai-board-attachments-dev}
-    # 2026-07-31 추가: 보고서는 게시판 첨부파일과 다른 버킷에 저장한다.
-    # 사용자 업로드물과 시스템 생성물은 보존 정책이 달라 분리했다.
+    bucket: ${AWS_S3_BUCKET:tdtc-ai-report}
     report-bucket: ${AWS_S3_REPORT_BUCKET:tdtc-ai-report}

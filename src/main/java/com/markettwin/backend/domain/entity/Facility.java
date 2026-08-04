@@ -62,6 +62,10 @@ public class Facility {
     @Column(name = "footprint_radius_m")
     private Double footprintRadiusM;
 
+    // 2026-08-04 추가 (시설 관리 화면): 층/위치 메모 등 자유 텍스트 비고
+    @Column(name = "rmk", length = 500)
+    private String rmk;
+
     @Column(name = "updated_at")
     private Instant updatedAt;
 
@@ -70,6 +74,18 @@ public class Facility {
      */
     public void updateWeight(Double weight) {
         this.weight = weight;
+        this.updatedAt = Instant.now();
+    }
+
+    // 2026-08-04 추가 (시설 관리 화면): 관리자/상인회가 등록한 시설 정보 수정
+    public void updateDetails(String facilityType, String name, java.math.BigDecimal latitude,
+                               java.math.BigDecimal longitude, Boolean isActive, String rmk) {
+        this.facilityType = facilityType;
+        this.name = name;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.isActive = isActive;
+        this.rmk = rmk;
         this.updatedAt = Instant.now();
     }
 }
