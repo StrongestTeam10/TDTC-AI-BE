@@ -9,7 +9,7 @@ public record RiskDto(
         String riskLevel,
         String reasonCode,
         Instant detectedAt,
-        Integer totalCount, // 👈 추가
+        Integer totalCount,
         String videoUrl
 ) {
 }
