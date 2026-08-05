@@ -43,6 +43,9 @@ dependencies {
     implementation platform('software.amazon.awssdk:bom:2.28.16')
     implementation 'software.amazon.awssdk:s3'
 
+    // 2026-08-04 추가: 상점 외관 사진(직접 촬영) EXIF GPS/촬영일시 추출 - 서버 사이드 처리
+    implementation 'com.drewnoakes:metadata-extractor:2.19.0'
+
     // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

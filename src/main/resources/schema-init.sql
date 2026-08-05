@@ -137,12 +137,17 @@ CREATE TABLE IF NOT EXISTS mrkfcts01m (
     weight         DOUBLE PRECISION DEFAULT 1.0,
     -- 2026-07-24 추가: 오브젝트(매대/푸드트럭 등) 실제 점유 반경(m). SIM 장애물 회피용.
     footprint_radius_m DOUBLE PRECISION,
+    -- 2026-08-04 추가: 층/위치 메모 등 비고
+    rmk            VARCHAR(500),
     updated_at     TIMESTAMP
 );
 
 -- 이미 생성되어 있던 DB(신규 컬럼 없이)에도 반영되도록 별도 ALTER도 함께 실행
 ALTER TABLE mrkfcts01m ADD COLUMN IF NOT EXISTS weight DOUBLE PRECISION DEFAULT 1.0;
 ALTER TABLE mrkfcts01m ADD COLUMN IF NOT EXISTS footprint_radius_m DOUBLE PRECISION;
+-- 2026-08-04 추가(시설 관리 화면): 층/위치 메모 등 자유 텍스트를 담는 비고란.
+-- 별도 컬럼을 새로 만들지 않고 comcode01m.rmk와 같은 이름/성격의 범용 비고 컬럼으로 둠.
+ALTER TABLE mrkfcts01m ADD COLUMN IF NOT EXISTS rmk VARCHAR(500);
 
 -- =========================================
 -- 7. 위험 점수 (⚠️ 2026-07-27 ERD 변경: 그레인이 "구역 단위"에서 "CCTV 프레임의
@@ -494,6 +499,38 @@ CREATE TABLE IF NOT EXISTS pstrprt01h (
 );
 
 CREATE INDEX IF NOT EXISTS idx_pstrprt01h_alert_id ON pstrprt01h(alert_id);
+
+-- =========================================
+-- 29. 시설 외관 사진 (2026-08-04 신규 - 상점 외관 직접 촬영 데이터 수집 파이프라인)
+-- =========================================
+-- 흐름: 사진 업로드 -> BE가 EXIF에서 GPS/촬영일시 추출(exif_*) -> 사용자가 지도에서
+-- 위치를 손으로 보정(corrected_*, 항상 NOT NULL - 스마트폰 GPS 오차 5~15m 및 좁은
+-- 골목 반사 오차 때문에 EXIF 값을 그대로 신뢰하지 않고 항상 사람 보정을 거침) ->
+-- 방향(동서남북)은 EXIF 방향값(신뢰 불가)을 쓰지 않고 촬영자가 직접 라벨링.
+-- 시설 하나당 같은 방향이라도 재촬영 시 새 행으로 누적(과거 사진 보존, 나중에 3D
+-- 트윈 텍스처를 만들 때 최신 사진만 골라 쓰거나 시계열로 비교하는 용도 모두 가능).
+CREATE TABLE IF NOT EXISTS mrkfcph01d (
+    photo_id             BIGSERIAL PRIMARY KEY,
+    facility_id          BIGINT NOT NULL REFERENCES mrkfcts01m(facility_id) ON DELETE CASCADE,
+    -- comcode01m DIR 도메인(DIRNO/DIREA/DIRSO/DIRWE) - 촬영자가 직접 라벨링, FK 제약은
+    -- 다른 comcode 참조 컬럼(rules_code/market_code 등)과 동일하게 애플리케이션에서 검증
+    direction_code       VARCHAR(5) NOT NULL,
+    s3_key               VARCHAR(500) NOT NULL,
+    original_name        VARCHAR(255) NOT NULL,
+    -- EXIF에서 추출된 원본 GPS. EXIF에 GPS 태그 자체가 없는 사진도 많아 NULL 허용
+    exif_latitude         DECIMAL(10,8),
+    exif_longitude         DECIMAL(11,8),
+    -- 지도에서 사람이 보정한 최종 좌표. 항상 사용자 확인을 거치므로 NOT NULL
+    corrected_latitude    DECIMAL(10,8) NOT NULL,
+    corrected_longitude   DECIMAL(11,8) NOT NULL,
+    -- EXIF DateTimeOriginal. 없는 사진도 있어 NULL 허용
+    captured_at           TIMESTAMP,
+    uploaded_by           BIGINT NOT NULL REFERENCES usrusrs01m(user_id),
+    created_at            TIMESTAMP NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_mrkfcph01d_facility_id ON mrkfcph01d(facility_id);
+CREATE INDEX IF NOT EXISTS idx_mrkfcph01d_direction_code ON mrkfcph01d(direction_code);
 
 -- =========================================
 -- 실제 시장 공간 데이터는 seed-market-data.sql 로 분리되어 있음
