@@ -39,6 +39,14 @@ public class SecurityConfig {
     @Value("${cors.allowed-origins:http://localhost:5173}")
     private String[] allowedOrigins;
 
+    /**
+     * 시뮬레이션 기능을 쓸 수 있는 권한. ROL01 관리자, ROL02 관제요원.
+     *
+     * hasAnyRole은 값 앞에 "ROLE_"을 붙여 비교하고, JwtAuthenticationFilter도
+     * "ROLE_" + rulesCode 형태로 권한을 만들므로 코드값만 그대로 적으면 된다.
+     */
+    private static final String[] SIMULATION_ROLES = {"ROL01", "ROL02"};
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -62,6 +70,17 @@ public class SecurityConfig {
                         .requestMatchers("/api/common-codes/**").permitAll() // 회원가입 화면(로그인 전)에서 소속기관 조회
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        // 2026-08-05 추가: 시뮬레이션은 관리자(ROL01)와 관제요원(ROL02)만 쓴다.
+                        // 상인회(ROL03)는 What-if 실험과 그 결과로 만든 정책 보고서를 다루지 않는다.
+                        //
+                        // 경로 전체를 막는 이유: 개별 엔드포인트를 나열하면 /api/simulation 아래에
+                        // 새 API가 생길 때 목록에 추가하는 걸 잊어도 아무 경고 없이 열린 채로 남는다.
+                        // 기본을 막고 필요한 것만 여는 편이 안전하다.
+                        //
+                        // 이 범위에는 관제용인 GET /api/simulation/coordinates/frame(CCTV 보행자
+                        // 좌표)도 포함된다. 경로 접두사만 공유할 뿐 성격이 다른 API지만, 관제요원이
+                        // ROL02라 실제로 막히는 대상은 상인회뿐이라 함께 두었다.
+                        .requestMatchers("/api/simulation/**").hasAnyRole(SIMULATION_ROLES)
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(
