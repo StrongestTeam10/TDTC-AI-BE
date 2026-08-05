@@ -2,6 +2,7 @@ package com.markettwin.backend.config;
 
 import com.markettwin.backend.security.JwtAuthenticationFilter;
 import com.markettwin.backend.security.JwtTokenProvider;
+import com.markettwin.backend.security.RestAccessDeniedHandler;
 import com.markettwin.backend.security.RestAuthenticationEntryPoint;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -56,7 +57,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtTokenProvider jwtTokenProvider,
-            RestAuthenticationEntryPoint restAuthenticationEntryPoint
+            RestAuthenticationEntryPoint restAuthenticationEntryPoint,
+            RestAccessDeniedHandler restAccessDeniedHandler
     ) throws Exception {
         http
                 .csrf(csrf -> csrf.disable()) // JWT 기반 stateless API라 CSRF 토큰 불필요
@@ -64,7 +66,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(basic -> basic.disable())
                 .formLogin(form -> form.disable())
-                .exceptionHandling(ex -> ex.authenticationEntryPoint(restAuthenticationEntryPoint))
+                // 401(로그인 필요)과 403(권한 없음)을 나눠 응답한다. 거부 처리를 등록하지
+                // 않으면 권한 부족도 401로 나가고, FE가 그걸 세션 만료로 보고 로그아웃시킨다.
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(restAuthenticationEntryPoint)
+                        .accessDeniedHandler(restAccessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/common-codes/**").permitAll() // 회원가입 화면(로그인 전)에서 소속기관 조회
