@@ -1,14 +1,17 @@
 package com.markettwin.backend.service;
 
+import com.markettwin.backend.domain.entity.Building;
 import com.markettwin.backend.domain.entity.Facility;
 import com.markettwin.backend.domain.entity.User;
 import com.markettwin.backend.domain.entity.Market;
 import com.markettwin.backend.domain.entity.Zone;
 import com.markettwin.backend.domain.entity.ZoneAdjacency;
+import com.markettwin.backend.dto.response.BuildingDto;
 import com.markettwin.backend.dto.response.GateDto;
 import com.markettwin.backend.dto.response.MarketDto;
 import com.markettwin.backend.dto.response.ZoneAdjacencyDto;
 import com.markettwin.backend.dto.response.ZoneDto;
+import com.markettwin.backend.repository.BuildingRepository;
 import com.markettwin.backend.repository.FacilityRepository;
 import com.markettwin.backend.exception.ForbiddenActionException;
 import com.markettwin.backend.exception.MarketNotFoundException;
@@ -40,6 +43,7 @@ public class MarketService {
     private final ZoneRepository zoneRepository;
     private final ZoneAdjacencyRepository zoneAdjacencyRepository;
     private final FacilityRepository facilityRepository;
+    private final BuildingRepository buildingRepository;
 
     public List<MarketDto> getMarkets(User currentUser) {
         List<Market> markets = isAdmin(currentUser)
@@ -78,6 +82,17 @@ public class MarketService {
         return facilityRepository.findByMarketId(marketId).stream()
                 .filter(f -> "GATE".equalsIgnoreCase(f.getFacilityType()))
                 .map(this::toGateDto)
+                .toList();
+    }
+
+    /**
+     * 2026-08-XX 추가: 지도에 상가/건물 폴리곤을 표시하기 위한 목록.
+     * 시뮬레이션 계산에는 안 쓰이는 순수 표시용이라 권한 검증 없이 zones/gates와
+     * 동일한 패턴으로 marketId 기준 조회만 한다.
+     */
+    public List<BuildingDto> getBuildings(Long marketId) {
+        return buildingRepository.findByMarketId(marketId).stream()
+                .map(this::toBuildingDto)
                 .toList();
     }
 
@@ -136,6 +151,18 @@ public class MarketService {
                 facility.getLatitude(),
                 facility.getLongitude(),
                 facility.getWeight()
+        );
+    }
+
+    private BuildingDto toBuildingDto(Building building) {
+        return new BuildingDto(
+                building.getBuildingId(),
+                building.getMarketId(),
+                building.getPnuCode(),
+                building.getPolygonCoordinates(),
+                building.getHeightM(),
+                building.getHeightEstimated(),
+                building.getFloors()
         );
     }
 }

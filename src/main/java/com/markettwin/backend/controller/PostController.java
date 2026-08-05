@@ -1,12 +1,12 @@
 package com.markettwin.backend.controller;
 
 import com.markettwin.backend.domain.entity.User;
+import com.markettwin.backend.dto.response.AttachmentDownloadUrlDto;
 import com.markettwin.backend.dto.response.PostDetailDto;
 import com.markettwin.backend.dto.response.PostListResponseDto;
 import com.markettwin.backend.security.CurrentUserProvider;
 import com.markettwin.backend.service.PostService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -99,14 +99,15 @@ public class PostController {
         return Map.of("liked", liked);
     }
 
-    // 302 리다이렉트로 S3 presigned URL을 바로 태워보냄 - BE가 파일 바이너리를
-    // 직접 스트리밍하지 않아 대용량 첨부에도 서버 부담이 없음
+    // 2026-08-04 변경: 302 리다이렉트 방식은 크로스오리진 리다이렉트 시 브라우저가
+    // Origin 헤더를 "null"로 바꿔버려서(표준 스펙 동작) S3 CORS 설정을 아무리
+    // 정확히 해도 절대 통과할 수 없는 구조적 문제가 있었음. presigned URL을 JSON으로
+    // 내려주고 FE가 window.location으로 직접 이동시키는 방식으로 변경 - 진짜 페이지
+    // 이동은 CORS 검사 대상이 아니라 이 문제 자체가 생기지 않음.
     @GetMapping("/{postId}/attachments/{attachmentId}/download")
-    public ResponseEntity<Void> download(@PathVariable Long postId, @PathVariable Long attachmentId) {
+    public AttachmentDownloadUrlDto download(@PathVariable Long postId, @PathVariable Long attachmentId) {
         User currentUser = currentUserProvider.getCurrentUser();
         URL presignedUrl = postService.getDownloadUrl(postId, attachmentId, currentUser);
-        return ResponseEntity.status(HttpStatus.FOUND)
-                .header(HttpHeaders.LOCATION, presignedUrl.toString())
-                .build();
+        return new AttachmentDownloadUrlDto(presignedUrl.toString());
     }
 }

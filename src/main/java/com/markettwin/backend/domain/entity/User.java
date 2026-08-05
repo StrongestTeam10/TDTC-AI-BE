@@ -5,15 +5,21 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.Instant;
 
 /**
  * USRUSRS01M - 사용자
+ *
+ * 2026-08-04 변경: 회원가입 관리자 승인(approvalStatus) + 비밀번호 찾기(updatePassword) 추가.
+ * 2026-08-05 변경: 관리자 회원 권한 변경 기능(UserAdminService)에서 rulesCode를
+ * 수정해야 해서 @Setter 추가 (Post.java와 동일한 패턴 - JPA dirty-checking으로 반영).
  */
 @Entity
 @Table(name = "usrusrs01m")
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -71,10 +77,34 @@ public class User {
     // MKT 도메인 코드로 존재하는지 검증함.
     @Column(name = "market_code", length = 5)
     private String marketCode;
+
+    // 2026-08-04 추가 (회원가입 관리자 승인): comcode01m(code_cob='APR') 코드값.
+    // APRPD=승인 대기(기본값), APRAP=승인됨, APRRJ=거부됨. AuthService.signup()이
+    // 가입 시점에 APRPD로 명시 세팅하고, UserApprovalService가 승인/거부 처리함.
+    @Column(name = "approval_status", nullable = false, length = 5)
+    private String approvalStatus;
+
     // 2026-08-04 추가 (비밀번호 찾기): 재설정 시 비밀번호 + 변경 이력(시각/IP)을 함께 갱신
     public void updatePassword(String encodedPassword, String clientIp) {
         this.password = encodedPassword;
         this.updatedAt = Instant.now();
         this.updatedIp = clientIp;
+    }
+
+    // 2026-08-04 추가 (회원가입 관리자 승인)
+    public void approve() {
+        this.approvalStatus = "APRAP";
+    }
+
+    public void reject() {
+        this.approvalStatus = "APRRJ";
+    }
+
+    public boolean isPendingApproval() {
+        return "APRPD".equals(this.approvalStatus);
+    }
+
+    public boolean isRejected() {
+        return "APRRJ".equals(this.approvalStatus);
     }
 }
