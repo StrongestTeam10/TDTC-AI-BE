@@ -6,5 +6,5 @@ import java.util.List;
 
 public interface PedestrianCoordinateJsonRepository extends JpaRepository<PedestrianCoordinateJson, Long> {
     List<PedestrianCoordinateJson> findByClipIdAndFrameIdAndVideoId(
-            Long clipId, Integer frameId, Integer videoId);
+            Long clipId, Integer frameId, Long videoId);
 }
