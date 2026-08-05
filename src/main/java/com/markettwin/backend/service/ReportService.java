@@ -109,14 +109,21 @@ public class ReportService {
         log.info("보고서 생성 완료: reportId={}, scenarioId={}, title={}, {}bytes",
                 reportId, scenario.getScenarioId(), report.title(), report.docx().length);
 
+        // 재생성이면 이전 보고서의 키. 아래 DB 갱신이 끝난 뒤 정리한다.
+        String previousStorageKey = scenarioResult.getGeneratedReportPath();
+
         String storageKey =
                 fileStorageService.uploadReport(report.docx(), DOCX_CONTENT_TYPE, KEY_PREFIX);
 
         // 보고서 1건 = 시나리오 1건이므로 결과 행에 S3 키와 제목을 그대로 남긴다.
-        // 같은 시나리오로 다시 생성하면 최신 값으로 덮이고, 이전 S3 객체는 참조를 잃는다.
+        // 같은 시나리오로 다시 생성하면 최신 값으로 덮인다.
         // 제목은 목록 표시용이며, 문서 표지와 같은 값이라야 사용자가 혼동하지 않는다.
+        // baselineResultId는 어느 현행안과 비교했는지 남기기 위한 것이다(선택 규칙은 그대로).
         reportQueryRepository.updateReportInfo(
-                scenarioResult.getResultId(), storageKey, fitReportTitle(report.title()));
+                scenarioResult.getResultId(), storageKey, fitReportTitle(report.title()),
+                baselineResult.getBaselineResultId());
+
+        deletePreviousReport(previousStorageKey, storageKey);
 
         String downloadUrl = fileStorageService
                 .generateReportDownloadUrl(storageKey, reportId + ".docx", DOWNLOAD_URL_TTL)
@@ -124,6 +131,24 @@ public class ReportService {
 
         return new ReportGenerateResponseDto(
                 reportId, scenario.getScenarioId(), downloadUrl, storageKey);
+    }
+
+    /**
+     * 재생성으로 참조를 잃은 이전 보고서 객체를 S3에서 지운다.
+     *
+     * DB 갱신이 끝난 뒤에 호출해야 한다. 순서가 반대면 갱신에 실패했을 때 DB는 옛 키를
+     * 가리키는데 그 객체는 이미 사라져, 다운로드가 되지 않는 보고서가 남는다.
+     *
+     * 삭제 실패는 무시한다. 이 시점에는 새 보고서가 이미 업로드되고 DB에도 반영돼 사용자
+     * 입장에서는 성공한 요청이다. 여기서 예외를 던지면 멀쩡한 보고서를 실패로 되돌리게 된다.
+     * 정리되지 않은 키는 S3FileStorageService가 로그에 남긴다.
+     */
+    private void deletePreviousReport(String previousKey, String newKey) {
+        if (previousKey == null || previousKey.isBlank() || previousKey.equals(newKey)) {
+            return;
+        }
+        log.info("이전 보고서 정리: key={}", previousKey);
+        fileStorageService.deleteReport(previousKey);
     }
 
     // ------------------------------------------------------------------

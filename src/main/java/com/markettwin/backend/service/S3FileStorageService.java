@@ -41,8 +41,11 @@ public class S3FileStorageService implements FileStorageService {
     private String bucket;
 
     /**
-     * 2026-07-30 추가: 보고서 전용 버킷.
-     * 미설정 시 aws.s3.bucket 값이 그대로 들어와 기존 동작(단일 버킷)을 유지한다.
+     * 보고서 저장 위치. 미설정이면 aws.s3.bucket 값을 쓴다.
+     *
+     * 2026-08-04에 게시판 첨부파일과 버킷을 하나로 합치고 키 prefix(board/ vs reports/)로만
+     * 구분하기로 해서, 지금은 위 bucket과 같은 값이 들어온다. 통합이 확정이면 이 설정과
+     * 보고서 전용 메서드들을 걷어낼 수 있다.
      */
     @Value("${aws.s3.report-bucket:${aws.s3.bucket}}")
     private String reportBucket;
@@ -116,6 +119,22 @@ public class S3FileStorageService implements FileStorageService {
             log.error("S3 삭제 실패(무시하고 진행): bucket={}, key={}", bucket, key, e);
         }
     }
+
+    /** delete와 같고 대상만 reportBucket이다. 지금은 두 설정이 같은 버킷을 가리킨다. */
+    @Override
+    public void deleteReport(String key) {
+        try {
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(reportBucket)
+                    .key(key)
+                    .build());
+        } catch (SdkException e) {
+            // 이전 보고서 정리는 부가 작업이라, 실패해도 새 보고서 생성 자체는 성공으로 둔다.
+            // 남은 객체는 로그로 추적할 수 있게 키를 남긴다.
+            log.error("S3 보고서 삭제 실패(무시하고 진행): bucket={}, key={}", reportBucket, key, e);
+        }
+    }
+
 
     @Override
     public URL generatePresignedDownloadUrl(String key, String originalFileName, Duration ttl) {

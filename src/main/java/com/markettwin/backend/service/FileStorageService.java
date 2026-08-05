@@ -20,12 +20,14 @@ public interface FileStorageService {
 
     /**
      * 2026-07-30 추가 (보고서 기능)
-     * 보고서 전용 버킷에 업로드하고 키를 반환한다.
+     * 보고서를 aws.s3.report-bucket에 업로드하고 키를 반환한다.
      *
      * 업로드된 파일이 아니라 BE가 만들어낸 결과물이라 MultipartFile이 없어 바이트로 받는다.
-     * 게시판 첨부파일과 버킷을 나눈 이유: 사용자 업로드물과 시스템 생성물은 보존 기간과
-     * 접근 주체가 달라, 수명주기 규칙과 권한을 각각 걸 수 있게 두는 편이 낫다.
-     * 아래 generateReportDownloadUrl과 같은 버킷을 바라봐야 하므로 짝으로 존재한다.
+     * upload()와 따로 있는 1차 이유가 이 입력 타입 차이다.
+     *
+     * 2026-08-04에 게시판 첨부파일과 버킷을 하나로 합치고 키 prefix(board/ vs reports/)로만
+     * 구분하기로 했다. 보고서 3종(uploadReport, generateReportDownloadUrl, deleteReport)은
+     * 여전히 aws.s3.report-bucket을 보는데, 통합이 확정이면 함께 정리할 수 있다.
      */
     String uploadReport(byte[] content, String contentType, String keyPrefix);
 
@@ -39,6 +41,15 @@ public interface FileStorageService {
      * 저장소에서 파일을 삭제한다. 이미 없는 키를 삭제해도 예외를 던지지 않는다(멱등).
      */
     void delete(String key);
+
+    /**
+     * 2026-08-05 추가 (보고서 기능)
+     * 보고서 객체를 삭제한다.
+     *
+     * 보고서 업로드·다운로드가 aws.s3.report-bucket을 보므로 삭제도 같은 설정을 따르게 했다.
+     * 2026-08-04에 게시판 첨부파일과 버킷을 하나로 합쳐서, 지금은 delete()와 결과가 같다.
+     */
+    void deleteReport(String key);
 
     /**
      * 다운로드용 임시 서명 URL을 발급한다. BE가 파일을 직접 스트리밍하지 않고

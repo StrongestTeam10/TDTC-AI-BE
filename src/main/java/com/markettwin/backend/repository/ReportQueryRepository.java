@@ -61,21 +61,29 @@ public interface ReportQueryRepository extends Repository<ScenarioResult, Long> 
     List<ReportRow> findScenarioHistoryByUserId(@Param("userId") Long userId);
 
     /**
-     * 보고서 저장 결과(S3 키와 문서 제목)를 결과 행에 기록한다.
+     * 보고서 저장 결과(S3 키, 문서 제목, 비교에 쓴 현행안 결과)를 결과 행에 기록한다.
      *
      * ScenarioResult 엔티티에는 report_title 매핑이 없어 네이티브 UPDATE로 처리한다.
      * 이 컬럼들은 보고서 기능이 소유하므로, 시뮬레이션 저장을 담당하는 엔티티를
      * 건드리지 않고 여기서만 다루는 편이 경계가 분명하다.
+     *
+     * baseline_result_id를 함께 남기는 이유: 보고서는 "그 시장의 가장 최근 현행안 결과"와
+     * 비교하는데, predict 호출마다 simbsln01d에 결과가 쌓이므로 "가장 최근"이 시점에 따라
+     * 달라진다. 같은 시나리오로 다시 만든 보고서의 수치가 바뀌었을 때 어느 현행안과
+     * 비교했는지 남아 있지 않으면 원인을 추적할 수 없다. 선택 규칙은 그대로 두고
+     * 선택 결과만 기록한다.
      */
     @Modifying
     @Transactional
     @Query(value = """
             UPDATE simrslt01d
                SET generated_report_path = :storageKey,
-                   report_title = :reportTitle
+                   report_title = :reportTitle,
+                   baseline_result_id = :baselineResultId
              WHERE result_id = :resultId
             """, nativeQuery = true)
     void updateReportInfo(@Param("resultId") Long resultId,
                          @Param("storageKey") String storageKey,
-                         @Param("reportTitle") String reportTitle);
+                         @Param("reportTitle") String reportTitle,
+                         @Param("baselineResultId") Long baselineResultId);
 }
