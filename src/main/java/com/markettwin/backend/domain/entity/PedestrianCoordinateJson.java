@@ -41,4 +41,7 @@ public class PedestrianCoordinateJson {
 
     @Column(name = "clip_id", nullable = false)
     private Long clipId;
+
+    @Column(name = "zone_id")
+    private Long zoneId;
 }
