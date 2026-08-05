@@ -54,7 +54,13 @@ public class PostService {
 
     private static final String ADMIN_ROLE_CODE = "ROL01";
     private static final int MAX_PAGE_SIZE = 50;
-    private static final String ATTACHMENT_KEY_PREFIX = "board-attachments";
+    // 2026-08-04 재변경: 게시판 첨부파일과 보고서 버킷을 하나(tdtc-ai-report)로
+    // 합치면서, 그 안에서 폴더로 구분하도록 접두사를 board로 바꿈(보고서는
+    // ReportService.KEY_PREFIX="reports"라 서로 겹치지 않음). 이전엔
+    // upload/board-attachments였음 - 과거에 그 접두사로 이미 올라간 첨부파일은
+    // DB에 저장된 실제 key를 그대로 쓰므로 다운로드에 영향 없음(새로 올라가는
+    // 파일부터만 이 접두사를 씀).
+    private static final String ATTACHMENT_KEY_PREFIX = "board";
     private static final Duration DOWNLOAD_URL_TTL = Duration.ofMinutes(5);
 
     // 2026-07-24 추가(UI 설계서 반영 - 카테고리 탭)

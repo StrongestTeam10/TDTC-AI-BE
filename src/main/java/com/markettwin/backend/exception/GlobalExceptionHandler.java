@@ -117,4 +117,20 @@ public class GlobalExceptionHandler {
         log.warn("보고서 생성 데이터 조건 불충족: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody(ex.getMessage()));
     }
+
+    // 2026-08-04 추가 (상점 외관 직접 촬영 데이터 수집 파이프라인)
+    @ExceptionHandler(FacilityNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleFacilityNotFound(FacilityNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody(ex.getMessage()));
+    }
+
+    @ExceptionHandler(FacilityPhotoNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleFacilityPhotoNotFound(FacilityPhotoNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody(ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidDirectionCodeException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidDirectionCode(InvalidDirectionCodeException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody(ex.getMessage()));
+    }
 }
