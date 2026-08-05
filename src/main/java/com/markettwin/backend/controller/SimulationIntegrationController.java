@@ -44,6 +44,7 @@ public class SimulationIntegrationController {
         response.put("captured_at", row.capturedAt());
         response.put("pixels_json", row.pixelsJson());
         response.put("bev_xyz_json", row.bevXyzJson());
+        response.put("zone_id", row.zoneId());
 
         return ResponseEntity.ok(response);
     }

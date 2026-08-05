@@ -6,10 +6,12 @@ import com.markettwin.backend.domain.entity.BaselineResult;
 import com.markettwin.backend.domain.entity.Market;
 import com.markettwin.backend.domain.entity.Scenario;
 import com.markettwin.backend.domain.entity.ScenarioResult;
+import com.markettwin.backend.domain.entity.User;
 import com.markettwin.backend.dto.request.*;
 import com.markettwin.backend.dto.response.ReportDownloadDto;
 import com.markettwin.backend.dto.response.ReportGenerateResponseDto;
 import com.markettwin.backend.dto.response.ScenarioHistoryDto;
+import com.markettwin.backend.exception.ForbiddenActionException;
 import com.markettwin.backend.exception.ReportDataException;
 import com.markettwin.backend.repository.BaselineRepository;
 import com.markettwin.backend.repository.BaselineResultRepository;
@@ -18,6 +20,7 @@ import com.markettwin.backend.repository.ReportQueryRepository;
 import com.markettwin.backend.repository.ScenarioRepository;
 import com.markettwin.backend.repository.ScenarioResultRepository;
 import com.markettwin.backend.repository.ZoneRepository;
+import com.markettwin.backend.security.CurrentUserProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -44,6 +47,8 @@ import java.util.UUID;
 public class ReportService {
 
     private static final String KEY_PREFIX = "reports";
+    /** 관리자(ROL01)는 시나리오 소유자가 아니어도 보고서를 다룰 수 있다. PostService와 같은 기준. */
+    private static final String ADMIN_ROLE_CODE = "ROL01";
     /** simrslt01d.report_title 컬럼 길이. 이 값을 넘으면 저장이 실패한다. */
     private static final int REPORT_TITLE_MAX_LENGTH = 200;
     private static final Duration DOWNLOAD_URL_TTL = Duration.ofMinutes(10);
@@ -64,6 +69,7 @@ public class ReportService {
     private final ZoneRepository zoneRepository;
     private final ReportQueryRepository reportQueryRepository;
     private final ScenarioDisplayNameResolver scenarioDisplayNameResolver;
+    private final CurrentUserProvider currentUserProvider;
     private final SimulationEngineClient simulationEngineClient;
     private final FileStorageService fileStorageService;
 
@@ -92,6 +98,7 @@ public class ReportService {
         Scenario scenario = scenarioRepository.findById(request.scenarioId())
                 .orElseThrow(() -> new ReportDataException(
                         "시나리오를 찾을 수 없습니다: scenarioId=" + request.scenarioId()));
+        assertOwner(scenario);
 
         ScenarioResult scenarioResult = latestResultOf(scenario.getScenarioId());
         Market market = loadMarket(scenario);
@@ -170,6 +177,13 @@ public class ReportService {
      * (재생성은 RAG 검색 + LLM 생성까지 다시 도는 수 분짜리 작업이다)
      */
     public ReportDownloadDto reissueDownloadUrl(Long scenarioId) {
+        // 소유자 확인을 보고서 존재 여부보다 먼저 한다. 순서가 반대면 남의 시나리오라도
+        // "생성된 보고서가 없습니다"와 다른 오류를 구분해 보고서 유무를 알아낼 수 있다.
+        Scenario scenario = scenarioRepository.findById(scenarioId)
+                .orElseThrow(() -> new ReportDataException(
+                        "시나리오를 찾을 수 없습니다: scenarioId=" + scenarioId));
+        assertOwner(scenario);
+
         ScenarioResult result = latestResultOf(scenarioId);
 
         String storageKey = result.getGeneratedReportPath();
@@ -179,14 +193,37 @@ public class ReportService {
                             + ". 먼저 보고서를 생성해야 다운로드할 수 있습니다.");
         }
 
-        Scenario scenario = scenarioRepository.findById(scenarioId)
-                .orElseThrow(() -> new ReportDataException(
-                        "시나리오를 찾을 수 없습니다: scenarioId=" + scenarioId));
-
         URL url = fileStorageService.generateReportDownloadUrl(
                 storageKey, downloadFileName(scenario), DOWNLOAD_URL_TTL);
         return new ReportDownloadDto(
                 scenarioId, url.toString(), DOWNLOAD_URL_TTL.toSeconds());
+    }
+
+    /**
+     * 이 시나리오를 다룰 수 있는 사용자인지 확인한다.
+     *
+     * 인증만 통과하면 남의 scenarioId로 보고서를 생성하거나 내려받을 수 있었기에 추가했다.
+     * 관리자(ROL01)는 통과시키며, 이는 게시판(PostService.assertCanModify)과 같은 기준이다.
+     *
+     * user_id가 NULL인 행은 소유자를 알 수 없으므로 거부한다. 시나리오 저장 시 user_id를
+     * 채우기 전에 만들어진 데이터가 해당하며, 관리자는 위 규칙으로 여전히 접근할 수 있다.
+     * "존재하지 않음"이 아니라 "권한 없음"으로 답하는 이유는, 시나리오 ID가 순번이라
+     * 숨겨도 실익이 없고 담당자가 원인을 알 수 있어야 하기 때문이다.
+     */
+    private void assertOwner(Scenario scenario) {
+        User currentUser = currentUserProvider.getCurrentUser();
+        if (ADMIN_ROLE_CODE.equals(currentUser.getRulesCode())) {
+            return;
+        }
+        if (scenario.getUserId() == null) {
+            throw new ForbiddenActionException(
+                    "실행자 정보가 없는 시나리오입니다. 관리자에게 문의하세요: scenarioId="
+                            + scenario.getScenarioId());
+        }
+        if (!scenario.getUserId().equals(currentUser.getUserId())) {
+            throw new ForbiddenActionException(
+                    "본인이 실행한 시뮬레이션의 보고서만 생성·조회할 수 있습니다.");
+        }
     }
 
     /**

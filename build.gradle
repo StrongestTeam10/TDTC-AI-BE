@@ -58,6 +58,9 @@ dependencies {
 
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // Gradle 9부터는 JUnit Platform launcher를 테스트 런타임에 명시해야 한다.
+    // 없으면 컴파일은 되지만 "Failed to load JUnit Platform"으로 실행이 막힌다.
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {

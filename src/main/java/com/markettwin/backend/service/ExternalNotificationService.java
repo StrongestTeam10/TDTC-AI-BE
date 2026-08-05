@@ -16,7 +16,7 @@ public class ExternalNotificationService {
     @Async // 이 메서드는 백그라운드에서 실행되어 서버 속도에 영향을 주지 않습니다.
     public void sendEmergencySms(Long zoneId, String alertType) {
         log.info("🚨 [긴급 SMS 발송 시작] 수신처: {}", targetPhone);
-        log.info("🚨 내용: 구역 ID [{}]에서 [{}] 위험 상황이 10초 이상 지속되었습니다. 즉시 확인 바랍니다.", zoneId, alertType);
+        log.info("🚨 내용: 구역 ID [{}]에서 [{}] 위험 상황이 15초 이상 지속되었습니다. 즉시 확인 바랍니다.", zoneId, alertType);
 
         // TODO: 향후 이곳에 실제 SMS 발송 코드 (CoolSMS 등) 3~4줄만 넣으시면 됩니다.
         // coolsmsApi.sendMessage(targetPhone, "위험 발생!");
