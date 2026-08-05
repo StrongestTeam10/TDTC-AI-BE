@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import com.markettwin.backend.dto.response.PedestrianCoordinateDto;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,21 +29,21 @@ public class SimulationIntegrationController {
     public ResponseEntity<Map<String, Object>> getCoordinatesForFrame(
             @RequestParam Long clipId,
             @RequestParam Integer frameId,
-            @RequestParam(required = false) Integer videoId) {
+            @RequestParam(required = false) Long videoId) {
 
-        List<PedestrianCoordinateJson> results = controlSystemService.getJsonCoordinates(clipId, frameId, videoId);
+        List<PedestrianCoordinateDto> results = controlSystemService.getJsonCoordinates(clipId, frameId, videoId);
 
 
         if (results == null || results.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
-        PedestrianCoordinateJson row = results.get(0);
+        PedestrianCoordinateDto row = results.get(0);
 
         Map<String, Object> response = new HashMap<>();
-        response.put("captured_at", row.getCapturedAt());
-        response.put("pixels_json", row.getPixelsJson());
-        response.put("bev_xyz_json", row.getBevXyzJson());
+        response.put("captured_at", row.capturedAt());
+        response.put("pixels_json", row.pixelsJson());
+        response.put("bev_xyz_json", row.bevXyzJson());
 
         return ResponseEntity.ok(response);
     }
