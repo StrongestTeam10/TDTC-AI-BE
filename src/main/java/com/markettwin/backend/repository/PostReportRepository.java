@@ -6,5 +6,5 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface PostReportRepository extends JpaRepository<PostReport, Long> {
-    List<PostReport> findByTargetDateAndVideoId(LocalDate targetDate, Integer videoId);
+    List<PostReport> findByTargetDateAndVideoId(LocalDate targetDate, Long videoId);
 }

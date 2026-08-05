@@ -23,4 +23,24 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // 둘 다 이 메서드를 씀 - 두 시점에 서로 다른 조건으로 어긋나지 않도록 통일.
     Optional<User> findByLoginIdAndNameAndOrgCodeAndMarketCode(
             String loginId, String name, String orgCode, String marketCode);
+
+    // 2026-08-04 추가 (회원가입 관리자 승인): UserApprovalService.listPending()에서
+    // 승인 대기(APRPD) 계정을 오래된 순으로 보여주는 용도.
+    List<User> findByApprovalStatusOrderByCreatedAtAsc(String approvalStatus);
+
+    // 2026-08-05 추가 (회원관리 - 사용자 관리/회원 승인 화면)
+    // 게시판의 "관리자 시장 탭"과 동일한 로직: marketCode 없으면 전체, 있으면 해당
+    // 시장만. pendingOnly 여부에 따라 rulesCode='ROL03'(기본 가입 권한, 아직 관리자가
+    // 검토 전) 필터를 추가로 거는 4가지 조합을 각각의 derived query로 구성함.
+    List<User> findAllByOrderByCreatedAtDesc();
+
+    List<User> findByRulesCodeOrderByCreatedAtDesc(String rulesCode);
+
+    List<User> findByMarketCodeOrderByCreatedAtDesc(String marketCode);
+
+    List<User> findByMarketCodeAndRulesCodeOrderByCreatedAtDesc(String marketCode, String rulesCode);
+
+    // 2026-08-05 추가: 권한 변경 시 "마지막 관리자(ROL01)를 강등시키는" 상황을
+    // 막기 위한 안전장치(UserAdminService.updateRole 참고).
+    long countByRulesCode(String rulesCode);
 }

@@ -48,7 +48,9 @@ CREATE TABLE IF NOT EXISTS usrusrs01m (
     -- 게시판 목록 조회 시 "본인 담당 시장 게시글만 노출"의 기준 컬럼.
     -- nullable인 이유: 관리자(ROL01)는 시장 제한 없이 전체를 보므로 시장 소속이
     -- 필수가 아님. 회원가입 화면에서 org_code와 동일하게 select로 입력받음.
-    market_code VARCHAR(5)
+    market_code VARCHAR(5),
+    -- 2026-08-04 추가: 회원가입 관리자 승인 상태 (comcode01m APR 도메인)
+    approval_status VARCHAR(5) NOT NULL DEFAULT 'APRPD'
 );
 
 -- 기존에 이미 생성돼 있던 DB에도 반영되도록 (2026-07-24 추가)
@@ -56,6 +58,19 @@ ALTER TABLE usrusrs01m ADD COLUMN IF NOT EXISTS agree_terms_at TIMESTAMP;
 ALTER TABLE usrusrs01m ADD COLUMN IF NOT EXISTS agree_privacy_at TIMESTAMP;
 ALTER TABLE usrusrs01m ADD COLUMN IF NOT EXISTS agree_marketing_at TIMESTAMP;
 ALTER TABLE usrusrs01m ADD COLUMN IF NOT EXISTS market_code VARCHAR(5);
+
+-- 2026-08-04 추가 (회원가입 관리자 승인): comcode01m APR 도메인(APRPD/APRAP/APRRJ).
+-- 신규 회원가입은 APRPD(대기)로 시작해서 관리자 승인 전엔 로그인 불가.
+-- 이 스크립트는 앱 기동마다 매번 실행되므로(다른 ALTER TABLE IF NOT EXISTS와 동일),
+-- "생성된 지 1분 이상 지난 행은 기존 사용자로 간주" 같은 시간 기반 판정은 위험함
+-- (재기동마다 다시 실행되면서, 방금 가입해 승인 대기 중인 계정도 1분만 지나면
+-- 자동 승인되어 버림). 대신 NULL 백필 방식을 씀: 컬럼을 NULL 허용으로 추가 →
+-- 기존 행(전부 NULL)만 APRAP으로 채움 → 그 다음에 DEFAULT/NOT NULL을 검. 이렇게
+-- 하면 두 번째 기동부터는 이미 NULL이 하나도 없어 UPDATE가 항상 0건에 그쳐 안전함.
+ALTER TABLE usrusrs01m ADD COLUMN IF NOT EXISTS approval_status VARCHAR(5);
+UPDATE usrusrs01m SET approval_status = 'APRAP' WHERE approval_status IS NULL;
+ALTER TABLE usrusrs01m ALTER COLUMN approval_status SET DEFAULT 'APRPD';
+ALTER TABLE usrusrs01m ALTER COLUMN approval_status SET NOT NULL;
 
 -- =========================================
 -- 3. 현장 변경 (승인/변경 이력)
