@@ -10,6 +10,8 @@ import com.markettwin.backend.dto.response.SignupResponseDto;
 import com.markettwin.backend.dto.response.UserSummaryDto;
 import com.markettwin.backend.dto.response.VerifyIdentityResponseDto;
 import com.markettwin.backend.exception.DuplicateLoginIdException;
+import com.markettwin.backend.exception.AccountPendingApprovalException;
+import com.markettwin.backend.exception.AccountRejectedException;
 import com.markettwin.backend.exception.IdentityVerificationFailedException;
 import com.markettwin.backend.exception.InvalidCredentialsException;
 import com.markettwin.backend.exception.InvalidMarketCodeException;
@@ -74,6 +76,9 @@ public class AuthService {
                 .agreeTermsAt(now)
                 .agreePrivacyAt(now)
                 .agreeMarketingAt(request.isAgreeMarketing() ? now : null)
+                // 2026-08-04 추가: 관리자 승인 전엔 로그인 불가 - 명시적으로 대기 상태로
+                // 생성(컬럼 DEFAULT도 APRPD지만, INSERT 시 명시하는 게 더 안전)
+                .approvalStatus("APRPD")
                 .build();
 
         User saved = userRepository.save(user);
@@ -91,6 +96,17 @@ public class AuthService {
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new InvalidCredentialsException();
+        }
+
+        // 2026-08-04 추가 (회원가입 관리자 승인): 아이디/비밀번호가 맞아도 승인
+        // 전이면 로그인을 막음. 아이디/비밀번호 오류(InvalidCredentialsException)와는
+        // 다른 메시지를 보여줘야 해서 별도 예외로 분리 - 비밀번호 자체는 맞았으니
+        // "아이디 또는 비밀번호가 올바르지 않습니다"로 뭉뚱그리면 사용자가 혼란스러움
+        if (user.isPendingApproval()) {
+            throw new AccountPendingApprovalException();
+        }
+        if (user.isRejected()) {
+            throw new AccountRejectedException();
         }
 
         String token = jwtTokenProvider.generateToken(user);

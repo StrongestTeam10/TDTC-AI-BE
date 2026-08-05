@@ -3,6 +3,50 @@
 이 파일은 Claude와의 작업 세션에서 변경된 내용을 기록합니다.
 각 항목은 zip으로 전달된 시점 기준입니다.
 
+### 2026-08-05 (4차 - 중복 CORS 설정 통일)
+- 지난 항목에서 발견한 `SecurityConfig.java`/`CorsConfig.java` CORS 설정 중복 정리
+- 🗑️ `config/CorsConfig.java` 삭제 - 다른 곳에서 참조하는 곳 없음을 확인
+- ✏️ `config/SecurityConfig.java`: `corsConfigurationSource()` 빈을 CORS 설정의
+  유일한 출처로 명시(Spring Security가 붙어있는 이상 실제 적용되는 것도 이 빈이라,
+  둘 중 지울 거면 `CorsConfig.java` 쪽이 맞음). 이번 PATCH 수정도 이미 반영된 상태
+
+### 2026-08-05 (3차 - PATCH 요청 CORS 403 수정)
+- **증상**: FE에서 회원 권한 변경(`PATCH /api/admin/users/{id}/role`) 호출 시
+  브라우저 preflight(`OPTIONS`)가 403으로 막히고 `Access-Control-Allow-Origin`
+  헤더가 없다는 CORS 오류 발생
+- **원인**: `SecurityConfig.corsConfigurationSource()`의 `allowedMethods`에 `PATCH`가
+  빠져있었음(GET/POST/PUT/DELETE/OPTIONS만 있었음) - GET/POST 위주였던 기존 API들은
+  문제없다가, `@PatchMapping`을 쓰는 새 엔드포인트에서만 걸림
+- ✏️ `config/SecurityConfig.java`: `allowedMethods`에 `PATCH` 추가
+- ✏️ `config/CorsConfig.java`: 동일하게 `PATCH` 누락돼있어 같이 수정
+- **⚠️ 발견한 별개 이슈**: `SecurityConfig.java`(`corsConfigurationSource` 빈)와
+  `CorsConfig.java`(`WebMvcConfigurer.addCorsMappings`)가 **완전히 같은 내용의 CORS
+  설정을 각자 따로 갖고 있습니다**. 지금은 둘 다 고쳐서 문제 없지만, 다음에 CORS
+  설정을 바꿀 일이 생기면 한쪽만 고치고 넘어가는 실수가 또 날 수 있는 구조입니다.
+  둘 중 하나로 통일하는 걸 권장드립니다 - 원하시면 다음에 정리해드릴게요
+
+### 2026-08-05 (2차 - 회원가입 관리자 승인 기능 컴파일 오류 수정)
+- **원인**: 직전 세션(회원관리 - 관리자 권한 변경 기능)에서 전달한 `User.java`가
+  구버전 스냅샷 기준이라, 그 사이 로컬에서 이미 구현돼 있던 회원가입 관리자 승인
+  기능(`approvalStatus`, `approve()`/`reject()`/`isPendingApproval()`/`isRejected()`)과
+  비밀번호 찾기 기능(`updatePassword`는 유지됐으나 승인 관련 메서드가 빠짐)을
+  실수로 덮어써서 `AuthService.java`가 참조하던 심볼들이 사라져 컴파일 실패
+- ✏️ `domain/entity/User.java`: `approvalStatus` 필드 + `approve()`/`reject()`/
+  `isPendingApproval()`/`isRejected()` 복원(제 쪽 `@Setter` 추가는 유지)
+- ✏️ `repository/UserRepository.java`: `findByApprovalStatusOrderByCreatedAtAsc`
+  누락 발견해서 추가 - `UserApprovalService.listPending()`이 참조하는데 실제
+  저장소 파일에는 없던 상태였음(별도 컴파일 오류로 다음에 나올 뻔한 것을 미리 발견)
+- ✏️ `exception/GlobalExceptionHandler.java`: `AccountPendingApprovalException`/
+  `AccountRejectedException`/`IdentityVerificationFailedException` 3개 모두
+  예외 클래스는 이미 있었는데 `@ExceptionHandler` 등록이 빠져있어서 지금까지는
+  전부 500(일반 예외 핸들러)으로 응답되고 있었음(컴파일 오류는 아니었지만 버그) -
+  의미에 맞는 상태코드(403/403/400)로 등록
+- 이번 수정 대상 3개 파일 외에 `UserApprovalController`/`UserApprovalService`/
+  `AuthController`/`AuthService`/`SecurityConfig`/DTO들은 이미 로컬에 완결된
+  상태로 확인됨(추가 수정 없음)
+- 참고: 회원가입 승인 기능 자체의 CHANGELOG 항목(2026-08-04)은 로컬에서 이미
+  작성하셨을 수 있어 이번엔 별도로 적지 않았습니다 - 없다면 알려주시면 추가해드릴게요
+
 ### 2026-08-04 (4차 - S3 실버킷 연동, 테스트 완료)
 - 게시판 첨부파일 저장소를 실제 운영 버킷에 연결. 자격증명은 코드/설정 파일에
   두지 않고 AWS 기본 자격증명 체인(환경변수 `AWS_ACCESS_KEY_ID`/
