@@ -331,7 +331,11 @@ public class ReportService {
                 null,   // generated_report_path: 여러 보고서에 재사용되므로 두지 않음
                 null,   // avg_stay_time: 현행안 결과 테이블에 없음
                 null,   // flow_direction: 현행안 결과 테이블에 없음
-                result.getExecutedAt());
+                result.getExecutedAt(),
+                // 아래 3개는 현행안 결과 테이블에도 있어 대안과 그대로 비교된다.
+                result.getEvacuatedCount(),
+                result.getMaxDensityZoneId(),
+                result.getMaxDensityZoneName());
     }
 
     /**
@@ -368,7 +372,10 @@ public class ReportService {
                 // Duration -> "PT30M". null이면 SIM에서 체류시간 항목이 빠질 뿐 정상 생성된다.
                 result.getAvgStayTime() == null ? null : result.getAvgStayTime().toString(),
                 result.getFlowDirection(),
-                result.getExecutedAt());
+                result.getExecutedAt(),
+                result.getEvacuatedCount(),
+                result.getMaxDensityZoneId(),
+                result.getMaxDensityZoneName());
     }
 
     /**
