@@ -73,6 +73,17 @@ public interface ReportQueryRepository extends Repository<ScenarioResult, Long> 
      * 비교했는지 남아 있지 않으면 원인을 추적할 수 없다. 선택 규칙은 그대로 두고
      * 선택 결과만 기록한다.
      */
+    /**
+     * previousKey는 이 요청이 보고서를 만들기 시작할 때 읽은 값이다. 그 사이 다른 요청이
+     * 먼저 기록했으면 값이 달라져 0행이 갱신되고, 호출자는 그것으로 충돌을 알아챈다.
+     *
+     * 보고서 생성은 SIM 호출까지 수 분이 걸려 트랜잭션으로 감싸지 않으므로, 두 요청이
+     * 겹치면 각자 파일을 올린 뒤 마지막 갱신만 남고 나머지는 참조 없는 객체가 된다.
+     * 이 조건이 그 경우를 잡아낸다.
+     *
+     * IS NOT DISTINCT FROM을 쓰는 이유: 최초 생성이면 양쪽이 NULL인데, '=' 로는
+     * NULL = NULL이 참이 되지 않아 항상 0행이 된다.
+     */
     @Modifying
     @Transactional
     @Query(value = """
@@ -81,9 +92,11 @@ public interface ReportQueryRepository extends Repository<ScenarioResult, Long> 
                    report_title = :reportTitle,
                    baseline_result_id = :baselineResultId
              WHERE result_id = :resultId
+               AND generated_report_path IS NOT DISTINCT FROM CAST(:previousKey AS varchar)
             """, nativeQuery = true)
-    void updateReportInfo(@Param("resultId") Long resultId,
+    int updateReportInfo(@Param("resultId") Long resultId,
                          @Param("storageKey") String storageKey,
                          @Param("reportTitle") String reportTitle,
-                         @Param("baselineResultId") Long baselineResultId);
+                         @Param("baselineResultId") Long baselineResultId,
+                         @Param("previousKey") String previousKey);
 }

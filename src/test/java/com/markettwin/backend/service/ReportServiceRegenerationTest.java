@@ -8,6 +8,7 @@ import com.markettwin.backend.domain.entity.Scenario;
 import com.markettwin.backend.domain.entity.ScenarioResult;
 import com.markettwin.backend.domain.entity.User;
 import com.markettwin.backend.dto.request.ReportGenerateRequestDto;
+import com.markettwin.backend.exception.ReportGenerationConflictException;
 import com.markettwin.backend.repository.BaselineRepository;
 import com.markettwin.backend.repository.BaselineResultRepository;
 import com.markettwin.backend.repository.MarketRepository;
@@ -32,6 +33,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -123,6 +125,12 @@ class ReportServiceRegenerationTest {
                 .willReturn(NEW_KEY);
         given(fileStorageService.generateReportDownloadUrl(anyString(), anyString(), any()))
                 .willReturn(URI.create("https://example.test/report").toURL());
+
+        // updateReportInfo의 반환값은 갱신된 행 수다. 1이면 이 요청이 기록에 성공했다는 뜻이고,
+        // 0이면 그 사이 다른 요청이 먼저 기록해 조건이 어긋났다는 뜻이다.
+        // 기본은 성공(1)으로 두고, 충돌을 재현하는 테스트에서만 0으로 다시 스텁한다.
+        given(reportQueryRepository.updateReportInfo(
+                any(), any(), any(), any(), any())).willReturn(1);
     }
 
     @BeforeEach
@@ -178,6 +186,25 @@ class ReportServiceRegenerationTest {
         reportService.generate(new ReportGenerateRequestDto(SCENARIO_ID, null, null));
 
         verify(reportQueryRepository).updateReportInfo(
-                eq(RESULT_ID), eq(NEW_KEY), anyString(), eq(BASELINE_RESULT_ID));
+                eq(RESULT_ID), eq(NEW_KEY), anyString(), eq(BASELINE_RESULT_ID), eq(OLD_KEY));
+    }
+
+    @Test
+    @DisplayName("다른 요청이 먼저 기록했으면 방금 올린 파일을 지우고 409를 반환한다")
+    void abandonsOwnUploadWhenAnotherRequestWon() throws Exception {
+        givenExistingReport(OLD_KEY);
+        // 갱신 행 수를 0으로 만들어, 이 요청이 보고서를 만드는 동안 다른 요청이 먼저
+        // generated_report_path를 바꿔놓아 WHERE 조건이 어긋난 상황을 재현한다.
+        given(reportQueryRepository.updateReportInfo(
+                any(), any(), any(), any(), any())).willReturn(0);
+
+        assertThatThrownBy(() ->
+                reportService.generate(new ReportGenerateRequestDto(SCENARIO_ID, null, null)))
+                .isInstanceOf(ReportGenerationConflictException.class);
+
+        // 이 요청이 올린 파일만 지운다. OLD_KEY는 먼저 기록한 요청이 지울 몫이라
+        // 여기서 건드리면 남의 보고서를 없애게 된다.
+        verify(fileStorageService).deleteReport(NEW_KEY);
+        verify(fileStorageService, never()).deleteReport(OLD_KEY);
     }
 }

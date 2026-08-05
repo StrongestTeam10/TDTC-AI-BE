@@ -13,6 +13,7 @@ import com.markettwin.backend.dto.response.ReportGenerateResponseDto;
 import com.markettwin.backend.dto.response.ScenarioHistoryDto;
 import com.markettwin.backend.exception.ForbiddenActionException;
 import com.markettwin.backend.exception.ReportDataException;
+import com.markettwin.backend.exception.ReportGenerationConflictException;
 import com.markettwin.backend.repository.BaselineRepository;
 import com.markettwin.backend.repository.BaselineResultRepository;
 import com.markettwin.backend.repository.MarketRepository;
@@ -126,9 +127,14 @@ public class ReportService {
         // 같은 시나리오로 다시 생성하면 최신 값으로 덮인다.
         // 제목은 목록 표시용이며, 문서 표지와 같은 값이라야 사용자가 혼동하지 않는다.
         // baselineResultId는 어느 현행안과 비교했는지 남기기 위한 것이다(선택 규칙은 그대로).
-        reportQueryRepository.updateReportInfo(
+        // previousStorageKey를 조건으로 걸어, 그 사이 다른 요청이 먼저 기록했으면 0행이 된다.
+        int updated = reportQueryRepository.updateReportInfo(
                 scenarioResult.getResultId(), storageKey, fitReportTitle(report.title()),
-                baselineResult.getBaselineResultId());
+                baselineResult.getBaselineResultId(), previousStorageKey);
+
+        if (updated == 0) {
+            abandonReport(storageKey, scenario.getScenarioId());
+        }
 
         deletePreviousReport(previousStorageKey, storageKey);
 
@@ -138,6 +144,21 @@ public class ReportService {
 
         return new ReportGenerateResponseDto(
                 reportId, scenario.getScenarioId(), downloadUrl, storageKey);
+    }
+
+    /**
+     * 동시에 들어온 다른 요청이 먼저 결과를 기록했을 때, 이 요청이 올린 파일을 되돌린다.
+     *
+     * 그냥 두면 DB가 가리키지 않는 파일이 남으므로, 지운 뒤 예외로 끝낸다.
+     * 먼저 기록한 요청의 보고서는 정상이라 사용자는 그것을 내려받으면 된다.
+     */
+    private void abandonReport(String storageKey, Long scenarioId) {
+        log.warn("보고서 생성 충돌로 방금 올린 파일을 되돌립니다: scenarioId={}, key={}",
+                scenarioId, storageKey);
+        fileStorageService.deleteReport(storageKey);
+        throw new ReportGenerationConflictException(
+                "같은 시나리오의 보고서가 동시에 생성되어 이 요청은 취소되었습니다: scenarioId="
+                        + scenarioId + ". 잠시 후 목록에서 최신 보고서를 확인하세요.");
     }
 
     /**

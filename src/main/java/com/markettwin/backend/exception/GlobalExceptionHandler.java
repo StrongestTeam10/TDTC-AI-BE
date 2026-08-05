@@ -107,6 +107,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorBody(ex.getMessage()));
     }
 
+    // 2026-07-27 추가 (보고서 기능)
+    // 2026-08-05 복구
+    @ExceptionHandler(ReportDataException.class)
+    public ResponseEntity<Map<String, Object>> handleReportData(ReportDataException ex) {
+        log.warn("보고서 생성 데이터 조건 불충족: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody(ex.getMessage()));
+    }
+
+    // 2026-08-05 추가 (보고서 기능)
+    @ExceptionHandler(ReportGenerationConflictException.class)
+    public ResponseEntity<Map<String, Object>> handleReportConflict(
+            ReportGenerationConflictException ex) {
+        log.warn("보고서 생성 충돌: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorBody(ex.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationException(
             MethodArgumentNotValidException ex) {
