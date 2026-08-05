@@ -74,9 +74,13 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        // 2026-08-05 변경: 이전엔 CorsConfig.java(WebMvcConfigurer)에도 똑같은 CORS
+        // 설정이 따로 있어서 PATCH 하나만 여기 추가했다가 놓칠 뻔했음. Spring
+        // Security를 쓰는 이상 실제로 적용되는 건 이 빈이므로, CorsConfig.java는
+        // 삭제하고 이 메서드를 CORS 설정의 유일한 출처로 통일함.
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(allowedOrigins));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);

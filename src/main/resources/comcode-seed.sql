@@ -77,6 +77,16 @@ VALUES
 ON CONFLICT (code_cob, code) DO NOTHING;
 
 -- =========================================
+-- 신규 도메인(2026-08-04): APR - 회원가입 관리자 승인 상태 (usrusrs01m.approval_status)
+-- =========================================
+INSERT INTO comcode01m (code_cob, code, code_name, describe, rmk)
+VALUES
+    ('APR', 'APRPD', '승인 대기', 'usrusrs01m.approval_status - 관리자 승인 대기 중', ''),
+    ('APR', 'APRAP', '승인됨', 'usrusrs01m.approval_status - 관리자가 승인한 계정', ''),
+    ('APR', 'APRRJ', '거부됨', 'usrusrs01m.approval_status - 관리자가 거부한 계정', '')
+ON CONFLICT (code_cob, code) DO NOTHING;
+
+-- =========================================
 -- 마이그레이션(2026-07-25): 카테고리 공지사항/자유게시판 2개로 축소
 -- 이미 comcode-seed.sql을 한 번 실행해서 BCTQA/BCTSG가 이미 들어가 있는 기존 DB에서만
 -- 아래를 실행할 것 (신규 DB는 위 INSERT문에 이미 BCTFR만 반영돼 있어 실행 불필요).
