@@ -6,6 +6,7 @@ import com.markettwin.backend.domain.entity.BaselineResult;
 import com.markettwin.backend.domain.entity.Market;
 import com.markettwin.backend.domain.entity.Scenario;
 import com.markettwin.backend.domain.entity.ScenarioResult;
+import com.markettwin.backend.domain.entity.User;
 import com.markettwin.backend.dto.request.ReportGenerateRequestDto;
 import com.markettwin.backend.repository.BaselineRepository;
 import com.markettwin.backend.repository.BaselineResultRepository;
@@ -14,6 +15,7 @@ import com.markettwin.backend.repository.ReportQueryRepository;
 import com.markettwin.backend.repository.ScenarioRepository;
 import com.markettwin.backend.repository.ScenarioResultRepository;
 import com.markettwin.backend.repository.ZoneRepository;
+import com.markettwin.backend.security.CurrentUserProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -52,6 +54,7 @@ class ReportServiceRegenerationTest {
     private static final Long RESULT_ID = 200L;
     private static final Long MARKET_ID = 1L;
     private static final Long BASELINE_RESULT_ID = 7L;
+    private static final Long OWNER_ID = 3L;
     private static final String OLD_KEY = "reports/old-object";
     private static final String NEW_KEY = "reports/new-object";
 
@@ -63,6 +66,7 @@ class ReportServiceRegenerationTest {
     @Mock private ZoneRepository zoneRepository;
     @Mock private ReportQueryRepository reportQueryRepository;
     @Mock private ScenarioDisplayNameResolver scenarioDisplayNameResolver;
+    @Mock private CurrentUserProvider currentUserProvider;
     @Mock private SimulationEngineClient simulationEngineClient;
     @Mock private FileStorageService fileStorageService;
 
@@ -82,6 +86,7 @@ class ReportServiceRegenerationTest {
         given(scenarioRepository.findById(SCENARIO_ID)).willReturn(
                 Optional.of(Scenario.builder()
                         .scenarioId(SCENARIO_ID)
+                        .userId(OWNER_ID)
                         .marketId(MARKET_ID)
                         .agentCount(100)
                         .policyTypeCode("POLFR")
@@ -121,9 +126,18 @@ class ReportServiceRegenerationTest {
     }
 
     @BeforeEach
-    void ignoreDisplayNameResolver() {
+    void setUpCommonStubs() {
         given(scenarioDisplayNameResolver.resolve(any(), any(), any(), any()))
                 .willReturn("망원시장 화재 시나리오");
+
+        // 소유자 검증(ReportService.assertOwner)을 통과시키기 위한 최소 설정.
+        // 검증 자체는 ReportServiceOwnerCheckTest가 다루므로 여기서는 본인 시나리오로 둔다.
+        given(currentUserProvider.getCurrentUser()).willReturn(
+                User.builder()
+                        .userId(OWNER_ID)
+                        .loginId("owner")
+                        .rulesCode("ROL03")
+                        .build());
     }
 
     @Test
