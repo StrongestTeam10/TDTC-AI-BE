@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -25,15 +26,22 @@ public class ControlSystemService {
     private final PostReportRepository postReportRepository;
     private final PedestrianCoordinateJsonRepository jsonCoordRepository;
     private final ExternalNotificationService externalNotificationService;
+    private final VideoS3Service videoS3Service; // 🌟 서비스 주입 추가
 
     public List<EmergencyAlertDto> getUnresolvedAlerts() {
         return emergencyAlertRepository.findByIsResolvedFalse().stream()
                 .map(EmergencyAlertDto::from).toList();
     }
 
-    public List<PostReportDto> getReportsByDate(LocalDate date, Long videoId) { // Integer -> Long 수정
+    // 🌟 에러가 났던 부분: 여기도 URL 변환기를 달아서 파라미터 2개로 맞춰줍니다!
+    public List<PostReportDto> getReportsByDate(LocalDate date, Long videoId) {
         return postReportRepository.findByTargetDateAndVideoId(date, videoId).stream()
-                .map(PostReportDto::from).toList();
+                .map(report -> {
+                    String viewUrl = (report.getS3PdfUrl() != null && !report.getS3PdfUrl().isBlank())
+                            ? videoS3Service.generatePresignedDownloadUrl(report.getS3PdfUrl(), Duration.ofHours(1)).toString()
+                            : null;
+                    return PostReportDto.from(report, viewUrl);
+                }).toList();
     }
 
     public List<PedestrianCoordinateDto> getJsonCoordinates(Long clipId, Integer frameId, Long videoId) { // Integer -> Long 수정

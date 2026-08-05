@@ -1,18 +1,15 @@
 package com.markettwin.backend.controller;
 
-import com.markettwin.backend.domain.entity.PedestrianCoordinateJson;
 import com.markettwin.backend.service.ControlSystemService;
+import com.markettwin.backend.dto.response.PedestrianCoordinateDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import com.markettwin.backend.dto.response.PedestrianCoordinateDto;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/simulation")
@@ -22,30 +19,20 @@ public class SimulationIntegrationController {
     private final ControlSystemService controlSystemService;
 
     /**
-     * 좌표 반환 API
-     * 프레임 번호를 전달받아, 해당 프레임의 시간(captured_at), 픽셀 좌표, 3D 물리 좌표를 1줄의 JSON으로 반환합니다.
+     * 좌표 반환 API (전면 개방)
+     * 프레임 번호를 전달받아, 인구 유입 예측 시뮬레이션 등에 필요한 보행자 좌표 DTO 전체(8개 컬럼)를 JSON으로 반환합니다.
      */
     @GetMapping("/coordinates/frame")
-    public ResponseEntity<Map<String, Object>> getCoordinatesForFrame(
+    public ResponseEntity<PedestrianCoordinateDto> getCoordinatesForFrame(
             @RequestParam Long clipId,
             @RequestParam Integer frameId,
             @RequestParam(required = false) Long videoId) {
 
         List<PedestrianCoordinateDto> results = controlSystemService.getJsonCoordinates(clipId, frameId, videoId);
 
-
         if (results == null || results.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-
-        PedestrianCoordinateDto row = results.get(0);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("captured_at", row.capturedAt());
-        response.put("pixels_json", row.pixelsJson());
-        response.put("bev_xyz_json", row.bevXyzJson());
-        response.put("zone_id", row.zoneId());
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(results.get(0));
     }
 }

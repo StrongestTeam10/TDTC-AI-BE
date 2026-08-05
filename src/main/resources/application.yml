@@ -30,10 +30,10 @@ naver:
 
 aws:
   video:
-    bucket: tdtc-ai-cctv
+    bucket: tdtc-cctv-upload
 
 emergency:
-  target-phone: "119"
+  target-phone: "119/112"
 
 ai:
   secret-key: "tdtc-super-secret-key-2026"
