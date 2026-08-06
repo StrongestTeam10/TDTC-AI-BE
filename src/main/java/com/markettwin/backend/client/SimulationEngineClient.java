@@ -37,7 +37,7 @@ public class SimulationEngineClient {
                 .bodyValue(request)
                 .retrieve()
                 .bodyToMono(ScenarioResultDto.class)
-                .timeout(Duration.ofSeconds(30))
+                .timeout(Duration.ofMinutes(5))
                 .onErrorMap(ex -> new SimulationEngineException(
                         "시뮬레이션 엔진 호출 실패: " + ex.getMessage(), ex))
                 .block();
@@ -61,7 +61,7 @@ public class SimulationEngineClient {
                 .bodyValue(request)
                 .retrieve()
                 .bodyToMono(PredictResultDto.class)
-                .timeout(Duration.ofSeconds(60))
+                .timeout(Duration.ofMinutes(5))
                 .onErrorMap(ex -> new SimulationEngineException(
                         "시뮬레이션 엔진 호출 실패: " + ex.getMessage(), ex))
                 .block();
