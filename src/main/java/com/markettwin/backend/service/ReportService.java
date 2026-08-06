@@ -191,28 +191,61 @@ public class ReportService {
      */
     public List<ScenarioHistoryDto> listMyScenarios(Long userId) {
         return reportQueryRepository.findScenarioHistoryByUserId(userId).stream()
-                .map(row -> {
-                    boolean hasReport = row.getStorageKey() != null
-                            && !row.getStorageKey().isBlank();
-                    return new ScenarioHistoryDto(
-                            row.getScenarioId(),
-                            scenarioDisplayNameResolver.resolve(
-                                    row.getScenarioName(),
-                                    row.getMarketName(),
-                                    row.getPolicyTypeCode(),
-                                    row.getRegDatetime()),
-                            row.getMarketId(),
-                            row.getMarketName(),
-                            row.getAgentCount(),
-                            row.getPolicyTypeCode(),
-                            row.getExecutedAt(),
-                            hasReport,
-                            hasReport ? row.getReportTitle() : null,
-                            hasReport
-                                    ? "/api/simulation/reports/" + row.getScenarioId() + "/download"
-                                    : null);
-                })
+                .map(this::toHistoryDto)
                 .toList();
+    }
+
+    /**
+     * 실행자와 무관하게 시뮬레이션 이력 전체를 최신순으로 돌려준다. 관리자 전용이다.
+     *
+     * 관제요원(ROL02)에게는 본인 실행만 보이는 /my가 있고, 관리자는 어느 지자체가 어떤
+     * 정책을 실험했는지 한눈에 봐야 하므로 목록을 나눴다. 필터를 조건으로 붙이는 대신
+     * 별도 API로 둔 이유는, /my에 userId를 넘기지 않으면 전체가 나오는 식의 설계는
+     * 파라미터 하나만 빠져도 남의 이력이 새기 때문이다.
+     *
+     * marketId를 주면 그 시장만 거른다(관리자 화면의 시장 전환 탭). null이면 전체다.
+     */
+    public List<ScenarioHistoryDto> listAllScenarios(Long marketId) {
+        assertAdmin();
+        return reportQueryRepository.findScenarioHistory(marketId).stream()
+                .map(this::toHistoryDto)
+                .toList();
+    }
+
+    private ScenarioHistoryDto toHistoryDto(ReportQueryRepository.ReportRow row) {
+        boolean hasReport = row.getStorageKey() != null && !row.getStorageKey().isBlank();
+        return new ScenarioHistoryDto(
+                row.getScenarioId(),
+                scenarioDisplayNameResolver.resolve(
+                        row.getScenarioName(),
+                        row.getMarketName(),
+                        row.getPolicyTypeCode(),
+                        row.getRegDatetime()),
+                row.getMarketId(),
+                row.getMarketName(),
+                row.getAgentCount(),
+                row.getPolicyTypeCode(),
+                row.getExecutedAt(),
+                hasReport,
+                hasReport ? row.getReportTitle() : null,
+                hasReport
+                        ? "/api/simulation/reports/" + row.getScenarioId() + "/download"
+                        : null,
+                row.getOwnerName());
+    }
+
+    /**
+     * 관리자(ROL01)만 통과시킨다.
+     *
+     * SecurityConfig는 /api/simulation/** 을 ROL01·ROL02까지 열어두므로 경로만으로는
+     * 관제요원이 전체 이력을 볼 수 있다. 관리자 전용 조회는 여기서 한 번 더 좁힌다.
+     */
+    private void assertAdmin() {
+        User currentUser = currentUserProvider.getCurrentUser();
+        if (!ADMIN_ROLE_CODE.equals(currentUser.getRulesCode())) {
+            throw new ForbiddenActionException(
+                    "전체 시뮬레이션 이력은 관리자만 조회할 수 있습니다.");
+        }
     }
 
     /**

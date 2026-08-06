@@ -7,6 +7,7 @@ import com.markettwin.backend.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -32,5 +33,19 @@ public class ScenarioHistoryController {
     public List<ScenarioHistoryDto> listMyScenarios() {
         User currentUser = currentUserProvider.getCurrentUser();
         return reportService.listMyScenarios(currentUser.getUserId());
+    }
+
+    /**
+     * 2026-08-06 추가
+     * 실행자와 무관하게 시뮬레이션 이력 전체를 최신순으로 반환한다. 관리자(ROL01) 전용이며,
+     * 관제요원이 호출하면 ReportService가 403으로 거절한다(SecurityConfig의 경로 규칙은
+     * ROL02까지 열려 있어 경로만으로는 좁혀지지 않는다).
+     *
+     * marketId를 주면 그 시장만 거른다. 생략하면 전체 시장이다.
+     */
+    @GetMapping
+    public List<ScenarioHistoryDto> listAllScenarios(
+            @RequestParam(required = false) Long marketId) {
+        return reportService.listAllScenarios(marketId);
     }
 }

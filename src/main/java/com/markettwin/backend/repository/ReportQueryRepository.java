@@ -39,6 +39,13 @@ public interface ReportQueryRepository extends Repository<ScenarioResult, Long> 
         /** 문서 표지에 실제로 박힌 제목. 보고서 기능 도입 전 데이터는 null. */
         String getReportTitle();
         String getStorageKey();
+        /**
+         * 실행자 이름. user_id가 NULL인 옛 데이터는 null이다.
+         *
+         * 관리자 전체 목록에서 "누가 돌린 실행인지"를 구분하는 유일한 단서다.
+         * 본인 목록에서는 항상 자기 이름이라 화면에 쓰이지 않는다.
+         */
+        String getOwnerName();
     }
 
     @Query(value = """
@@ -51,14 +58,47 @@ public interface ReportQueryRepository extends Repository<ScenarioResult, Long> 
                    s.reg_datetime         AS regDatetime,
                    r.executed_at          AS executedAt,
                    r.report_title         AS reportTitle,
-                   r.generated_report_path AS storageKey
+                   r.generated_report_path AS storageKey,
+                   u.name                 AS ownerName
               FROM simrslt01d r
               JOIN simscnr01m s ON s.scenario_id = r.scenario_id
               LEFT JOIN mrkaddr01m m ON m.market_id = s.market_id
+              LEFT JOIN usrusrs01m u ON u.user_id = s.user_id
              WHERE s.user_id = :userId
              ORDER BY r.executed_at DESC, r.result_id DESC
             """, nativeQuery = true)
     List<ReportRow> findScenarioHistoryByUserId(@Param("userId") Long userId);
+
+    /**
+     * 실행자와 무관하게 시뮬레이션 이력 전체를 돌려준다. 관리자 전용 목록에서 쓴다.
+     *
+     * marketId가 null이면 전체 시장을 대상으로 한다. 네이티브 쿼리라 파라미터 타입을
+     * 추론할 수 없어 CAST를 명시한다(캐스트 없이 null을 넘기면 Postgres가
+     * "could not determine data type of parameter"로 거절한다).
+     *
+     * 실행자 조인이 LEFT JOIN인 이유: simscnr01m.user_id를 채우기 전에 만들어진 행이
+     * 있어서, INNER JOIN이면 그 이력이 관리자 목록에서도 통째로 사라진다.
+     */
+    @Query(value = """
+            SELECT s.scenario_id          AS scenarioId,
+                   s.scenario_name        AS scenarioName,
+                   s.market_id            AS marketId,
+                   m.market_name          AS marketName,
+                   s.agent_count          AS agentCount,
+                   s.policy_type_code     AS policyTypeCode,
+                   s.reg_datetime         AS regDatetime,
+                   r.executed_at          AS executedAt,
+                   r.report_title         AS reportTitle,
+                   r.generated_report_path AS storageKey,
+                   u.name                 AS ownerName
+              FROM simrslt01d r
+              JOIN simscnr01m s ON s.scenario_id = r.scenario_id
+              LEFT JOIN mrkaddr01m m ON m.market_id = s.market_id
+              LEFT JOIN usrusrs01m u ON u.user_id = s.user_id
+             WHERE (CAST(:marketId AS bigint) IS NULL OR s.market_id = CAST(:marketId AS bigint))
+             ORDER BY r.executed_at DESC, r.result_id DESC
+            """, nativeQuery = true)
+    List<ReportRow> findScenarioHistory(@Param("marketId") Long marketId);
 
     /**
      * 보고서 저장 결과(S3 키, 문서 제목, 비교에 쓴 현행안 결과)를 결과 행에 기록한다.

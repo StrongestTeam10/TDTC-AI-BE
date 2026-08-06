@@ -31,6 +31,12 @@ public record ScenarioHistoryDto(
         String reportTitle,
 
         // 다운로드 주소를 발급받을 경로. 보고서가 없으면 null.
-        String downloadPath
+        String downloadPath,
+
+        // 2026-08-06 추가: 이 실행을 돌린 사용자 이름.
+        // 관리자 전체 목록(GET /api/simulation/scenarios)에서 실행자를 구분하는 데 쓴다.
+        // 본인 목록(/my)에도 같이 담기지만 항상 자기 이름이라 화면에서 쓰지 않는다.
+        // simscnr01m.user_id가 NULL인 옛 데이터는 null이다.
+        String ownerName
 ) {
 }
