@@ -19,13 +19,24 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UploadController {
 
-    private final VideoS3Service videoS3Service; // 여기를 사용자님 전용 서비스로 변경
+    private final VideoS3Service videoS3Service;
 
     @GetMapping("/presigned-url")
-    public ResponseEntity<Map<String, String>> getPresignedUrl(@RequestParam String filename) {
-        String key = "videos/" + UUID.randomUUID() + "_" + filename;
+    public ResponseEntity<Map<String, String>> getPresignedUrl(
+            @RequestParam String filename,
+            @RequestParam(defaultValue = "raw-videos") String folder) {
 
-        URL presignedUrl = videoS3Service.generatePresignedUploadUrl(key, "video/mp4", Duration.ofMinutes(10));
+        //  보안 검증: 원본영상, 위험클립, PDF신고서 3개 폴더만 허용
+        if (!folder.equals("raw-videos") && !folder.equals("danger-clips") && !folder.equals("post-reports")) {
+            throw new IllegalArgumentException("허용되지 않은 S3 폴더명입니다.");
+        }
+
+        String key = folder + "/" + UUID.randomUUID() + "_" + filename;
+
+        // PDF 파일이면 "application/pdf", 아니면 "video/mp4"로 타입 지정
+        String contentType = filename.toLowerCase().endsWith(".pdf") ? "application/pdf" : "video/mp4";
+
+        URL presignedUrl = videoS3Service.generatePresignedUploadUrl(key, contentType, Duration.ofMinutes(10));
 
         Map<String, String> response = new HashMap<>();
         response.put("presignedUrl", presignedUrl.toString());

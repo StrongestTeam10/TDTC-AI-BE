@@ -2,8 +2,10 @@ package com.markettwin.backend.service;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 import java.net.URL;
@@ -15,7 +17,6 @@ public class VideoS3Service {
     private final S3Presigner s3Presigner;
     private final String bucket;
 
-    // 공용 계정의 S3Presigner를 주입받고, 버킷 이름만 영상 전용으로 분리
     public VideoS3Service(S3Presigner s3Presigner,
                           @Value("${aws.video.bucket}") String bucket) {
         this.s3Presigner = s3Presigner;
@@ -35,5 +36,19 @@ public class VideoS3Service {
                 .build();
 
         return s3Presigner.presignPutObject(presignRequest).url();
+    }
+
+    public URL generatePresignedDownloadUrl(String key, Duration ttl) {
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .build();
+
+        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                .signatureDuration(ttl)
+                .getObjectRequest(getObjectRequest)
+                .build();
+
+        return s3Presigner.presignGetObject(presignRequest).url();
     }
 }
