@@ -41,12 +41,16 @@ public class SecurityConfig {
     private String[] allowedOrigins;
 
     /**
-     * 시뮬레이션 기능을 쓸 수 있는 권한. ROL01 관리자, ROL02 관제요원.
+     * 관제 기능(실시간 대시보드·시뮬레이션·정책 보고서)을 쓸 수 있는 권한.
+     * ROL01 관리자, ROL02 관제요원.
+     *
+     * 2026-08-06: 이름을 SIMULATION_ROLES에서 바꿨다. 대시보드까지 같은 두 권한으로
+     * 제한하게 되면서 "시뮬레이션"이라는 이름이 범위를 좁게 말하게 됐다.
      *
      * hasAnyRole은 값 앞에 "ROLE_"을 붙여 비교하고, JwtAuthenticationFilter도
      * "ROLE_" + rulesCode 형태로 권한을 만들므로 코드값만 그대로 적으면 된다.
      */
-    private static final String[] SIMULATION_ROLES = {"ROL01", "ROL02"};
+    private static final String[] CONTROL_SYSTEM_ROLES = {"ROL01", "ROL02"};
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -86,7 +90,15 @@ public class SecurityConfig {
                         // 이 범위에는 관제용인 GET /api/simulation/coordinates/frame(CCTV 보행자
                         // 좌표)도 포함된다. 경로 접두사만 공유할 뿐 성격이 다른 API지만, 관제요원이
                         // ROL02라 실제로 막히는 대상은 상인회뿐이라 함께 두었다.
-                        .requestMatchers("/api/simulation/**").hasAnyRole(SIMULATION_ROLES)
+                        .requestMatchers("/api/simulation/**").hasAnyRole(CONTROL_SYSTEM_ROLES)
+                        // 2026-08-06 추가: 실시간 관제 대시보드도 같은 두 권한으로 제한한다.
+                        // 상인회(ROL03)는 실시간 관제 대상이 아니다 - 상인회에게 열려 있는 것은
+                        // 게시판과 상점 위치 등록(/api/facilities/**)이다.
+                        //
+                        // /api/markets/** 는 여기에 넣지 않았다. 상점 위치 등록 화면이 시장
+                        // 목록을 조회하므로 막으면 상인회가 쓸 수 있는 화면이 함께 죽는다.
+                        // 시장별 접근 범위는 MarketService.getAccessibleMarket이 따로 좁힌다.
+                        .requestMatchers("/api/dashboard/**").hasAnyRole(CONTROL_SYSTEM_ROLES)
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(
