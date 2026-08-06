@@ -58,7 +58,9 @@ public class SimulationService {
         Scenario scenario = saveScenario(request);
         ScenarioResultDto result = simulationEngineClient.runScenario(request);
         saveScenarioResult(scenario.getScenarioId(), result);
-        return result;
+        // 저장된 시나리오 식별자를 응답에 실어 준다. 이 값이 없으면 FE는 방금 실행한
+        // 시나리오로 보고서를 만들 수 없다(SIM이 준 scenarioId는 UUID라 쓸 수 없음).
+        return result.withPersistedScenarioId(scenario.getScenarioId());
     }
 
     private Scenario saveScenario(ScenarioRequestDto request) {
