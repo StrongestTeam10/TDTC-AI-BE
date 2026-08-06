@@ -38,7 +38,23 @@ public class VideoS3Service {
         return s3Presigner.presignPutObject(presignRequest).url();
     }
 
-    public URL generatePresignedDownloadUrl(String key, Duration ttl) {
+    public URL generatePresignedDownloadUrl(String keyOrUrl, Duration ttl) {
+        String key = keyOrUrl;
+
+        if (key != null && key.startsWith("http")) {
+            try {
+                java.net.URL url = new java.net.URL(key);
+                key = url.getPath();
+                if (key.startsWith("/")) {
+                    key = key.substring(1);
+                }
+                if (key.startsWith(bucket + "/")) {
+                    key = key.substring(bucket.length() + 1);
+                }
+            } catch (Exception e) {
+            }
+        }
+
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                 .bucket(bucket)
                 .key(key)
@@ -51,4 +67,5 @@ public class VideoS3Service {
 
         return s3Presigner.presignGetObject(presignRequest).url();
     }
+
 }

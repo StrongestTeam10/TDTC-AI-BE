@@ -31,7 +31,7 @@ public class AiIntegrationController {
     public List<PedestrianCoordinateDto> getJsonCoordinates(
             @RequestParam Long clipId,
             @RequestParam Integer frameId,
-            @RequestParam(required = false) Long videoId) { // Integer -> Long 수정
+            @RequestParam(required = false) Long videoId) {
         return controlSystemService.getJsonCoordinates(clipId, frameId, videoId);
     }
 
@@ -39,11 +39,14 @@ public class AiIntegrationController {
     public ResponseEntity<String> triggerEmergencyAlert(
             @RequestHeader(value = "X-API-KEY", required = false) String apiKey,
             @RequestBody AlertTriggerRequest request) {
+
         if (apiKey == null || !apiKey.equals(aiSecretKey)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("❌ 경고: API 키가 일치하지 않거나 누락되었습니다.");
         }
-        controlSystemService.triggerAlertFromAi(request.zoneId(), request.alertType());
-        return ResponseEntity.ok("✅ 긴급 알람 처리 프로세스가 성공적으로 시작되었습니다.");
+
+        controlSystemService.triggerAlertFromAi(request);
+
+        return ResponseEntity.ok("✅ 긴급 알람 처리 프로세스 및 사후 명세서 적재가 성공적으로 시작되었습니다.");
     }
 }
