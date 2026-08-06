@@ -67,6 +67,18 @@ public class SimulationEngineClient {
                 .block();
     }
 
+    public Object analyzePolicy(Object request) {
+        return simulationEngineWebClient.post()
+                .uri("/policy/analyze")
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(Object.class)
+                .timeout(Duration.ofSeconds(60))
+                .onErrorMap(ex -> new SimulationEngineException(
+                        "정책 분석(LLM) 엔진 호출 실패: " + describeError(ex), ex))
+                .block();
+    }
+
     public Mono<Boolean> healthCheck() {
         return simulationEngineWebClient.get()
                 .uri("/health")
