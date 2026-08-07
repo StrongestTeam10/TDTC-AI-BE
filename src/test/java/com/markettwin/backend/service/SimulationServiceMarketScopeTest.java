@@ -95,7 +95,7 @@ class SimulationServiceMarketScopeTest {
         givenMarketOutOfScope();
 
         assertThatThrownBy(() -> simulationService.predict(
-                new PredictRequestDto(OTHER_MARKET_ID, null, 30, 100, null)))
+                new PredictRequestDto(OTHER_MARKET_ID, null, 30, 100, List.of(), List.of(), null)))
                 .isInstanceOf(ForbiddenActionException.class);
 
         verify(simulationEngineClient, never()).predict(any());
