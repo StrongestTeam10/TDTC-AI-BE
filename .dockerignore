@@ -1,0 +1,31 @@
+# 빌드 컨텍스트에서 제외 (도커 데몬/CI 러너로 전송되는 양을 줄인다)
+# 주의: gradle/ (wrapper 디렉터리)는 빌드에 필요하므로 제외하지 않는다.
+
+# Git
+.git
+.gitignore
+.gitattributes
+.github
+
+# IDE
+.idea
+*.iml
+.vscode
+
+# Gradle 로컬 캐시 / 빌드 산출물
+.gradle
+build
+out
+
+# 문서 (이미지에 들어가지 않지만 컨텍스트만 키운다)
+*.md
+
+# 로컬 환경설정 · 비밀정보 (이미지에 절대 들어가면 안 됨)
+.env
+.env.*
+*.pem
+*.key
+
+# OS
+.DS_Store
+Thumbs.db
