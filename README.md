@@ -77,14 +77,37 @@ S3 업로드 → simrslt01d에 경로·제목 기록 → presigned URL 반환
 - `scheduler/` : 정기 실행 작업 (상점 매력도 갱신)
 
 ## 환경변수 (운영, `application-prod.yml`)
-- `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` : RDS PostgreSQL 접속 정보
-- `SIMULATION_ENGINE_URL` : FastAPI 시뮬레이션 엔진 내부 주소 (VPC 내부, 외부 미노출 권장)
-- `FRONTEND_ORIGIN` : CloudFront 도메인 (CORS 허용)
-- `AWS_REGION`, `AWS_S3_BUCKET` : 게시판 첨부파일 저장용 S3 (2026-07-24 추가). 자격증명은
+> 2026-08-06 정정: 아래 변수명을 `DB_URL` / `SIMULATION_ENGINE_URL` / `FRONTEND_ORIGIN`
+> 으로 적어뒀었는데 실제 `application-prod.yml`이 읽는 이름과 달랐습니다.
+> 운영 프로필은 전부 `PRO_` 접두사를 씁니다.
+
+`SPRING_PROFILES_ACTIVE=prod` 를 반드시 함께 설정해야 합니다. 빠뜨리면
+`application.yml`의 기본값인 `local` 프로필로 뜹니다.
+
+아래는 모두 **기본값이 없어** 하나라도 비면 기동에 실패합니다.
+
+- `PRO_DB_URL`, `PRO_DB_USERNAME`, `PRO_DB_PASSWORD` : RDS PostgreSQL 접속 정보
+- `PRO_SIMULATION_ENGINE_URL` : FastAPI 시뮬레이션 엔진 내부 주소 (VPC 내부, 외부 미노출 권장)
+  - `WebClientConfig`가 `${simulation-engine.base-url}`로 기본값 없이 주입받음
+- `PRO_FRONTEND_ORIGIN` : FE 오리진 (CORS 허용). CloudFront 적용 전에는 S3 정적 호스팅 주소
+- `JWT_SECRET` : HS256 서명 키. 32바이트(256비트) 이상
+- `AWS_S3_BUCKET` : 게시판 첨부파일/보고서 저장용 S3 (2026-07-24 추가). 자격증명은
   환경변수로 직접 넣지 않고 EC2/ECS 인스턴스 role의 기본 자격증명 체인을 사용
-  - `AWS_S3_REPORT_BUCKET` : 보고서 DOCX 저장용 S3 (2026-07-31 추가). 사용자 업로드물과
-  시스템 생성물은 보존 정책이 달라 버킷 분리. **설정하지 않으면 `AWS_S3_BUCKET`
-  으로 폴백**되어 게시판 첨부파일과 같은 버킷에 섞이므로 운영에서는 반드시 지정 필요
+
+기본값이 있어 생략 가능한 것:
+- `AWS_REGION` (기본 `ap-northeast-2`), `JWT_EXPIRATION_MS` (기본 1시간)
+- `AWS_S3_REPORT_BUCKET` : 보고서 DOCX 저장용 S3 (2026-07-31 추가). **생략하면
+  `AWS_S3_BUCKET`으로 폴백**됩니다. 2026-08-04에 버킷을 하나(`tdtc-ai-report`)로
+  통합하기로 해서 지금은 폴백이 의도된 동작입니다.
+
+## 환경변수 (로컬, `application-local.yml`)
+- `DEV_DB_URL`, `DEV_DB_USERNAME`, `DEV_DB_PASSWORD` : 개발 DB 접속 정보 (기본값 없음)
+
+> 2026-08-06 변경: `DEV_DB_URL`에 있던 Supabase 호스트 하드코딩 기본값을 제거했습니다.
+> 기본값이 있으면 `SPRING_PROFILES_ACTIVE`를 빠뜨린 컨테이너가 조용히 원격 DB로
+> 붙어버려서(RDS 전환 후에는 새 RDS가 아니라 옛 DB에 쓰게 됨) 알아채기 어렵습니다.
+> 이제 설정을 빠뜨리면 기동 단계에서 바로 실패합니다.
+> 로컬 실행 시 세 변수를 모두 설정하세요 (PowerShell 예: `$env:DEV_DB_URL="jdbc:postgresql://..."`).
 
 ## 게시판 첨부파일 S3 버킷 설정 (2026-07-24 추가, 필수)
 파일 업로드(`PutObject`)는 BE 서버가 직접 호출하지만, **다운로드는 presigned URL로
