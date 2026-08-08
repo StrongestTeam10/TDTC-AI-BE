@@ -13,9 +13,16 @@ spring:
 simulation-engine:
   base-url: ${PRO_SIMULATION_ENGINE_URL}
 
+# 2026-08-08 수정: 리스트가 아니라 스칼라여야 한다.
+# SecurityConfig의 @Value("${cors.allowed-origins:...}")는 YAML 리스트를 읽지 못한다.
+# 리스트는 cors.allowed-origins[0] 형태의 키로 펼쳐져서 ${cors.allowed-origins}가
+# 해석되지 않고, 조용히 기본값(http://localhost:5173)으로 떨어진다.
+# 그 결과 운영에서 S3 오리진의 요청이 전부 403으로 막혔다(2026-08-08 실측 확인).
+#
+# 여러 오리진이 필요하면 쉼표로 구분한다(@Value의 String[] 바인딩이 쉼표로 나눈다).
+#   예: cors.allowed-origins: https://a.example.com,https://b.example.com
 cors:
-  allowed-origins:
-    - ${PRO_FRONTEND_ORIGIN}    # 예: https://d1234abc.cloudfront.net (추후 실제 도메인으로 교체)
+  allowed-origins: ${PRO_FRONTEND_ORIGIN}    # 예: https://d1234abc.cloudfront.net
 
 # 2026-07-24 추가: 운영 환경에서는 JWT_SECRET을 반드시 환경변수로 설정해야 함
 # (기본값 없음 - 안 정하면 기동 실패). 32바이트(256비트) 이상의 무작위 문자열 권장.
