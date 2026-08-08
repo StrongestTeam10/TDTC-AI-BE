@@ -36,7 +36,7 @@ public class AiIntegrationController {
     }
 
     @PostMapping("/alerts/trigger")
-    public ResponseEntity<String> triggerEmergencyAlert(
+    public ResponseEntity<?> triggerEmergencyAlert(
             @RequestHeader(value = "X-API-KEY", required = false) String apiKey,
             @RequestBody AlertTriggerRequest request) {
 
@@ -45,8 +45,9 @@ public class AiIntegrationController {
                     .body("❌ 경고: API 키가 일치하지 않거나 누락되었습니다.");
         }
 
-        controlSystemService.triggerAlertFromAi(request);
+        // 알람 생성 후 해당 알람의 ID 반환
+        Long alertId = controlSystemService.triggerAlertFromAi(request);
 
-        return ResponseEntity.ok("✅ 긴급 알람 처리 프로세스 및 사후 명세서 적재가 성공적으로 시작되었습니다.");
+        return ResponseEntity.ok(alertId);
     }
 }
