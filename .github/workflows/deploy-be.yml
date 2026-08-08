@@ -35,8 +35,10 @@ jobs:
       contents: read
       id-token: write # OIDC 토큰 발급에 필요
 
-    outputs:
-      image: ${{ steps.meta.outputs.image }}
+    # job 출력으로 이미지 주소를 넘기지 않습니다.
+    # ECR_REPOSITORY_URL이 Secret이라, 그 값으로 만든 출력은 GitHub이
+    # "Skip output 'image' since it may contain secret" 으로 폐기합니다.
+    # deploy job은 같은 커밋에서 돌므로 태그를 스스로 계산합니다.
 
     steps:
       - name: Checkout
@@ -104,10 +106,22 @@ jobs:
 
       - name: Deploy via SSM
         env:
-          IMAGE: ${{ needs.build.outputs.image }}
+          # needs.build.outputs.image 를 쓰지 않습니다.
+          # ECR_REPOSITORY_URL이 Secret이라 그 값이 섞인 job 출력은 GitHub이 버리고,
+          # deploy job에서 빈 문자열이 되어 docker login이 Docker Hub로 붙어 실패했습니다.
+          #   (Get "https://registry-1.docker.io/v2/": malformed HTTP Authorization header)
+          # 태그는 커밋 SHA 앞 7자로 결정되고 두 job이 같은 커밋에서 돌기 때문에,
+          # 여기서 다시 조립하면 build가 push한 것과 정확히 같은 주소가 됩니다.
+          ECR_REPO: ${{ secrets.ECR_REPOSITORY_URL }}
           INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
         run: |
           set -euo pipefail
+
+          IMAGE="${ECR_REPO}:${GITHUB_SHA::7}"
+          if [ -z "${ECR_REPO}" ]; then
+            echo "::error::ECR_REPOSITORY_URL Secret이 비어 있습니다."
+            exit 1
+          fi
 
           # EC2에서 실행할 스크립트. ECR 인증은 인스턴스 프로파일로 처리되므로
           # 자격증명을 넘길 필요가 없습니다.
