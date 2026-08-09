@@ -10,20 +10,26 @@ import com.markettwin.backend.domain.entity.User;
 import com.markettwin.backend.dto.request.*;
 import com.markettwin.backend.dto.response.ReportDownloadDto;
 import com.markettwin.backend.dto.response.ReportGenerateResponseDto;
+import com.markettwin.backend.dto.response.PageResponseDto;
+import com.markettwin.backend.dto.response.ScenarioDetailDto;
 import com.markettwin.backend.dto.response.ScenarioHistoryDto;
 import com.markettwin.backend.exception.ForbiddenActionException;
 import com.markettwin.backend.exception.ReportDataException;
 import com.markettwin.backend.exception.ReportGenerationConflictException;
 import com.markettwin.backend.repository.BaselineRepository;
 import com.markettwin.backend.repository.BaselineResultRepository;
+import com.markettwin.backend.repository.FacilityRepository;
 import com.markettwin.backend.repository.MarketRepository;
 import com.markettwin.backend.repository.ReportQueryRepository;
 import com.markettwin.backend.repository.ScenarioRepository;
 import com.markettwin.backend.repository.ScenarioResultRepository;
 import com.markettwin.backend.repository.ZoneRepository;
 import com.markettwin.backend.security.CurrentUserProvider;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.net.URL;
@@ -33,6 +39,10 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.UUID;
 
 /**
@@ -52,6 +62,9 @@ public class ReportService {
     private static final String ADMIN_ROLE_CODE = "ROL01";
     /** simrslt01d.report_title 컬럼 길이. 이 값을 넘으면 저장이 실패한다. */
     private static final int REPORT_TITLE_MAX_LENGTH = 200;
+    /** 게시판 목록(PostController)과 같은 값. 한 서비스 안에서 목록 크기가 달라질 이유가 없다. */
+    private static final int SCENARIO_HISTORY_DEFAULT_SIZE = 10;
+    private static final int SCENARIO_HISTORY_MAX_SIZE = 100;
     private static final Duration DOWNLOAD_URL_TTL = Duration.ofMinutes(10);
     private static final String DOCX_CONTENT_TYPE =
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -73,6 +86,10 @@ public class ReportService {
     private final CurrentUserProvider currentUserProvider;
     private final SimulationEngineClient simulationEngineClient;
     private final FileStorageService fileStorageService;
+    /** 닫은 게이트 이름을 찾는 데 쓴다(시나리오 상세). */
+    private final FacilityRepository facilityRepository;
+    /** simscnr01m.virtual_config(실행 요청 JSON)를 풀 때 쓴다(시나리오 상세). */
+    private final ObjectMapper objectMapper;
 
     /**
      * 보고서 식별자를 만든다.
@@ -189,10 +206,15 @@ public class ReportService {
      * 보고서가 없는 실행도 함께 나온다. 사용자가 보려는 것은 실행 이력이고 보고서는
      * 그중 일부에 붙은 부가 정보이므로, 목록의 대표 이름은 시나리오명을 쓴다.
      */
-    public List<ScenarioHistoryDto> listMyScenarios(Long userId) {
-        return reportQueryRepository.findScenarioHistoryByUserId(userId).stream()
-                .map(this::toHistoryDto)
-                .toList();
+    public PageResponseDto<ScenarioHistoryDto> listMyScenarios(
+            Long userId, String keyword, String searchField, boolean withReportOnly,
+            Integer minRiskScore, Integer maxRiskScore, int page, int size) {
+        Pageable pageable = scenarioHistoryPageable(page, size);
+        return PageResponseDto.from(reportQueryRepository
+                .findScenarioHistoryByUserId(
+                        userId, normalizeKeyword(keyword), normalizeSearchField(searchField),
+                        withReportOnly, minRiskScore, maxRiskScore, pageable)
+                .map(this::toHistoryDto));
     }
 
     /**
@@ -205,11 +227,50 @@ public class ReportService {
      *
      * marketId를 주면 그 시장만 거른다(관리자 화면의 시장 전환 탭). null이면 전체다.
      */
-    public List<ScenarioHistoryDto> listAllScenarios(Long marketId) {
+    public PageResponseDto<ScenarioHistoryDto> listAllScenarios(
+            Long marketId, String keyword, String searchField, boolean withReportOnly,
+            Integer minRiskScore, Integer maxRiskScore, int page, int size) {
         assertAdmin();
-        return reportQueryRepository.findScenarioHistory(marketId).stream()
-                .map(this::toHistoryDto)
-                .toList();
+        Pageable pageable = scenarioHistoryPageable(page, size);
+        return PageResponseDto.from(reportQueryRepository
+                .findScenarioHistory(
+                        marketId, normalizeKeyword(keyword), normalizeSearchField(searchField),
+                        withReportOnly, minRiskScore, maxRiskScore, pageable)
+                .map(this::toHistoryDto));
+    }
+
+    private Pageable scenarioHistoryPageable(int page, int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = size <= 0
+                ? SCENARIO_HISTORY_DEFAULT_SIZE
+                : Math.min(size, SCENARIO_HISTORY_MAX_SIZE);
+        return PageRequest.of(safePage, safeSize);
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return null;
+        }
+        return keyword.trim();
+    }
+
+    /** 검색 대상 필드. 알 수 없는 값은 전체 검색으로 되돌린다. */
+    private static final Set<String> SEARCH_FIELDS =
+            Set.of("all", "market", "policy", "reportTitle", "owner");
+
+    /**
+     * 클라이언트가 보낸 검색 대상을 검증한다.
+     *
+     * 값을 그대로 SQL에 넘기지만 문자열 비교(IN)에만 쓰이고 쿼리 구조에 끼어들지 않아
+     * 주입 위험은 없다. 다만 오타나 옛 클라이언트가 보낸 알 수 없는 값이 오면 어떤
+     * 분기에도 걸리지 않아 "검색어를 넣었는데 항상 0건"이 된다. 그 경우 전체 검색으로
+     * 되돌려 조용히 빈 화면이 되는 일을 막는다.
+     */
+    private String normalizeSearchField(String searchField) {
+        if (searchField == null || !SEARCH_FIELDS.contains(searchField)) {
+            return "all";
+        }
+        return searchField;
     }
 
     private ScenarioHistoryDto toHistoryDto(ReportQueryRepository.ReportRow row) {
@@ -231,7 +292,111 @@ public class ReportService {
                 hasReport
                         ? "/api/simulation/reports/" + row.getScenarioId() + "/download"
                         : null,
-                row.getOwnerName());
+                row.getOwnerName(),
+                row.getPredictedRiskScore());
+    }
+
+    /**
+     * 시나리오 한 건의 실행 설정을 돌려준다. 목록에서 행을 펼쳤을 때 쓴다.
+     *
+     * 소유자 검증은 보고서와 같은 기준이다(assertOwner). 남의 실행 설정도 실험 내용이라
+     * 아무나 볼 수 있어서는 안 되고, 관리자는 우회한다.
+     *
+     * 실행 조건(오브젝트·이벤트·통로정책·닫은 게이트)은 simscnr01m.virtual_config에
+     * 실행 요청 JSON 그대로 들어 있다. 그것을 풀어 구역/게이트 이름을 붙여 내려준다.
+     */
+    public ScenarioDetailDto getScenarioDetail(Long scenarioId) {
+        Scenario scenario = scenarioRepository.findById(scenarioId)
+                .orElseThrow(() -> new ReportDataException(
+                        "시나리오를 찾을 수 없습니다: scenarioId=" + scenarioId));
+        assertOwner(scenario);
+
+        Market market = loadMarket(scenario);
+        ScenarioRequestDto config = parseVirtualConfig(scenario);
+
+        Map<Long, String> zoneNames = zoneRepository.findByMarketId(market.getMarketId()).stream()
+                .collect(Collectors.toMap(
+                        com.markettwin.backend.domain.entity.Zone::getZoneId,
+                        com.markettwin.backend.domain.entity.Zone::getZoneName,
+                        (first, second) -> first));
+        Map<Long, String> gateNames = facilityRepository.findByMarketId(market.getMarketId()).stream()
+                .collect(Collectors.toMap(
+                        com.markettwin.backend.domain.entity.Facility::getFacilityId,
+                        com.markettwin.backend.domain.entity.Facility::getName,
+                        (first, second) -> first));
+
+        return new ScenarioDetailDto(
+                scenario.getScenarioId(),
+                scenarioDisplayNameResolver.resolve(
+                        scenario.getScenarioName(), market.getMarketName(),
+                        scenario.getPolicyTypeCode(), scenario.getRegDatetime()),
+                market.getMarketId(),
+                market.getMarketName(),
+                scenario.getAgentCount(),
+                // steps는 시나리오 테이블에 컬럼이 없어 실행 요청 JSON에서만 알 수 있다.
+                config == null ? null : config.steps(),
+                scenario.getPolicyTypeCode(),
+                scenario.getRegDatetime(),
+                toObjectViews(config, zoneNames),
+                toEventViews(config, zoneNames),
+                toCorridorViews(config, zoneNames),
+                toGateViews(config, gateNames));
+    }
+
+    /**
+     * virtual_config를 실행 요청 형태로 되돌린다.
+     *
+     * 풀지 못해도 예외로 끝내지 않고 null을 돌려준다. 이 화면은 "무엇을 설정했는지"를
+     * 참고로 보여주는 곳이라, 옛 데이터나 형식이 바뀐 JSON 하나 때문에 상세 전체가
+     * 열리지 않는 편이 더 나쁘다. 그 경우 실행 조건이 빈 목록으로 나온다.
+     */
+    private ScenarioRequestDto parseVirtualConfig(Scenario scenario) {
+        String raw = scenario.getVirtualConfig();
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(raw, ScenarioRequestDto.class);
+        } catch (Exception e) {
+            log.warn("시나리오 실행 설정을 읽지 못했습니다: scenarioId={}, 원인={}",
+                    scenario.getScenarioId(), e.getMessage());
+            return null;
+        }
+    }
+
+    private <T, R> List<R> mapOrEmpty(List<T> source, Function<T, R> mapper) {
+        return source == null ? List.of() : source.stream().map(mapper).toList();
+    }
+
+    private List<ScenarioDetailDto.PlacedObjectView> toObjectViews(
+            ScenarioRequestDto config, Map<Long, String> zoneNames) {
+        if (config == null) return List.of();
+        return mapOrEmpty(config.objects(), o -> new ScenarioDetailDto.PlacedObjectView(
+                o.objectType(), o.zoneId(), zoneNames.get(o.zoneId()), o.intensity()));
+    }
+
+    private List<ScenarioDetailDto.EventTriggerView> toEventViews(
+            ScenarioRequestDto config, Map<Long, String> zoneNames) {
+        if (config == null) return List.of();
+        return mapOrEmpty(config.events(), e -> new ScenarioDetailDto.EventTriggerView(
+                e.eventType(), e.zoneId(), zoneNames.get(e.zoneId()), e.intensity(),
+                e.triggerStep(), e.burnSteps(), e.recoverySteps()));
+    }
+
+    private List<ScenarioDetailDto.CorridorPolicyView> toCorridorViews(
+            ScenarioRequestDto config, Map<Long, String> zoneNames) {
+        if (config == null) return List.of();
+        return mapOrEmpty(config.corridorPolicies(), c -> new ScenarioDetailDto.CorridorPolicyView(
+                c.fromZoneId(), zoneNames.get(c.fromZoneId()),
+                c.toZoneId(), zoneNames.get(c.toZoneId()),
+                c.action(), c.allowedDirection()));
+    }
+
+    private List<ScenarioDetailDto.GateView> toGateViews(
+            ScenarioRequestDto config, Map<Long, String> gateNames) {
+        if (config == null) return List.of();
+        return mapOrEmpty(config.closedGateIds(),
+                id -> new ScenarioDetailDto.GateView(id, gateNames.get(id)));
     }
 
     /**
