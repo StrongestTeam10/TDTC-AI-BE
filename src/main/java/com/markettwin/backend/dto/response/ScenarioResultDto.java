@@ -41,11 +41,16 @@ public record ScenarioResultDto(
         Long persistedScenarioId
 ) {
 
-    /** SIM 응답에 DB 시나리오 식별자만 덧붙인 사본을 만든다. */
+    /**
+     * SIM 응답에 DB 시나리오 식별자만 덧붙인 사본을 만든다.
+     *
+     * 구성요소를 하나하나 나열하므로 record에 필드가 늘면 여기도 함께 고쳐야 한다.
+     * 인자 순서와 개수가 어긋나면 컴파일에서 잡히니 조용히 빠지는 일은 없다.
+     */
     public ScenarioResultDto withPersistedScenarioId(Long persistedScenarioId) {
         return new ScenarioResultDto(
-                scenarioId, requestedAt, frames, evacuationTimeSeconds, finalRiskScore,
-                averageDensity, maxDensity, maxDensityZoneId, maxDensityZoneName,
-                evacuatedCount, persistedScenarioId);
+                scenarioId, requestedAt, frames, riskTrend, evacuationTimeSeconds,
+                finalRiskScore, averageDensity, maxDensity, maxDensityZoneId,
+                maxDensityZoneName, evacuatedCount, persistedScenarioId);
     }
 }
