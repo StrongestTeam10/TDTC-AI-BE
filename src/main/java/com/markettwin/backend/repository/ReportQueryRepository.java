@@ -1,6 +1,8 @@
 package com.markettwin.backend.repository;
 
 import com.markettwin.backend.domain.entity.ScenarioResult;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
@@ -8,8 +10,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.List;
-
 /**
  * 시나리오 실행 이력 조회 전용 읽기 리포지토리.
  *
@@ -39,6 +39,21 @@ public interface ReportQueryRepository extends Repository<ScenarioResult, Long> 
         /** 문서 표지에 실제로 박힌 제목. 보고서 기능 도입 전 데이터는 null. */
         String getReportTitle();
         String getStorageKey();
+        /**
+         * 실행자 이름. user_id가 NULL인 옛 데이터는 null이다.
+         *
+         * 관리자 전체 목록에서 "누가 돌린 실행인지"를 구분하는 유일한 단서다.
+         * 본인 목록에서는 항상 자기 이름이라 화면에 쓰이지 않는다.
+         */
+        String getOwnerName();
+        /**
+         * 2026-08-06 추가: 이 실행의 종합 위험 점수(simrslt01d.predicted_risk_score, 0~100).
+         *
+         * 보고서 기능 도입 전 데이터와 위험도 계산이 실패한 실행은 null이다.
+         * 등급(안전/주의/위험/심각) 구분은 화면이 맡고 여기서는 점수만 돌려준다 -
+         * 등급 경계를 바꿀 때 BE를 함께 고쳐야 하는 상황을 만들지 않기 위함이다.
+         */
+        Integer getPredictedRiskScore();
     }
 
     @Query(value = """
@@ -51,14 +66,140 @@ public interface ReportQueryRepository extends Repository<ScenarioResult, Long> 
                    s.reg_datetime         AS regDatetime,
                    r.executed_at          AS executedAt,
                    r.report_title         AS reportTitle,
-                   r.generated_report_path AS storageKey
+                   r.generated_report_path AS storageKey,
+                   u.name                 AS ownerName,
+                   r.predicted_risk_score AS predictedRiskScore
               FROM simrslt01d r
               JOIN simscnr01m s ON s.scenario_id = r.scenario_id
+              LEFT JOIN comcode01m c
+                     ON c.code_cob = 'POL' AND c.code = s.policy_type_code
+             LEFT JOIN mrkaddr01m m ON m.market_id = s.market_id
+              LEFT JOIN usrusrs01m u ON u.user_id = s.user_id
+             WHERE s.user_id = :userId
+               AND (CAST(:withReportOnly AS boolean) = FALSE
+                    OR NULLIF(BTRIM(r.generated_report_path), '') IS NOT NULL)
+               AND (CAST(:minRiskScore AS int) IS NULL
+                    OR r.predicted_risk_score >= CAST(:minRiskScore AS int))
+               AND (CAST(:maxRiskScore AS int) IS NULL
+                    OR r.predicted_risk_score <= CAST(:maxRiskScore AS int))
+               AND (CAST(:keyword AS text) IS NULL
+                    OR (CAST(:searchField AS text) IN ('all', 'market')
+                        AND m.market_name ILIKE '%' || CAST(:keyword AS text) || '%')
+                    OR (CAST(:searchField AS text) IN ('all', 'policy')
+                        AND c.code_name ILIKE '%' || CAST(:keyword AS text) || '%')
+                    OR (CAST(:searchField AS text) IN ('all', 'reportTitle')
+                        AND r.report_title ILIKE '%' || CAST(:keyword AS text) || '%'))
+             ORDER BY r.executed_at DESC, r.result_id DESC
+            """, countQuery = """
+            SELECT COUNT(*)
+              FROM simrslt01d r
+              JOIN simscnr01m s ON s.scenario_id = r.scenario_id
+              LEFT JOIN comcode01m c
+                     ON c.code_cob = 'POL' AND c.code = s.policy_type_code
               LEFT JOIN mrkaddr01m m ON m.market_id = s.market_id
              WHERE s.user_id = :userId
-             ORDER BY r.executed_at DESC, r.result_id DESC
+               AND (CAST(:withReportOnly AS boolean) = FALSE
+                    OR NULLIF(BTRIM(r.generated_report_path), '') IS NOT NULL)
+               AND (CAST(:minRiskScore AS int) IS NULL
+                    OR r.predicted_risk_score >= CAST(:minRiskScore AS int))
+               AND (CAST(:maxRiskScore AS int) IS NULL
+                    OR r.predicted_risk_score <= CAST(:maxRiskScore AS int))
+               AND (CAST(:keyword AS text) IS NULL
+                    OR (CAST(:searchField AS text) IN ('all', 'market')
+                        AND m.market_name ILIKE '%' || CAST(:keyword AS text) || '%')
+                    OR (CAST(:searchField AS text) IN ('all', 'policy')
+                        AND c.code_name ILIKE '%' || CAST(:keyword AS text) || '%')
+                    OR (CAST(:searchField AS text) IN ('all', 'reportTitle')
+                        AND r.report_title ILIKE '%' || CAST(:keyword AS text) || '%'))
             """, nativeQuery = true)
-    List<ReportRow> findScenarioHistoryByUserId(@Param("userId") Long userId);
+    Page<ReportRow> findScenarioHistoryByUserId(
+            @Param("userId") Long userId,
+            @Param("keyword") String keyword,
+            @Param("searchField") String searchField,
+            @Param("withReportOnly") boolean withReportOnly,
+            @Param("minRiskScore") Integer minRiskScore,
+            @Param("maxRiskScore") Integer maxRiskScore,
+            Pageable pageable);
+
+    /**
+     * 실행자와 무관하게 시뮬레이션 이력 전체를 돌려준다. 관리자 전용 목록에서 쓴다.
+     *
+     * marketId가 null이면 전체 시장을 대상으로 한다. 네이티브 쿼리라 파라미터 타입을
+     * 추론할 수 없어 CAST를 명시한다(캐스트 없이 null을 넘기면 Postgres가
+     * "could not determine data type of parameter"로 거절한다).
+     *
+     * 실행자 조인이 LEFT JOIN인 이유: simscnr01m.user_id를 채우기 전에 만들어진 행이
+     * 있어서, INNER JOIN이면 그 이력이 관리자 목록에서도 통째로 사라진다.
+     */
+    @Query(value = """
+            SELECT s.scenario_id          AS scenarioId,
+                   s.scenario_name        AS scenarioName,
+                   s.market_id            AS marketId,
+                   m.market_name          AS marketName,
+                   s.agent_count          AS agentCount,
+                   s.policy_type_code     AS policyTypeCode,
+                   s.reg_datetime         AS regDatetime,
+                   r.executed_at          AS executedAt,
+                   r.report_title         AS reportTitle,
+                   r.generated_report_path AS storageKey,
+                   u.name                 AS ownerName,
+                   r.predicted_risk_score AS predictedRiskScore
+              FROM simrslt01d r
+              JOIN simscnr01m s ON s.scenario_id = r.scenario_id
+              LEFT JOIN comcode01m c
+                     ON c.code_cob = 'POL' AND c.code = s.policy_type_code
+              LEFT JOIN mrkaddr01m m ON m.market_id = s.market_id
+             LEFT JOIN usrusrs01m u ON u.user_id = s.user_id
+             WHERE (CAST(:marketId AS bigint) IS NULL OR s.market_id = CAST(:marketId AS bigint))
+               AND (CAST(:withReportOnly AS boolean) = FALSE
+                    OR NULLIF(BTRIM(r.generated_report_path), '') IS NOT NULL)
+               AND (CAST(:minRiskScore AS int) IS NULL
+                    OR r.predicted_risk_score >= CAST(:minRiskScore AS int))
+               AND (CAST(:maxRiskScore AS int) IS NULL
+                    OR r.predicted_risk_score <= CAST(:maxRiskScore AS int))
+               AND (CAST(:keyword AS text) IS NULL
+                    OR (CAST(:searchField AS text) IN ('all', 'market')
+                        AND m.market_name ILIKE '%' || CAST(:keyword AS text) || '%')
+                    OR (CAST(:searchField AS text) IN ('all', 'policy')
+                        AND c.code_name ILIKE '%' || CAST(:keyword AS text) || '%')
+                    OR (CAST(:searchField AS text) IN ('all', 'reportTitle')
+                        AND r.report_title ILIKE '%' || CAST(:keyword AS text) || '%')
+                    OR (CAST(:searchField AS text) IN ('all', 'owner')
+                        AND u.name ILIKE '%' || CAST(:keyword AS text) || '%'))
+             ORDER BY r.executed_at DESC, r.result_id DESC
+            """, countQuery = """
+            SELECT COUNT(*)
+              FROM simrslt01d r
+              JOIN simscnr01m s ON s.scenario_id = r.scenario_id
+              LEFT JOIN comcode01m c
+                     ON c.code_cob = 'POL' AND c.code = s.policy_type_code
+              LEFT JOIN mrkaddr01m m ON m.market_id = s.market_id
+              LEFT JOIN usrusrs01m u ON u.user_id = s.user_id
+             WHERE (CAST(:marketId AS bigint) IS NULL OR s.market_id = CAST(:marketId AS bigint))
+               AND (CAST(:withReportOnly AS boolean) = FALSE
+                    OR NULLIF(BTRIM(r.generated_report_path), '') IS NOT NULL)
+               AND (CAST(:minRiskScore AS int) IS NULL
+                    OR r.predicted_risk_score >= CAST(:minRiskScore AS int))
+               AND (CAST(:maxRiskScore AS int) IS NULL
+                    OR r.predicted_risk_score <= CAST(:maxRiskScore AS int))
+               AND (CAST(:keyword AS text) IS NULL
+                    OR (CAST(:searchField AS text) IN ('all', 'market')
+                        AND m.market_name ILIKE '%' || CAST(:keyword AS text) || '%')
+                    OR (CAST(:searchField AS text) IN ('all', 'policy')
+                        AND c.code_name ILIKE '%' || CAST(:keyword AS text) || '%')
+                    OR (CAST(:searchField AS text) IN ('all', 'reportTitle')
+                        AND r.report_title ILIKE '%' || CAST(:keyword AS text) || '%')
+                    OR (CAST(:searchField AS text) IN ('all', 'owner')
+                        AND u.name ILIKE '%' || CAST(:keyword AS text) || '%'))
+            """, nativeQuery = true)
+    Page<ReportRow> findScenarioHistory(
+            @Param("marketId") Long marketId,
+            @Param("keyword") String keyword,
+            @Param("searchField") String searchField,
+            @Param("withReportOnly") boolean withReportOnly,
+            @Param("minRiskScore") Integer minRiskScore,
+            @Param("maxRiskScore") Integer maxRiskScore,
+            Pageable pageable);
 
     /**
      * 보고서 저장 결과(S3 키, 문서 제목, 비교에 쓴 현행안 결과)를 결과 행에 기록한다.

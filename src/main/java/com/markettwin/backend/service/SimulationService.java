@@ -37,6 +37,10 @@ import java.time.Instant;
  * (화재 > 음향이상 > 통로정책 있음 > 없음 순 우선순위). 실제 상세 내용은
  * virtualConfig에 요청 전체가 JSON으로 그대로 남아있으니 정보 손실은 없다.
  *
+ * 2026-08-06 변경: 실행 요청의 marketId를 그대로 믿지 않고 시장 접근 권한을 먼저
+ * 확인한다(assertMarketInScope). 조회 쪽은 이미 같은 검증을 하고 있었고 실행 경로만
+ * 빠져 있었다.
+ *
  * user_id가 저장 로직에서 채워지지 않고 있던 문제 수정.
  * 이 API(/api/simulation/**)는 이미 인증 필수(SecurityConfig의 authenticated())라
  * 로그인된 사용자가 항상 있으므로, CurrentUserProvider(게시판 기능 때 만든 공통
@@ -53,12 +57,16 @@ public class SimulationService {
     private final BaselineResultRepository baselineResultRepository;
     private final ObjectMapper objectMapper;
     private final CurrentUserProvider currentUserProvider;
+    private final MarketService marketService;
 
     public ScenarioResultDto runScenario(ScenarioRequestDto request) {
+        assertMarketInScope(request.marketId());
         Scenario scenario = saveScenario(request);
         ScenarioResultDto result = simulationEngineClient.runScenario(request);
         saveScenarioResult(scenario.getScenarioId(), result);
-        return result;
+        // 저장된 시나리오 식별자를 응답에 실어 준다. 이 값이 없으면 FE는 방금 실행한
+        // 시나리오로 보고서를 만들 수 없다(SIM이 준 scenarioId는 UUID라 쓸 수 없음).
+        return result.withPersistedScenarioId(scenario.getScenarioId());
     }
 
     private Scenario saveScenario(ScenarioRequestDto request) {
@@ -132,7 +140,22 @@ public class SimulationService {
         }
     }
 
+    /**
+     * 요청한 시장을 이 사용자가 다룰 수 있는지 확인한다.
+     *
+     * 지금까지 marketId를 그대로 믿고 실행했다. 관제요원(ROL02)은 담당 시장의 목록만
+     * 내려받지만, 요청 본문의 marketId를 바꾸면 남의 시장 시뮬레이션을 실행해
+     * simscnr01m에 자기 이력으로 남길 수 있었다. 조회 쪽(대시보드/구역/시설)은
+     * 이미 같은 검증을 하고 있어 실행 경로만 빠져 있던 셈이다.
+     *
+     * 관리자(ROL01)는 MarketService 규칙대로 전체 시장을 통과한다.
+     */
+    private void assertMarketInScope(Long marketId) {
+        marketService.getAccessibleMarket(marketId, currentUserProvider.getCurrentUser());
+    }
+
     public PredictResultDto predict(PredictRequestDto request) {
+        assertMarketInScope(request.marketId());
         PredictResultDto result = simulationEngineClient.predict(request);
 
         baselineRepository.findFirstByMarketIdAndIsActiveTrueOrderByBaselineIdDesc(request.marketId())

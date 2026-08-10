@@ -51,8 +51,16 @@ public class ScenarioDisplayNameResolver {
      * 표시용 시나리오명을 만든다.
      *
      * 자동 생성 형태가 아니면 원본을 그대로 돌려준다.
-     * 대체할 때는 "{시장명} {정책유형} 시나리오 (yyyy-MM-dd HH:mm)" 형태로 만든다.
+     * 대체할 때는 "yyyy-MM-dd HH:mm {시장명} {정책유형} 시나리오" 형태로 만든다.
      * 시각은 UTC로 저장돼 있어 KST로 바꿔 표기한다.
+     *
+     * 2026-08-06 변경: 날짜를 뒤 괄호에서 맨 앞으로 옮겼다. 목록이 시각 내림차순이라
+     * 날짜가 앞에 오면 행을 위아래로 훑기 쉽다. 맨 앞에 오면서 괄호는 구분 역할이
+     * 없어져 뺐다.
+     *
+     * 이 이름은 목록(ReportService.toHistoryDto)과 보고서 문서의 시나리오 구성표·결과
+     * 비교표(ReportService.toScenarioRow) 양쪽에 쓰인다. 같은 시나리오가 두 곳에서 다른
+     * 형태로 보이는 것이 어느 한쪽 형태보다 나쁘므로, 여기 한 곳만 고쳐 함께 바꾼다.
      */
     public String resolve(
             String storedName, String marketName, String policyTypeCode, Instant regDatetime) {
@@ -62,6 +70,10 @@ public class ScenarioDisplayNameResolver {
         }
 
         StringBuilder name = new StringBuilder();
+        if (regDatetime != null) {
+            name.append(STAMP.format(regDatetime)).append(' ');
+        }
+
         if (marketName != null && !marketName.isBlank()) {
             name.append(marketName).append(' ');
         }
@@ -72,9 +84,6 @@ public class ScenarioDisplayNameResolver {
         }
         name.append("시나리오");
 
-        if (regDatetime != null) {
-            name.append(" (").append(STAMP.format(regDatetime)).append(')');
-        }
         return name.toString();
     }
 
