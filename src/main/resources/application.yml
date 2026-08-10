@@ -7,7 +7,7 @@ spring:
   # 요건대로 정한 값은 아니라서 프로젝트 정책에 맞게 조정 가능 (당장은 개당 20MB/요청당 50MB로 설정)
   servlet:
     multipart:
-      max-file-size: 20MB
+      max-file-size: 50MB
       max-request-size: 50MB
 
 server:

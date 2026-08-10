@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.http.client.MultipartBodyBuilder;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
@@ -67,10 +69,16 @@ public class SimulationEngineClient {
                 .block();
     }
 
-    public Object analyzePolicy(Object request) {
+    public Object analyzePolicy(String policyText, MultipartFile file) {
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("policyText", policyText);
+        if (file != null && !file.isEmpty()) {
+            builder.part("file", file.getResource());
+        }
+
         return simulationEngineWebClient.post()
                 .uri("/policy/analyze")
-                .bodyValue(request)
+                .bodyValue(builder.build())
                 .retrieve()
                 .bodyToMono(Object.class)
                 .timeout(Duration.ofSeconds(60))
