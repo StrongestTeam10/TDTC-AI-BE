@@ -3,6 +3,7 @@ package com.markettwin.backend.service;
 import com.markettwin.backend.domain.entity.User;
 import com.markettwin.backend.dto.response.UserSummaryDto;
 import com.markettwin.backend.exception.ForbiddenActionException;
+import com.markettwin.backend.exception.InvalidMarketCodeException;
 import com.markettwin.backend.exception.InvalidRoleCodeException;
 import com.markettwin.backend.exception.UserNotFoundException;
 import com.markettwin.backend.repository.CommonCodeRepository;
@@ -35,6 +36,7 @@ public class UserAdminService {
     private static final String ADMIN_ROLE_CODE = "ROL01";
     private static final String PENDING_ROLE_CODE = "ROL03"; // 회원가입 시 기본 부여되는 권한(=미검토 상태로 간주)
     private static final String ROLE_CODE_COB = "ROL"; // comcode01m.code_cob
+    private static final String MARKET_CODE_COB = "MKT"; // comcode01m.code_cob (담당 시장)
 
     private final UserRepository userRepository;
     private final CommonCodeRepository commonCodeRepository;
@@ -57,8 +59,18 @@ public class UserAdminService {
         return users.stream().map(this::toSummary).toList();
     }
 
+    /**
+     * 2026-08-10 변경: 권한만 바꾸던 것을 "권한 + 소속 시장"으로 확대했다. 회원관리
+     * 화면이 한 행에서 두 값을 같이 고친 뒤 저장 버튼으로 일괄 전송하는 방식이 되어,
+     * 한 회원당 요청이 두 번 나가지 않도록 한 엔드포인트에서 같이 처리한다.
+     *
+     * newMarketCode가 null이면 소속 시장은 건드리지 않는다(예전 요청 본문과의 호환).
+     * 빈 문자열이면 "소속 시장 없음"으로 지운다 - 관리자(ROL01)는 시장 제한이 없어
+     * NULL이 정상 상태라 비우는 경로가 필요하다.
+     */
     @Transactional
-    public UserSummaryDto updateRole(Long targetUserId, String newRulesCode, User currentUser, String clientIp) {
+    public UserSummaryDto updateRole(Long targetUserId, String newRulesCode, String newMarketCode,
+                                     User currentUser, String clientIp) {
         requireAdmin(currentUser);
         validateRoleCode(newRulesCode);
 
@@ -74,6 +86,14 @@ public class UserAdminService {
         }
 
         target.setRulesCode(newRulesCode);
+        if (newMarketCode != null) {
+            if (newMarketCode.isBlank()) {
+                target.setMarketCode(null);
+            } else {
+                validateMarketCode(newMarketCode);
+                target.setMarketCode(newMarketCode);
+            }
+        }
         target.setUpdatedAt(Instant.now());
         target.setUpdatedIp(clientIp);
 
@@ -91,6 +111,13 @@ public class UserAdminService {
                 && commonCodeRepository.existsByCodeCobAndCode(ROLE_CODE_COB, rulesCode);
         if (!valid) {
             throw new InvalidRoleCodeException(rulesCode);
+        }
+    }
+
+    // AuthService.signup()이 회원가입 시 담당 시장을 검증하는 것과 같은 규칙
+    private void validateMarketCode(String marketCode) {
+        if (!commonCodeRepository.existsByCodeCobAndCode(MARKET_CODE_COB, marketCode)) {
+            throw new InvalidMarketCodeException(marketCode);
         }
     }
 
