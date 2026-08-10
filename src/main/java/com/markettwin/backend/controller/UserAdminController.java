@@ -42,7 +42,8 @@ public class UserAdminController {
             HttpServletRequest httpRequest
     ) {
         User currentUser = currentUserProvider.getCurrentUser();
-        return userAdminService.updateRole(userId, request.getRulesCode(), currentUser, resolveClientIp(httpRequest));
+        return userAdminService.updateRole(userId, request.getRulesCode(), request.getMarketCode(),
+                currentUser, resolveClientIp(httpRequest));
     }
 
     // AuthController와 동일한 패턴(로드밸런서 뒤에서 X-Forwarded-For 우선 사용)
