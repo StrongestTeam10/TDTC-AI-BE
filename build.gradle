@@ -61,6 +61,9 @@ dependencies {
     // Gradle 9부터는 JUnit Platform launcher를 테스트 런타임에 명시해야 한다.
     // 없으면 컴파일은 되지만 "Failed to load JUnit Platform"으로 실행이 막힌다.
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    //CCTV 관제 대시보드 자동신고 SMS 발송(Solapi V4)
+    implementation 'net.nurigo:sdk:4.3.0'
 }
 
 tasks.named('test') {

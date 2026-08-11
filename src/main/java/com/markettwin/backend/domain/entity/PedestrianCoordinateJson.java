@@ -44,4 +44,9 @@ public class PedestrianCoordinateJson {
 
     @Column(name = "zone_id")
     private Long zoneId;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "bbox_json", columnDefinition = "jsonb")
+    private String bboxJson;
+
 }

@@ -460,6 +460,7 @@ CREATE TABLE IF NOT EXISTS pedaggr01h (
     -- person_N은 프레임 간 지속되는 추적 ID (실제 적재 데이터로 확인됨, 2026-07-31).
     pixels_json     JSONB,
     bev_xyz_json    JSONB,
+    bbox_json       JSONB,
     captured_at     TIMESTAMP NOT NULL,
     CONSTRAINT uq_pedaggr01h_clip_frame UNIQUE (clip_id, frame_id)
 );
