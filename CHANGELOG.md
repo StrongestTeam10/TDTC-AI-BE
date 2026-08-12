@@ -3,6 +3,88 @@
 이 파일은 Claude와의 작업 세션에서 변경된 내용을 기록합니다.
 각 항목은 zip으로 전달된 시점 기준입니다.
 
+### 2026-08-11 (3차 - 시장 오브젝트/구조 설정 저장 API 신규)
+- **요청**: 시장 구조 등록 화면에서 시뮬레이션 비교의 초기 배치로 쓸 "오브젝트 배치
+  (푸드트럭/행사존/휴게공간/장애물) + 통로 제어 정책(출발/도착 구역, 폐쇄)"을 등록.
+  DB에 담을 구조가 없으면 물어봐 달라고 해서 확인 결과 → **정규화 테이블 없이 JSON
+  세트로 저장**(재재님 결정)
+- **파악한 현황**: PlacedObject/CorridorPolicy는 시뮬레이션 실행 파라미터(ScenarioRequest)
+  일 뿐, 지금은 simscnr01m.virtual_config(JSON TEXT)에만 통째 저장됨. 오브젝트/정책을
+  독립적으로 담는 테이블이 없었음
+- ➕ `schema-init.sql` `mrkobjt01m` 신규: 시장당 1행(UNIQUE market_id). objects_json/
+  corridor_policies_json을 **TEXT**로(JSONB 대신 - 통째 저장/조회만 하므로 String 매핑이
+  깔끔하고 Hibernate varchar↔jsonb 캐스팅 문제를 피함. simscnr01m.virtual_config와 동일 방식)
+- ➕ `domain/entity/MarketObjectConfig.java`, `repository/MarketObjectConfigRepository.java`
+- ➕ `dto/response/MarketObjectConfigDto.java`(objects/corridorPolicies를 파싱된 리스트로),
+  `dto/request/MarketObjectConfigSaveRequestDto.java`. 기존 `PlacedObjectDto`/`CorridorPolicyDto`
+  재사용(시뮬레이션 요청과 1:1이라 변환 없이 오감)
+- ➕ `service/MarketObjectConfigService.java`: 리스트 ↔ JSON 문자열만 변환. 조회 시 저장된
+  게 없으면 빈 세트 반환, 저장은 시장당 1행 upsert. 권한은 시설과 동일(ROL01/ORGMA)
+- ➕ `controller/MarketObjectConfigController.java`: `GET /api/market-objects?marketId=`,
+  `PUT /api/market-objects`(통째 덮어쓰기)
+- **기존 흐름 무관**: 실제 시뮬레이션 실행 결과는 그대로 현행안(simbsln01m)/시나리오
+  (simscnr01m)에 적재됨. 이 테이블은 "실행 전 초기 배치"만 보관
+- 검증: `./gradlew compileJava` BUILD SUCCESSFUL
+- ⚠️ **DB 재기동으로 schema-init.sql을 태워야** 함(mrkobjt01m 생성)
+
+### 2026-08-11 (2차 - CCTV 구역 재설계: zone_id 소속 + 페이징 + 폴리곤 포함 검증)
+- **요청**: CCTV 구역을 고정 1~4가 아니라 등록마다 추가되게, 시뮬레이션 구역(zone_id)
+  조인해서 목록 세팅, 사용/미사용 컬럼, 4점이 소속 구역 폴리곤 밖으로 못 나가게
+- ✏️ `schema-init.sql` `mrkcctv01m` 재설계:
+  - `zone_no`/`zone_name`/유니크 제약 제거 → `zone_id`(mrkaddr01d FK) + `is_active` 추가
+  - 기존 1차 테이블 이관용 ALTER 추가(테스트 단계라 zone_id 소급 불가 → 비우고 재등록).
+    `zone_id` 인덱스 추가
+- ✏️ `CctvZone` 엔티티: zoneNo/zoneName 제거, zoneId/isActive 추가
+- ✏️ `CctvZoneRepository`: `findByMarketId(marketId, Pageable)` (게시판식 페이징)
+- ✏️ `CctvZoneDto`: zoneName은 이 테이블에 없고 zone_id로 조인해 채움. isActive 추가
+- ✏️ `CctvZoneSaveRequestDto`: zoneNo 제거, zoneId/isActive 추가
+- ✏️ `CctvZoneService`:
+  - 목록 페이징 + zone_id → 구역명 맵을 한 번에 조회해 조인(N+1 방지)
+  - 등록(create, POST)마다 새 행 / 수정(update, PUT by id) / 삭제(by id)
+  - **저장 전 검증**: 사각형 4점 + 네 꼭짓점이 소속 zone 폴리곤 안에 있는지
+    point-in-polygon(ray casting)으로 확인. 변(선분)이 오목 구역 밖으로 새는 경우는
+    FE가 실시간으로 막고, BE는 꼭짓점 포함을 무결성 백스톱으로 검사(FE 우회 방어)
+  - 다른 시장 구역을 소속으로 지정하는 것도 차단
+- ✏️ `CctvZoneController`: `GET`(page/size, PageResponseDto), `POST`(신규),
+  `PUT /{id}`, `DELETE /{id}`. 권한은 그대로 관리자(ROL01)/상인회(ORGMA)
+- ✏️ `CctvZoneNotFoundException`: (marketId, zoneNo) → (cctvZoneId)로 시그니처 변경
+- 검증: `./gradlew compileJava` BUILD SUCCESSFUL
+- ⚠️ **DB 재기동으로 schema-init.sql을 태워야 함**(zone_id/is_active 반영). 1차 테스트로
+  넣어둔 CCTV 구역 행이 있으면 zone_id가 NULL이라 새로 등록해야 한다
+
+### 2026-08-11 (CCTV 관제 구역 저장 API 신규 - 시뮬레이션 구역과 분리)
+- **요청**: 상점 위치 등록 화면에서 CCTV 좌표 구역 1~4를 지도에 그려 JSON으로 저장.
+  단 "시뮬레이션 비교 화면에서 폴리곤이 겹치거나 기존 데이터에 영향이 가면 안 됨"
+- **왜 MRKADDR01D(시뮬레이션 구역)에 넣지 않았는지**: 그 테이블은 지도 표시용이 아니라
+  계산 입력이다. 확인한 소비처는 아래 4곳이고, CCTV 구역을 섞으면 지도뿐 아니라
+  시뮬레이션 결과 수치와 정책 보고서 내용까지 함께 바뀐다
+  - `TDTC-AI-SIM/app/db/repository.py:28` — `SELECT ... FROM mrkaddr01d WHERE market_id = %s`로
+    시장의 모든 구역을 읽어 Mesa 에이전트를 배치하고 위험도를 계산 (영향이 가장 큼)
+  - `MarketService` → `GET /api/markets/{id}/zones` → 시뮬레이션 비교 화면 지도 폴리곤
+  - `ReportService` → 정책 보고서의 구역 목록·비교표
+  - `ZoneAdjacency` → 구역 간 통로 연결
+  - `zone_type` 컬럼으로 거르는 방안도 검토했으나, SIM이 ORM 없이 직접 SQL을 쓰고 있어
+    쿼리 한 곳만 놓쳐도 조용히 섞이므로 **테이블 자체를 분리**함
+- ➕ `schema-init.sql`: `mrkcctv01m` 신규 (market_id, zone_no 1~4 CHECK, zone_name,
+  polygon_coordinates TEXT, rmk, updated_at + `UNIQUE(market_id, zone_no)`)
+  - 좌표 형식은 MRKADDR01D와 동일한 **GeoJSON Polygon 문자열**로 맞춤 → FE 폴리곤
+    파싱/렌더 코드를 그대로 재사용 가능
+- ➕ `domain/entity/CctvZone.java`, `repository/CctvZoneRepository.java`
+- ➕ `dto/response/CctvZoneDto.java`, `dto/request/CctvZoneSaveRequestDto.java`
+- ➕ `service/CctvZoneService.java` — 권한 규칙은 `FacilityService`와 동일(같은 화면에서
+  쓰는 기능이라 관리자 ROL01 또는 상인회 ORGMA만). 저장 전 GeoJSON을 파싱해 **꼭짓점이
+  사각형 4개인지 검증**(CCTV 호모그래피 ROI 형식). 닫힌 링의 마지막 중복점은 빼고 셈
+- ➕ `controller/CctvZoneController.java` — `GET /api/cctv-zones?marketId=`,
+  `PUT /api/cctv-zones/{zoneNo}`(번호 단위 upsert), `DELETE /api/cctv-zones/{zoneNo}`
+  - 화면이 "구역 N번"을 덮어쓰는 방식이라 POST가 아니라 PUT
+- ➕ `exception/CctvZoneNotFoundException`(404), `InvalidCctvZonePolygonException`(400)
+  + `GlobalExceptionHandler`에 핸들러 2개 추가
+- **기존 코드 무변경 확인**: 수정한 파일은 `GlobalExceptionHandler`(+11/-0)와
+  `schema-init.sql`(+35/-0) 둘뿐이며 **삭제된 줄이 0**. `Zone.java`/`ZoneRepository`/
+  `MarketService`/`ReportService`/`SpatialLayoutService`/`ZoneAdjacency`는 손대지 않았고
+  SIM 저장소도 무변경
+- 검증: `./gradlew compileJava --rerun-tasks` BUILD SUCCESSFUL
+
 ### 2026-08-05 (4차 - 중복 CORS 설정 통일)
 - 지난 항목에서 발견한 `SecurityConfig.java`/`CorsConfig.java` CORS 설정 중복 정리
 - 🗑️ `config/CorsConfig.java` 삭제 - 다른 곳에서 참조하는 곳 없음을 확인
