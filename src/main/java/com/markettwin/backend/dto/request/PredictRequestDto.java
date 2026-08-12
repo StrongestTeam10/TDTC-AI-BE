@@ -13,8 +13,13 @@ import java.util.List;
  *
  * 실제 관측된 인원 배치를 초기 상태로 삼아, 매대(오브젝트) 매력도 기반 자연스러운
  * 이동과 게이트를 통한 신규 유입만으로 "인구가 몰렸을 때" 위험도가 어떻게
- * 전개되는지를 본다. 오브젝트 배치/통로정책/게이트 폐쇄는 여전히
- * ScenarioRequestDto(파이프라인 B, After) 전용이다.
+ * 전개되는지를 본다.
+ *
+ * 2026-08-12 변경: 오브젝트 배치/통로정책도 Before가 받는다. 시장 구조 등록에서
+ * 저장한 "현행"(mrkobjt01m)을 개입 전(Before)에도 그대로 반영해야 개입 전이 실제
+ * 시장 모습이 되고, 개입 후와의 차이가 순수하게 "사용자 개입분"이 된다. (게이트
+ * 폐쇄는 이전부터 Before가 받고 있었다 - closedGateIds.) After는 이 현행에 사용자가
+ * 삭제/추가한 결과를 ScenarioRequestDto로 보낸다.
  *
  * 2026-08-XX 추가: events(화재). FE는 이전부터 Before 화면에서도 이벤트를
  * 같이 보내고 있었는데, 이 DTO에 필드가 없어 역직렬화 시 조용히 버려지고
@@ -46,11 +51,25 @@ public record PredictRequestDto(
         // SIM 필수 필드(default_factory=list)에 null이 전달되지 않게 한다.
         List<Long> closedGateIds,
 
+        // 2026-08-12 추가: 현행 오브젝트/통로정책(시장 구조 등록에서 저장한 것).
+        // ScenarioRequestDto와 동일 형식이라 그대로 SIM에 전달된다. null이면 빈 목록.
+        @Valid
+        List<PlacedObjectDto> objects,
+
+        @Valid
+        List<CorridorPolicyDto> corridorPolicies,
+
         Integer seed
 ) {
         public PredictRequestDto {
                 if (closedGateIds == null) {
                         closedGateIds = List.of();
+                }
+                if (objects == null) {
+                        objects = List.of();
+                }
+                if (corridorPolicies == null) {
+                        corridorPolicies = List.of();
                 }
         }
 }

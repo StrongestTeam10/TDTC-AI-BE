@@ -41,8 +41,12 @@ public class MarketObjectConfigService {
     private final MarketService marketService;
     private final ObjectMapper objectMapper;
 
+    // 2026-08-12: 조회(get)는 관리 권한(assertCanManage)을 요구하지 않는다.
+    // 저장은 여전히 상인회(ORGMA)/관리자만이지만, 저장된 "현행"을 시뮬레이션 비교
+    // 화면이 초기 배치로 읽어 쓰기 때문에, 시뮬을 쓰는 관제요원(ROL02)도 조회할 수
+    // 있어야 한다. 시장 접근 검증(getAccessibleMarket)은 유지하므로 아무나 여는 게
+    // 아니라 그 시장에 접근 가능한 사용자로만 열린다. (팀 협의 완료)
     public MarketObjectConfigDto get(Long marketId, User currentUser) {
-        assertCanManage(currentUser);
         marketService.getAccessibleMarket(marketId, currentUser);
 
         return repository.findByMarketId(marketId)
