@@ -63,10 +63,13 @@ public class PostController {
             @RequestParam String content,
             @RequestParam(required = false, defaultValue = "false") boolean notice,
             @RequestParam(required = false) String categoryCode,
+            // 2026-08-12 추가: 관리자만 지정할 수 있는 게시 시장. 빈 문자열은 "전체"라는
+            // 뜻이라 파라미터를 아예 보내지 않은 경우(null)와 구분해야 한다.
+            @RequestParam(required = false) String marketCode,
             @RequestParam(required = false) List<MultipartFile> files
     ) {
         User currentUser = currentUserProvider.getCurrentUser();
-        Long postId = postService.create(title, content, notice, categoryCode, files, currentUser);
+        Long postId = postService.create(title, content, notice, categoryCode, marketCode, files, currentUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("postId", postId));
     }
 
@@ -77,11 +80,13 @@ public class PostController {
             @RequestParam(required = false) String content,
             @RequestParam(required = false) Boolean notice,
             @RequestParam(required = false) String categoryCode,
+            @RequestParam(required = false) String marketCode,
             @RequestParam(required = false) List<Long> deleteAttachmentIds,
             @RequestParam(required = false) List<MultipartFile> files
     ) {
         User currentUser = currentUserProvider.getCurrentUser();
-        postService.update(postId, title, content, notice, categoryCode, deleteAttachmentIds, files, currentUser);
+        postService.update(postId, title, content, notice, categoryCode, marketCode,
+                deleteAttachmentIds, files, currentUser);
         return ResponseEntity.noContent().build();
     }
 

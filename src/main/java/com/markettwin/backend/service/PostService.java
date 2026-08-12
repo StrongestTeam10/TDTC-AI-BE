@@ -69,6 +69,7 @@ public class PostService {
     // 2026-07-25 변경: 카테고리를 공지사항/자유게시판 2개로 축소하면서 기본값도
     // BCTQA(질문과 답변, 폐지) -> BCTFR(자유게시판)로 변경
     private static final String DEFAULT_CATEGORY_CODE = "BCTFR"; // 카테고리 미지정 시 기본값(자유게시판)
+    private static final String MARKET_CODE_COB = "MKT"; // comcode01m 담당 시장 도메인
 
     private final PostRepository postRepository;
     private final PostAttachmentRepository attachmentRepository;
@@ -168,7 +169,7 @@ public class PostService {
 
     @Transactional
     public Long create(String title, String content, boolean noticeRequested, String categoryCodeRequested,
-                        List<MultipartFile> files, User currentUser) {
+                        String marketCodeRequested, List<MultipartFile> files, User currentUser) {
         if (noticeRequested && !isAdmin(currentUser)) {
             throw new ForbiddenActionException("공지 고정은 관리자만 설정할 수 있습니다.");
         }
@@ -176,9 +177,7 @@ public class PostService {
 
         String categoryCode = validateCategoryCode(categoryCodeRequested, currentUser);
 
-        // 공지는 시장 무관 전체 노출이라 market_code를 필수로 요구하지 않음(관리자 담당
-        // 시장이 없어도 공지는 작성 가능해야 하므로). 일반 글은 작성자 marketCode로 채움.
-        String marketCode = notice ? currentUser.getMarketCode() : requireMarketCode(currentUser);
+        String marketCode = resolveMarketCode(marketCodeRequested, notice, currentUser);
 
         Instant now = Instant.now();
         Post post = Post.builder()
@@ -201,7 +200,7 @@ public class PostService {
 
     @Transactional
     public void update(Long postId, String title, String content, Boolean noticeRequested,
-                        String categoryCodeRequested,
+                        String categoryCodeRequested, String marketCodeRequested,
                         List<Long> deleteAttachmentIds, List<MultipartFile> newFiles, User currentUser) {
         Post post = getPostOrThrow(postId);
         assertCanModify(post, currentUser);
@@ -220,6 +219,15 @@ public class PostService {
         }
         if (categoryCodeRequested != null && !categoryCodeRequested.isBlank()) {
             post.setCategoryCode(validateCategoryCode(categoryCodeRequested, currentUser));
+        }
+        // 2026-08-12 추가: 게시 시장 변경. 관리자만 가능하며, 값을 아예 보내지 않으면
+        // (marketCodeRequested == null) 기존 시장을 그대로 둔다. 빈 문자열은 "전체"라는
+        // 뜻이라 null과 구분해야 해서, 여기서 null 검사만으로 갈라낸다.
+        if (marketCodeRequested != null) {
+            if (!isAdmin(currentUser)) {
+                throw new ForbiddenActionException("게시 시장은 관리자만 변경할 수 있습니다.");
+            }
+            post.setMarketCode(normalizeMarketCode(marketCodeRequested));
         }
         post.setUpdatedAt(Instant.now());
         postRepository.save(post);
@@ -343,6 +351,38 @@ public class PostService {
         if (!post.getWriterId().equals(currentUser.getUserId())) {
             throw new ForbiddenActionException("본인이 작성한 게시글만 수정/삭제할 수 있습니다.");
         }
+    }
+
+    /**
+     * 2026-08-12 추가: 글이 올라갈 시장을 정한다.
+     *
+     * 관리자(ROL01)만 직접 지정할 수 있다. 그 외 권한이 값을 보내도 무시하고 작성자의
+     * 담당 시장을 쓴다 - 화면에서 셀렉트를 숨기는 것과 별개로, 요청을 직접 만들어
+     * 보내는 경로를 막기 위해 서버에서 한 번 더 판정한다.
+     *
+     * 관리자가 값을 아예 보내지 않으면(null) 예전과 같이 동작한다. 이미 배포된 옛
+     * 클라이언트가 marketCode 없이 보내도 그대로 돌아가야 하기 때문이다.
+     *
+     * 공지는 시장 무관 전체 노출이라 market_code를 필수로 요구하지 않는다(담당 시장이
+     * 없는 관리자도 공지는 쓸 수 있어야 한다). 일반 글은 작성자 marketCode로 채운다.
+     */
+    private String resolveMarketCode(String requested, boolean notice, User currentUser) {
+        if (!isAdmin(currentUser) || requested == null) {
+            return notice ? currentUser.getMarketCode() : requireMarketCode(currentUser);
+        }
+        return normalizeMarketCode(requested);
+    }
+
+    /** 빈 값은 "전체"(null). 그 외에는 comcode01m MKT 도메인에 있는 코드인지 확인한다. */
+    private String normalizeMarketCode(String requested) {
+        String trimmed = requested.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        if (!commonCodeRepository.existsByCodeCobAndCode(MARKET_CODE_COB, trimmed)) {
+            throw new ForbiddenActionException("존재하지 않는 시장 코드입니다: " + trimmed);
+        }
+        return trimmed;
     }
 
     private String requireMarketCode(User user) {
