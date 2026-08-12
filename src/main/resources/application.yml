@@ -32,14 +32,20 @@ aws:
   video:
     bucket: tdtc-cctv-upload
 
+# 2026-08-12: 아래 5개는 필수값(기본값 없음)이었다가 로컬/EC2/CI 전부를 기동
+# 불가로 만들어서 되돌림. SMS는 JWT_SECRET/DB 비밀번호 같은 보안 필수값이 아니라
+# "설정 안 하면 그 기능만 안 되는" 선택 기능이라, naver.client.* 와 같은 방식으로
+# 콜론 기본값을 둔다. solapi.*가 비어 있으면 NurigoApp.initialize가 인증 실패로
+# 끝나고, sendEmergencySms()는 그 예외를 잡아 로그만 남긴다(ExternalNotificationService
+# 참고) - 앱 기동 자체는 막지 않는다.
 emergency:
-  target-phone: ${EMERGENCY_TARGET_PHONE}
+  target-phone: ${EMERGENCY_TARGET_PHONE:}
 ai:
-  secret-key: ${AI_SECRET_KEY}
+  secret-key: ${AI_SECRET_KEY:tdtc-super-secret-key-2026}
 
 solapi:
-  api-key: ${SOLAPI_API_KEY}
-  api-secret: ${SOLAPI_API_SECRET}
-  sender-phone: ${SOLAPI_SENDER_PHONE}
+  api-key: ${SOLAPI_API_KEY:}
+  api-secret: ${SOLAPI_API_SECRET:}
+  sender-phone: ${SOLAPI_SENDER_PHONE:}
 
 
