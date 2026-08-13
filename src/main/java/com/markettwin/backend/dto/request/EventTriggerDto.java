@@ -18,7 +18,9 @@ import jakarta.validation.constraints.NotNull;
  */
 public record EventTriggerDto(
         @NotNull
-        String eventType,   // "fire" | "acoustic_anomaly"
+        // 2026-08-12: "acoustic_anomaly"를 지웠다. 음향 이상 이벤트는 SIM·FE에서 이미
+        // 제거되어(SIM EventTrigger.eventType은 "fire"만 받는다) 값으로 올 수 없다.
+        String eventType,   // "fire"
 
         @NotNull
         Long zoneId,
