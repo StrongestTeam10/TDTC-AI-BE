@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,9 +34,14 @@ public class VideoClipController {
     private String aiSecretKey;
 
     @GetMapping
-    public List<VideoClipDto> getAllVideoClips() {
-        return repository.findAll().stream()
-                .filter(clip -> !Boolean.TRUE.equals(clip.getIsDeleted())) // ★ 추가: 삭제된 영상은 필터링(프론트엔드 노출 금지)
+    public List<VideoClipDto> getAllVideoClips(@RequestParam(required = false) Long zoneId) {
+        // ★ 추가됨: zoneId가 파라미터로 넘어오면 필터링, 없으면 전체 조회
+        List<VideoClip> clips = (zoneId != null)
+                ? repository.findByZoneId(zoneId)
+                : repository.findAll();
+
+        return clips.stream()
+                .filter(clip -> !Boolean.TRUE.equals(clip.getIsDeleted())) // 삭제된 영상은 필터링(프론트엔드 노출 금지)
                 .map(clip -> {
                     String viewUrl = (clip.getS3ClipUrl() != null && !clip.getS3ClipUrl().isBlank())
                             ? videoS3Service.generatePresignedDownloadUrl(clip.getS3ClipUrl(), Duration.ofHours(1)).toString()

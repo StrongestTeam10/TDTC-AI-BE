@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,8 +33,13 @@ public class PostReportController {
     private String aiSecretKey;
 
     @GetMapping
-    public List<PostReportDto> getAllPostReports() {
-        return repository.findAll().stream().map(report -> {
+    public List<PostReportDto> getAllPostReports(@RequestParam(required = false) Long zoneId) {
+        // ★ 추가됨: zoneId가 넘어오면 네이티브 조인 쿼리로 필터링, 없으면 전체 조회
+        List<PostReport> reports = (zoneId != null)
+                ? repository.findByZoneIdNative(zoneId)
+                : repository.findAll();
+
+        return reports.stream().map(report -> {
             String viewUrl = (report.getS3PdfUrl() != null && !report.getS3PdfUrl().isBlank())
                     ? videoS3Service.generatePresignedDownloadUrl(report.getS3PdfUrl(), Duration.ofHours(1)).toString()
                     : null;
