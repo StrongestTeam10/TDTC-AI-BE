@@ -69,4 +69,14 @@ public class ControlSystemService {
                     return alert.getAlertId();
                 });
     }
+
+    // TDTC-AI-BE/src/main/java/com/markettwin/backend/service/ControlSystemService.java
+
+    @Transactional
+    public void resolveAlert(Long alertId) {
+        EmergencyAlert alert = emergencyAlertRepository.findById(alertId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 알람을 찾을 수 없습니다: " + alertId));
+        alert.resolve();
+    }
+
 }

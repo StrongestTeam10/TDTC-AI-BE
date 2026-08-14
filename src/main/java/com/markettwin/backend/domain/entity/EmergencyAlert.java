@@ -32,4 +32,9 @@ public class EmergencyAlert {
     @Column(name = "alerted_at", nullable = false)
     @Builder.Default
     private Instant alertedAt = Instant.now();
+
+    public void resolve() {
+        this.isResolved = true;
+    }
+
 }

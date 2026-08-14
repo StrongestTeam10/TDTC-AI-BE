@@ -40,12 +40,10 @@ aws:
 # 참고) - 앱 기동 자체는 막지 않는다.
 emergency:
   target-phone: ${EMERGENCY_TARGET_PHONE:}
+  
 ai:
-  secret-key: ${AI_SECRET_KEY:tdtc-super-secret-key-2026}
-
+  secret-key: ${AI_SECRET_KEY:}
 solapi:
   api-key: ${SOLAPI_API_KEY:}
   api-secret: ${SOLAPI_API_SECRET:}
   sender-phone: ${SOLAPI_SENDER_PHONE:}
-
-

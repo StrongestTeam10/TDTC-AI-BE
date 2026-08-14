@@ -35,6 +35,18 @@ public class UserAdminController {
         return userAdminService.list(marketCode, pendingOnly, currentUser);
     }
 
+    // 2026-08-13 추가: 관리자 당직자 지정/해제 API
+    @PatchMapping("/{userId}/duty")
+    public UserSummaryDto updateDuty(
+            @PathVariable Long userId,
+            @Valid @RequestBody com.markettwin.backend.dto.request.UpdateUserDutyRequestDto request,
+            HttpServletRequest httpRequest
+    ) {
+        User currentUser = currentUserProvider.getCurrentUser();
+        return userAdminService.updateDuty(userId, request.getIsDuty(), currentUser, resolveClientIp(httpRequest));
+    }
+
+
     @PatchMapping("/{userId}/role")
     public UserSummaryDto updateRole(
             @PathVariable Long userId,

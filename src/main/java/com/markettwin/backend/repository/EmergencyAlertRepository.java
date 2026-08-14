@@ -11,4 +11,9 @@ public interface EmergencyAlertRepository extends JpaRepository<EmergencyAlert, 
     boolean existsByZoneIdAndIsResolvedFalse(Long zoneId);
 
     Optional<EmergencyAlert> findFirstByZoneIdAndIsResolvedFalse(Long zoneId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("DELETE FROM EmergencyAlert e WHERE e.alertedAt < :threshold")
+    void deleteByAlertedAtBefore(@org.springframework.data.repository.query.Param("threshold") java.time.Instant threshold);
+
 }

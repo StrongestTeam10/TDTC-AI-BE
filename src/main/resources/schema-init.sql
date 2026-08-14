@@ -71,6 +71,12 @@ ALTER TABLE usrusrs01m ADD COLUMN IF NOT EXISTS approval_status VARCHAR(5);
 UPDATE usrusrs01m SET approval_status = 'APRAP' WHERE approval_status IS NULL;
 ALTER TABLE usrusrs01m ALTER COLUMN approval_status SET DEFAULT 'APRPD';
 ALTER TABLE usrusrs01m ALTER COLUMN approval_status SET NOT NULL;
+-- 2026-08-13 추가: 전화번호 및 당직자 여부 (안전하게 추가)
+ALTER TABLE usrusrs01m ADD COLUMN IF NOT EXISTS phone_number VARCHAR(20);
+ALTER TABLE usrusrs01m ADD COLUMN IF NOT EXISTS is_duty BOOLEAN;
+UPDATE usrusrs01m SET is_duty = FALSE WHERE is_duty IS NULL;
+ALTER TABLE usrusrs01m ALTER COLUMN is_duty SET DEFAULT FALSE;
+ALTER TABLE usrusrs01m ALTER COLUMN is_duty SET NOT NULL;
 
 -- =========================================
 -- 3. 현장 변경 (승인/변경 이력)

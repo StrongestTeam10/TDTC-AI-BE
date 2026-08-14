@@ -84,6 +84,13 @@ public class User {
     @Column(name = "approval_status", nullable = false, length = 5)
     private String approvalStatus;
 
+    // 2026-08-13 추가: 전화번호 및 당직자 여부
+    @Column(name = "phone_number", length = 20)
+    private String phoneNumber;
+
+    @Column(name = "is_duty", nullable = false)
+    private Boolean isDuty;
+
     // 2026-08-04 추가 (비밀번호 찾기): 재설정 시 비밀번호 + 변경 이력(시각/IP)을 함께 갱신
     public void updatePassword(String encodedPassword, String clientIp) {
         this.password = encodedPassword;

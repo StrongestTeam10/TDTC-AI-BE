@@ -100,6 +100,22 @@ public class UserAdminService {
         return toSummary(target);
     }
 
+    // 2026-08-13 추가: 관리자의 당직 상태 변경 API 로직
+    @Transactional
+    public UserSummaryDto updateDuty(Long targetUserId, Boolean isDuty, User currentUser, String clientIp) {
+        requireAdmin(currentUser);
+
+        User target = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new UserNotFoundException(targetUserId));
+
+        target.setIsDuty(isDuty);
+        target.setUpdatedAt(Instant.now());
+        target.setUpdatedIp(clientIp);
+
+        return toSummary(target);
+    }
+
+
     private void requireAdmin(User user) {
         if (!ADMIN_ROLE_CODE.equals(user.getRulesCode())) {
             throw new ForbiddenActionException("관리자만 이용할 수 있습니다.");
@@ -129,6 +145,8 @@ public class UserAdminService {
                 .rulesCode(user.getRulesCode())
                 .orgCode(user.getOrgCode())
                 .marketCode(user.getMarketCode())
+                .phoneNumber(user.getPhoneNumber())
+                .isDuty(user.getIsDuty())
                 .build();
     }
 }

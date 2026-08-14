@@ -14,6 +14,7 @@ public class PendingUserDto {
     private Long userId;
     private String loginId;
     private String name;
+    private String phoneNumber; // 08.13 추가
     private String orgCode;
     private String marketCode;
     private String approvalStatus;
