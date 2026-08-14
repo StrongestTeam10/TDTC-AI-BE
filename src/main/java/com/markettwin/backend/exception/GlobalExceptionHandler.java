@@ -101,6 +101,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorBody(ex.getMessage()));
     }
 
+    // 2026-08-11 추가 (CCTV 관제 구역)
+    @ExceptionHandler(CctvZoneNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleCctvZoneNotFound(CctvZoneNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody(ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidCctvZonePolygonException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidCctvZonePolygon(InvalidCctvZonePolygonException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody(ex.getMessage()));
+    }
+
     @ExceptionHandler(FileStorageException.class)
     public ResponseEntity<Map<String, Object>> handleFileStorage(FileStorageException ex) {
         log.error("파일 저장소 처리 실패: {}", ex.getMessage());

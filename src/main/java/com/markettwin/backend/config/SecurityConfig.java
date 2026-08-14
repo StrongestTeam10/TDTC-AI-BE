@@ -18,6 +18,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -119,8 +120,36 @@ public class SecurityConfig {
         // 설정이 따로 있어서 PATCH 하나만 여기 추가했다가 놓칠 뻔했음. Spring
         // Security를 쓰는 이상 실제로 적용되는 건 이 빈이므로, CorsConfig.java는
         // 삭제하고 이 메서드를 CORS 설정의 유일한 출처로 통일함.
+        //
+        // 2026-08-12 변경: 오리진을 "정확 일치"로만 받고 있어서, 로컬에서 Vite dev
+        // 서버가 5173이 아닌 포트로 뜨면 API가 전부 막혔다. Vite는 지정 포트가 이미
+        // 사용 중이면 조용히 5174, 5175로 올려 잡는데(dev 서버를 두 개 띄우면 바로
+        // 이렇게 된다), 그러면 preflight가 403으로 떨어져 화면은 뜨는데 API만 전부
+        // 실패하는 상태가 된다(2026-08-12 실측: 5173 → 200, 5174 → 403).
+        //
+        // 설정값에 '*'가 든 항목만 패턴으로 취급하고 나머지는 예전처럼 정확 일치로 둔다.
+        // 전부 setAllowedOriginPatterns로 넘기지 않는 이유: setAllowedOrigins는 값이
+        // "*"이면서 allowCredentials(true)이면 Spring이 예외로 막아주는데, 패턴 쪽은
+        // 그 검사를 하지 않는다. 운영 설정(PRO_FRONTEND_ORIGIN)에 실수로 "*"가 들어가도
+        // 조용히 통과하게 되므로, 그 안전장치는 남겨둔다.
+        //
+        // 로컬 설정은 application-local.yml에서 http://localhost:[*] 형태로 준다.
+        // ⚠️ @Value의 String[] 바인딩이 쉼표로 자르므로 :[5173,5174] 같은 포트 목록
+        //    문법은 쓸 수 없다. 포트 전체를 여는 :[*]를 쓸 것.
+        List<String> exactOrigins = new ArrayList<>();
+        List<String> originPatterns = new ArrayList<>();
+        for (String origin : allowedOrigins) {
+            String trimmed = origin.trim();
+            if (trimmed.isEmpty()) continue;
+            if (trimmed.contains("*")) originPatterns.add(trimmed);
+            else exactOrigins.add(trimmed);
+        }
+
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(allowedOrigins));
+        // 둘 다 설정할 수 있다. CorsConfiguration.checkOrigin이 정확 일치를 먼저 보고,
+        // 걸리지 않으면 패턴을 본다.
+        if (!exactOrigins.isEmpty()) configuration.setAllowedOrigins(exactOrigins);
+        if (!originPatterns.isEmpty()) configuration.setAllowedOriginPatterns(originPatterns);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

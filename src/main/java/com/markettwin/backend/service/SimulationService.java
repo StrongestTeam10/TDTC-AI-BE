@@ -91,16 +91,29 @@ public class SimulationService {
         return scenarioRepository.save(scenario);
     }
 
+    /**
+     * 이 실행을 대표하는 정책 유형 코드(simscnr01m.policy_type_code) 하나를 고른다.
+     *
+     * ⚠️ 알려진 한계(2026-08-12 확인 후 그대로 두기로 함): 컬럼이 코드 하나(VARCHAR(5))라
+     * 개입을 여러 개 걸어도 아래 우선순위 중 첫 번째만 남는다. 예를 들어 화재 + 통로폐쇄를
+     * 함께 실행하면 POLCB는 기록되지 않는다. 오브젝트 배치나 게이트 폐쇄만 한 실행은
+     * POLNO(없음)로 남는다.
+     *
+     * 고치지 않는 이유: 실행 요청 원본이 simscnr01m.virtual_config에 JSON으로 통째로 남아
+     * 있어 정보가 사라지지 않고, 보고서도 그 원본을 쓴다. FE도 이 값을 더는 쓰지 않는다
+     * (시나리오 이력의 "정책 유형" 열과 검색 선택지를 2026-08-12에 제거했다 - 부정확한
+     * 요약을 보여주고 그것으로 검색까지 하게 두는 것이 오히려 오해를 만들어서다).
+     * 즉 이 값은 지금 ScenarioDisplayNameResolver가 시나리오 이름을 조립할 때만 쓴다.
+     *
+     * 2026-08-12: acoustic_anomaly(POLAC) 분기를 제거했다. 음향 이상 이벤트는 SIM과
+     * FE에서 이미 완전히 삭제되어(SIM EventTrigger.eventType은 "fire"만 받는다) 이
+     * 분기는 어떤 요청으로도 도달할 수 없는 죽은 코드였다.
+     */
     private String derivePolicyTypeCode(ScenarioRequestDto request) {
         boolean hasFire = request.events() != null && request.events().stream()
                 .anyMatch(e -> "fire".equals(e.eventType()));
         if (hasFire) {
             return "POLFR";
-        }
-        boolean hasAcoustic = request.events() != null && request.events().stream()
-                .anyMatch(e -> "acoustic_anomaly".equals(e.eventType()));
-        if (hasAcoustic) {
-            return "POLAC";
         }
         boolean hasCorridorPolicy = request.corridorPolicies() != null && !request.corridorPolicies().isEmpty();
         if (hasCorridorPolicy) {

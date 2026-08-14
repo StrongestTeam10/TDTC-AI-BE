@@ -150,7 +150,9 @@ public class MarketService {
                 facility.getName(),
                 facility.getLatitude(),
                 facility.getLongitude(),
-                facility.getWeight()
+                facility.getWeight(),
+                // is_active가 null인 과거 데이터는 "열림"으로 간주(엔티티 기본값과 동일).
+                facility.getIsActive() == null ? Boolean.TRUE : facility.getIsActive()
         );
     }
 
