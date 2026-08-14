@@ -32,6 +32,10 @@ public class SignupRequestDto {
     @Size(max = 50, message = "이름은 50자 이하여야 합니다.")
     private String name;
 
+    // 2026-08-13 추가: 전화번호 (선택 항목)
+    @Size(max = 20, message = "전화번호는 20자 이하여야 합니다.")
+    private String phoneNumber;
+
     // comcode01m의 ORG 도메인 코드(예: ORGKT, ORGGV, ORGMA) 중 하나여야 함.
     // 실제 존재 여부는 AuthService에서 CommonCodeRepository로 한 번 더 확인함.
     @NotBlank(message = "소속기관은 필수입니다.")

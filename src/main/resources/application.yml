@@ -33,13 +33,11 @@ aws:
     bucket: tdtc-cctv-upload
 
 emergency:
-  target-phone: ${EMERGENCY_TARGET_PHONE}
+  target-phone: ${EMERGENCY_TARGET_PHONE:}
 ai:
-  secret-key: ${AI_SECRET_KEY}
+  secret-key: ${AI_SECRET_KEY:}
 
 solapi:
-  api-key: ${SOLAPI_API_KEY}
-  api-secret: ${SOLAPI_API_SECRET}
-  sender-phone: ${SOLAPI_SENDER_PHONE}
-
-
+  api-key: ${SOLAPI_API_KEY:}
+  api-secret: ${SOLAPI_API_SECRET:}
+  sender-phone: ${SOLAPI_SENDER_PHONE:}

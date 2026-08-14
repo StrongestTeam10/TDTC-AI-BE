@@ -43,4 +43,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // 2026-08-05 추가: 권한 변경 시 "마지막 관리자(ROL01)를 강등시키는" 상황을
     // 막기 위한 안전장치(UserAdminService.updateRole 참고).
     long countByRulesCode(String rulesCode);
+
+    // 2026-08-13 추가: 특정 시장의 당직자만 조회
+    List<User> findByMarketCodeAndIsDutyTrue(String marketCode);
 }

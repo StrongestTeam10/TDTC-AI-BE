@@ -63,6 +63,7 @@ public class UserApprovalService {
                 .userId(user.getUserId())
                 .loginId(user.getLoginId())
                 .name(user.getName())
+                .phoneNumber(user.getPhoneNumber()) // 08.13 추가
                 .orgCode(user.getOrgCode())
                 .marketCode(user.getMarketCode())
                 .approvalStatus(user.getApprovalStatus())

@@ -50,4 +50,13 @@ public class AiIntegrationController {
 
         return ResponseEntity.ok(alertId);
     }
+
+    // TDTC-AI-BE/src/main/java/com/markettwin/backend/controller/AiIntegrationController.java
+
+    @PatchMapping("/alerts/{alertId}/resolve")
+    public ResponseEntity<Void> resolveAlert(@PathVariable Long alertId) {
+        controlSystemService.resolveAlert(alertId);
+        return ResponseEntity.ok().build();
+    }
+
 }

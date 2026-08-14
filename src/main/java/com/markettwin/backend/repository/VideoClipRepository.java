@@ -20,4 +20,9 @@ public interface VideoClipRepository extends JpaRepository<VideoClip, Long> {
 
     // ★ 추가됨: zone_id로 영상 클립 목록 조회
     List<VideoClip> findByZoneId(Long zoneId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("DELETE FROM VideoClip v WHERE v.clipType = 'TEMP' AND v.startTime < :threshold")
+    void deleteTempClipsOlderThan(@org.springframework.data.repository.query.Param("threshold") java.time.Instant threshold);
+
 }

@@ -80,6 +80,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/common-codes/**").permitAll() // 회원가입 화면(로그인 전)에서 소속기관 조회
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        // ★ 파이프라인 연동용 AI 웹훅(Python) 통로 개방 (JWT 검사 생략, X-API-KEY로 자체 인증)
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/ai/alerts/trigger").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/video-clips").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/post-reports").permitAll()
                         // 2026-08-05 추가: 시뮬레이션은 관리자(ROL01)와 관제요원(ROL02)만 쓴다.
                         // 상인회(ROL03)는 What-if 실험과 그 결과로 만든 정책 보고서를 다루지 않는다.
                         //

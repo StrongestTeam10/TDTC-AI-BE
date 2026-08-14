@@ -7,4 +7,9 @@ import java.util.List;
 public interface PedestrianCoordinateJsonRepository extends JpaRepository<PedestrianCoordinateJson, Long> {
     List<PedestrianCoordinateJson> findByClipIdAndFrameIdAndVideoId(
             Long clipId, Integer frameId, Long videoId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("DELETE FROM PedestrianCoordinateJson p WHERE p.capturedAt < :threshold")
+    void deleteByCapturedAtBefore(@org.springframework.data.repository.query.Param("threshold") java.time.Instant threshold);
+
 }
