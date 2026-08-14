@@ -213,14 +213,16 @@ S3 콘솔 > 버킷 > 권한 > CORS:
 ```text
 src/main/resources/db/
 ├─ migration/
-│  └─ V1__baseline_schema.sql     기준 스키마 (2026-08-13 시점 전체)
-└─ legacy/                        Flyway 도입 전 수동 실행하던 파일 (참고용, 실행 안 됨)
+│  ├─ V1__baseline_schema.sql                      기준 스키마 (2026-08-13 시점 전체)
+│  ├─ V2__add_user_phone_number_and_is_duty.sql    당직자 SMS용 사용자 컬럼 추가
+│  └─ V3__vdoclip01m_factor_id_drop_not_null.sql   클립의 factor_id NOT NULL 해제
+└─ legacy/                                         Flyway 도입 전 수동 실행하던 파일 (참고용, 실행 안 됨)
 ```
 
 **새 DDL을 추가할 때**
 
 ```text
-src/main/resources/db/migration/V2__add_xxx_column.sql
+src/main/resources/db/migration/V4__add_xxx_column.sql
 ```
 
 버전 번호를 올려 파일을 추가하기만 하면 됩니다. 다음 기동에서 아직 적용되지 않은 것만 순서대로 실행되고 `flyway_schema_history`에 기록됩니다.
@@ -238,7 +240,11 @@ src/main/resources/db/migration/V2__add_xxx_column.sql
 - **기존 DB** → V1을 "적용 완료"로 표시만 하고 건너뜀 → V2부터 적용
 - **빈 DB** → V1부터 전부 실행
 
-두 경우 모두 같은 최종 스키마에 도달합니다. **처음 배포할 때 기존 DB에서는 DDL이 한 줄도 실행되지 않고**, `flyway_schema_history` 테이블만 새로 생깁니다.
+두 경우 모두 같은 최종 스키마에 도달합니다.
+
+**V1은 기존 DB에서 절대 실행되지 않습니다.** 전체 스키마를 새로 만드는 파일이라 그대로 돌면 "이미 존재한다"로 실패하기 때문입니다. 반면 V2 이후는 기존 DB에도 그대로 적용됩니다. 그래서 Flyway를 처음 도입한 배포에서 기존 운영 RDS·개발 DB에 실제로 실행된 DDL은 **V2와 V3**이고, 여기에 `flyway_schema_history` 테이블이 새로 생겼습니다.
+
+바꿔 말하면, **기존 DB에 반영하고 싶은 변경은 반드시 V2 이후의 새 파일로 넣어야 합니다.** V1을 고쳐도 기존 DB에는 아무 일도 일어나지 않고, 체크섬만 달라져 기동이 거부됩니다.
 
 **시드 데이터는 Flyway가 관리하지 않습니다**
 
