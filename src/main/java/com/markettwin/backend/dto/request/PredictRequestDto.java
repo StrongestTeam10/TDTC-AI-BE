@@ -59,6 +59,10 @@ public record PredictRequestDto(
         @Valid
         List<CorridorPolicyDto> corridorPolicies,
 
+        // 2026-08-12 추가: CCTV 관측 초기배치. BE가 현재 프레임 픽셀좌표를 구역 폴리곤에
+        // 비례매핑해 채운다(FE는 안 보냄). null이면 빈 목록 → SIM은 유입만으로 배치.
+        List<ObservedAgentDto> observedAgents,
+
         Integer seed
 ) {
         public PredictRequestDto {
@@ -71,5 +75,15 @@ public record PredictRequestDto(
                 if (corridorPolicies == null) {
                         corridorPolicies = List.of();
                 }
+                if (observedAgents == null) {
+                        observedAgents = List.of();
+                }
+        }
+
+        /** BE가 관측 좌표를 계산한 뒤 그 값으로 채운 새 요청을 만든다(레코드 불변). */
+        public PredictRequestDto withObservedAgents(List<ObservedAgentDto> agents) {
+                return new PredictRequestDto(
+                        marketId, capturedAt, steps, totalInflow, events,
+                        closedGateIds, objects, corridorPolicies, agents, seed);
         }
 }

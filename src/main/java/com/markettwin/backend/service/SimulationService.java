@@ -58,11 +58,17 @@ public class SimulationService {
     private final ObjectMapper objectMapper;
     private final CurrentUserProvider currentUserProvider;
     private final MarketService marketService;
+    private final ObservedPlacementService observedPlacementService;
 
     public ScenarioResultDto runScenario(ScenarioRequestDto request) {
         assertMarketInScope(request.marketId());
         Scenario scenario = saveScenario(request);
-        ScenarioResultDto result = simulationEngineClient.runScenario(request);
+        // 2026-08-12: CCTV 관측 초기배치를 조립해 SIM에 함께 보낸다(항상 적용, 데이터 없는
+        // 구역은 SIM이 유입으로 채움). virtual_config엔 저장하지 않으므로 saveScenario는
+        // 원본 request로 하고, 엔진 호출만 관측 좌표를 채운 요청으로 한다.
+        ScenarioRequestDto effective = request.withObservedAgents(
+                observedPlacementService.computeForMarket(request.marketId(), request.capturedAt()));
+        ScenarioResultDto result = simulationEngineClient.runScenario(effective);
         saveScenarioResult(scenario.getScenarioId(), result);
         // 저장된 시나리오 식별자를 응답에 실어 준다. 이 값이 없으면 FE는 방금 실행한
         // 시나리오로 보고서를 만들 수 없다(SIM이 준 scenarioId는 UUID라 쓸 수 없음).
@@ -169,7 +175,11 @@ public class SimulationService {
 
     public PredictResultDto predict(PredictRequestDto request) {
         assertMarketInScope(request.marketId());
-        PredictResultDto result = simulationEngineClient.predict(request);
+        // 2026-08-12: 개입 전(Before)도 개입 후와 "같은" 관측 초기배치를 쓴다. capturedAt이
+        // 양쪽 동일하면 같은 프레임이 선택되어 배치가 일치한다.
+        PredictRequestDto effective = request.withObservedAgents(
+                observedPlacementService.computeForMarket(request.marketId(), request.capturedAt()));
+        PredictResultDto result = simulationEngineClient.predict(effective);
 
         baselineRepository.findFirstByMarketIdAndIsActiveTrueOrderByBaselineIdDesc(request.marketId())
                 .ifPresent(baseline -> saveBaselineResult(baseline.getBaselineId(), result));
