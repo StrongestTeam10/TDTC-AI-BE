@@ -10,6 +10,37 @@ spring:
       max-file-size: 50MB
       max-request-size: 50MB
 
+  # 2026-08-13 추가: DB 스키마 마이그레이션(Flyway)
+  #
+  # 지금까지는 schema-init.sql을 SQL Editor에서 손으로 태우는 방식이었다. 그러면
+  # (1) 어느 DB에 어디까지 적용됐는지 기록이 남지 않고 (2) 운영에 DDL을 먼저 치고
+  # 코드를 배포하는 순서를 사람이 매번 지켜야 했다. ddl-auto가 validate라서 순서가
+  # 어긋나면 애플리케이션이 기동 자체에 실패한다.
+  # 이제 기동 시 Flyway가 스키마를 맞춘 뒤 Hibernate가 검증하므로 순서가 보장된다.
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+    # ⚠️ 이 프로젝트는 테이블이 이미 들어 있는 DB(운영 RDS·개발 DB)에 Flyway를
+    #    나중에 붙인 경우다. 그대로 두면 첫 기동에서 V1(전체 스키마 생성)을 실행하려다
+    #    "이미 존재한다"로 실패한다.
+    #
+    #    baseline-on-migrate=true : 관리 이력(flyway_schema_history)이 없는데 스키마에
+    #      객체가 이미 있으면, 그 DB를 baseline-version에 도달한 것으로 표시만 하고
+    #      그보다 낮거나 같은 버전은 실행하지 않는다.
+    #    baseline-version=1       : V1(기준 스키마)을 적용 완료로 간주한다.
+    #
+    #    결과적으로
+    #      기존 DB → V1 건너뛰고 V2부터 적용
+    #      빈  DB → V1부터 전부 실행
+    #    두 경우 모두 같은 최종 스키마에 도달한다.
+    baseline-on-migrate: true
+    baseline-version: 1
+
+    # 적용이 끝난 마이그레이션 파일이 수정되면 기동을 거부한다(기본값). 이미 반영된
+    # 변경을 나중에 고쳐도 DB에는 반영되지 않아 코드와 실제 스키마가 갈리기 때문이다.
+    validate-on-migrate: true
+
 server:
   port: 8080
 

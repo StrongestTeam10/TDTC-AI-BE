@@ -206,9 +206,54 @@ S3 콘솔 > 버킷 > 권한 > CORS:
 
 **고치지 않기로 했습니다.** 실행 요청 원본이 `simscnr01m.virtual_config`에 JSON으로 통째로 남아 있어 정보가 사라지지 않고, 보고서도 그 원본을 씁니다. FE도 이 값을 표시하지 않습니다(2026-08-12에 시나리오 이력의 정책 유형 열·검색을 제거). 현재 이 값은 `ScenarioDisplayNameResolver`가 시나리오 이름을 조립할 때만 쓰입니다.
 
-### DB 마이그레이션은 수동입니다
+### DB 마이그레이션 (Flyway)
 
-Flyway/Liquibase를 쓰지 않습니다. `src/main/resources/schema-init.sql`, `comcode-seed.sql`, `db/migration/*.sql`을 SQL Editor에서 직접 실행합니다. `ddl-auto: validate`로 고정해 엔티티가 스키마를 덮어쓰지 않게 막아뒀습니다.
+스키마 변경은 **Flyway가 기동 시 자동 적용**합니다. `ddl-auto: validate`는 그대로 두므로, Flyway가 스키마를 맞춘 뒤 Hibernate가 엔티티와 대조하는 순서가 됩니다.
+
+```text
+src/main/resources/db/
+├─ migration/
+│  ├─ V1__baseline_schema.sql                      기준 스키마 (2026-08-13 시점 전체)
+│  ├─ V2__add_user_phone_number_and_is_duty.sql    당직자 SMS용 사용자 컬럼 추가
+│  └─ V3__vdoclip01m_factor_id_drop_not_null.sql   클립의 factor_id NOT NULL 해제
+└─ legacy/                                         Flyway 도입 전 수동 실행하던 파일 (참고용, 실행 안 됨)
+```
+
+**새 DDL을 추가할 때**
+
+```text
+src/main/resources/db/migration/V4__add_xxx_column.sql
+```
+
+버전 번호를 올려 파일을 추가하기만 하면 됩니다. 다음 기동에서 아직 적용되지 않은 것만 순서대로 실행되고 `flyway_schema_history`에 기록됩니다.
+
+| 규칙 | 이유 |
+|---|---|
+| **적용된 파일은 절대 수정하지 않는다** | 체크섬이 달라져 기동을 거부합니다. 고칠 게 있으면 새 버전을 추가하세요 |
+| 한 파일에 한 가지 변경 | 실패 지점을 좁히기 쉽습니다 |
+| 되도록 멱등하게 (`IF NOT EXISTS` 등) | 중간 실패 후 재시도가 안전해집니다 |
+
+**기존 DB에 어떻게 붙였나**
+
+운영 RDS·개발 DB에는 이미 테이블이 다 있는 상태에서 Flyway를 도입했습니다. 그래서 `baseline-on-migrate: true` / `baseline-version: 1`로 두어,
+
+- **기존 DB** → V1을 "적용 완료"로 표시만 하고 건너뜀 → V2부터 적용
+- **빈 DB** → V1부터 전부 실행
+
+두 경우 모두 같은 최종 스키마에 도달합니다.
+
+**V1은 기존 DB에서 절대 실행되지 않습니다.** 전체 스키마를 새로 만드는 파일이라 그대로 돌면 "이미 존재한다"로 실패하기 때문입니다. 반면 V2 이후는 기존 DB에도 그대로 적용됩니다. 그래서 Flyway를 처음 도입한 배포에서 기존 운영 RDS·개발 DB에 실제로 실행된 DDL은 **V2와 V3**이고, 여기에 `flyway_schema_history` 테이블이 새로 생겼습니다.
+
+바꿔 말하면, **기존 DB에 반영하고 싶은 변경은 반드시 V2 이후의 새 파일로 넣어야 합니다.** V1을 고쳐도 기존 DB에는 아무 일도 일어나지 않고, 체크섬만 달라져 기동이 거부됩니다.
+
+**시드 데이터는 Flyway가 관리하지 않습니다**
+
+| 파일 | 이유 |
+|---|---|
+| `comcode-seed.sql` | `DELETE` 후 재삽입이라 멱등하지만(참조하는 FK 없음), 운영에 손으로 추가한 코드가 있으면 지워집니다 |
+| `seed-market-data.sql` | `ON CONFLICT`가 없는 순수 `INSERT`라 **재실행하면 데이터가 중복**됩니다 |
+
+둘 다 DB를 새로 만들 때만 한 번 실행하세요. 공통코드를 배포마다 동기화하고 싶으면 `R__comcode_seed.sql`(반복 마이그레이션)로 옮길 수 있지만, 위의 "손으로 추가한 코드가 지워지는" 문제를 먼저 정리해야 합니다.
 
 ### 테스트
 
