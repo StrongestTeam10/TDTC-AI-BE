@@ -17,4 +17,8 @@ public interface CommonCodeRepository extends JpaRepository<CommonCode, CommonCo
     List<CommonCode> findByCodeCob(String codeCob);
 
     boolean existsByCodeCobAndCode(String codeCob, String code);
+
+    // 2026-08-14 추가 (시장 등록): comcode01m.code_name은 도메인별이 아니라 테이블
+    // 전체에 UNIQUE라, 새 시장 이름을 넣기 전에 도메인과 무관하게 중복을 확인해야 한다.
+    boolean existsByCodeName(String codeName);
 }

@@ -33,4 +33,8 @@ public interface ZoneAdjacencyRepository extends JpaRepository<ZoneAdjacency, Lo
     List<ZoneAdjacency> findByMarketIdAndIsActiveTrue(@Param("marketId") Long marketId);
 
     List<ZoneAdjacency> findByFromZoneId(Long fromZoneId);
+
+    // 2026-08-14 추가 (구역 삭제): 통로는 구역에서 파생된 값이라, 구역이 없어지면
+    // 그 구역이 양 끝 중 어느 쪽이든 걸려 있는 행을 함께 지운다.
+    void deleteByFromZoneIdOrToZoneId(Long fromZoneId, Long toZoneId);
 }

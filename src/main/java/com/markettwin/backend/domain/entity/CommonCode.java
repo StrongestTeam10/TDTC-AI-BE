@@ -37,4 +37,16 @@ public class CommonCode {
 
     @Column(name = "rmk", length = 500)
     private String remark;
+
+    /**
+     * 2026-08-14 추가: 표시 이름만 바꾼다(시장 이름 수정 시 MKT 도메인 코드명 동기화).
+     *
+     * 새 객체를 만들어 save()하지 않고 이 메서드로 고치는 이유: 이 엔티티는 복합키
+     * (@IdClass)라 Spring Data가 "새 엔티티"로 오판해 merge 대신 persist를 시도할 수
+     * 있고, 그러면 PK 중복으로 실패한다. 트랜잭션 안에서 조회한 엔티티를 직접 고치면
+     * 더티 체킹이 UPDATE를 내보낸다(CctvZone.updateDetails와 같은 방식).
+     */
+    public void rename(String codeName) {
+        this.codeName = codeName;
+    }
 }

@@ -13,6 +13,19 @@ java {
     }
 }
 
+// 2026-08-14: Flyway 버전을 Spring Boot가 관리하는 값(10.10.0)보다 올린다.
+//
+// 10.10.0은 PostgreSQL 16까지만 검증된 버전이라, PostgreSQL 17인 개발/운영 DB에
+// 붙을 때마다 기동 로그에 경고가 남았다.
+//   WARN o.f.c.internal.database.base.Database :
+//     Flyway upgrade recommended: PostgreSQL 17.6 is newer than this version of
+//     Flyway and support has not been tested.
+//
+// PostgreSQL 17 지원은 Flyway 10.20.0(2024-10-16)에 들어갔다. 10.x 안에서만 올려
+// 메이저 변경(11.x)의 동작 차이를 피한다. spring-boot BOM이 노출하는 flyway.version
+// 속성을 덮어쓰는 방식이라 flyway-core / flyway-database-postgresql이 함께 올라간다.
+ext['flyway.version'] = '10.22.0'
+
 repositories {
     mavenCentral()
 }

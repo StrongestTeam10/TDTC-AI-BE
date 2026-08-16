@@ -18,7 +18,16 @@ public class CctvZoneSaveRequestDto {
     @NotNull(message = "시장은 필수입니다.")
     private Long marketId;
 
-    @NotNull(message = "소속 시뮬레이션 구역을 선택해주세요.")
+    /**
+     * 소속 시뮬레이션 구역.
+     *
+     * 2026-08-14 변경: 필수에서 선택으로 바꿨다. 값을 주면 그 구역을 그대로 쓰고,
+     * 비워서 보내면 사각형 중심 좌표가 어느 구역에 들어가는지 서버가 찾아 채운다
+     * (CctvZoneService.resolveZone). "구역을 먼저 고르고 그 안에만 그린다"를
+     * "지도에 그리면 구역을 찾아준다"로 뒤집기 위한 것이다.
+     *
+     * 기존 화면은 이 값을 계속 보내므로 그대로 동작한다.
+     */
     private Long zoneId;
 
     /**
