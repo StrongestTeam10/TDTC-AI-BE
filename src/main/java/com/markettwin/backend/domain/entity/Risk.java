@@ -54,4 +54,11 @@ public class Risk {
 
     @Column(name = "video_url", length = 1000)
     private String videoUrl;
+
+    // 👇 새로 추가된 2개의 컬럼 (밀집율, 정체시간) 08.16 추가
+    @Column(name = "occupancy_rate")
+    private Float occupancyRate;
+
+    @Column(name = "stagnation_sec")
+    private Float stagnationSec;
 }
