@@ -50,6 +50,9 @@ class SimulationServiceMarketScopeTest {
     @Mock
     private MarketService marketService;
 
+    @Mock
+    private ObservedPlacementService observedPlacementService;
+
     @InjectMocks
     private SimulationService simulationService;
 
@@ -63,7 +66,7 @@ class SimulationServiceMarketScopeTest {
 
     private ScenarioRequestDto scenarioRequest() {
         return new ScenarioRequestDto(
-                OTHER_MARKET_ID, 100, 30, List.of(), List.of(), List.of(), List.of());
+                OTHER_MARKET_ID, 100, 30, List.of(), List.of(), List.of(), List.of(), null, List.of());
     }
 
     @Test
@@ -96,7 +99,7 @@ class SimulationServiceMarketScopeTest {
 
         assertThatThrownBy(() -> simulationService.predict(
                 new PredictRequestDto(OTHER_MARKET_ID, null, 30, 100,
-                        List.of(), List.of(), List.of(), List.of(), null)))
+                        List.of(), List.of(), List.of(), List.of(), List.of(), null)))
                 .isInstanceOf(ForbiddenActionException.class);
 
         verify(simulationEngineClient, never()).predict(any());
