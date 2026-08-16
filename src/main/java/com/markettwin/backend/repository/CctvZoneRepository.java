@@ -17,4 +17,8 @@ public interface CctvZoneRepository extends JpaRepository<CctvZone, Long> {
 
     /** 2026-08-12 추가(관측 초기배치): 그 시뮬 구역의 활성 CCTV 구역 4점 폴리곤. */
     Optional<CctvZone> findFirstByZoneIdAndIsActiveTrue(Long zoneId);
+
+    // 2026-08-14 추가 (구역 삭제): 시뮬레이션 구역을 지우기 전에, 그 구역에 걸린
+    // CCTV가 있는지 확인해 FK 위반 대신 안내 메시지를 주기 위함.
+    long countByZoneId(Long zoneId);
 }

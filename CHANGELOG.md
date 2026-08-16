@@ -3,6 +3,44 @@
 이 파일은 Claude와의 작업 세션에서 변경된 내용을 기록합니다.
 각 항목은 zip으로 전달된 시점 기준입니다.
 
+### 2026-08-14 (Flyway 도입 - 배포 시점 스키마 병목 제거)
+- **문제**: 스키마 변경을 `schema-init.sql`로 SQL Editor에서 손으로 실행하고 있었음.
+  배포 파이프라인(`deploy-be.yml`)에는 DDL 단계가 없어서(이미지 빌드 → SSM 배포 →
+  헬스체크가 전부), "운영 DB에 DDL 먼저 → 코드 배포" 순서를 사람이 매번 지켜야 했음.
+  `ddl-auto: validate`라 순서가 어긋나면 컨테이너가 뜨지 않고 헬스체크에서 배포가 죽음.
+  적용 이력도 남지 않아 운영 RDS/개발 DB/로컬이 서로 갈라질 수 있었음
+- ➕ `build.gradle`: `flyway-core` + `flyway-database-postgresql` 추가. Flyway 10부터
+  DB별 지원이 모듈로 분리돼서, core만 넣으면
+  `No database found to handle jdbc:postgresql`로 기동 실패함
+- ✏️ `application.yml`: `spring.flyway` 설정 추가. `baseline-on-migrate: true` /
+  `baseline-version: 1` - 테이블이 이미 다 있는 DB(운영 RDS·개발 DB)에 Flyway를 나중에
+  붙인 경우라, 그냥 두면 첫 기동에서 V1(전체 스키마 생성)을 실행하려다 "이미 존재한다"로
+  실패함. 기존 DB → V1 건너뛰고 V2부터 / 빈 DB → V1부터 전부. 두 경로 모두 같은 최종
+  스키마에 도달. `ddl-auto: validate`는 그대로 유지(엔티티가 스키마를 덮어쓰지 않음)
+- ✏️ `schema-init.sql` → `db/migration/V1__baseline_schema.sql` 이동(내용 동일, 헤더 주석만 추가)
+- ✏️ `db/migration/2026-08-11_cctv_marketobject.sql` → `db/legacy/`로 이동(참고용, 실행 안 됨)
+- ➕ `db/migration/V2__add_user_phone_number_and_is_duty.sql`: `usrusrs01m`에
+  `phone_number VARCHAR(20)`, `is_duty BOOLEAN NOT NULL DEFAULT false` 추가(당직자 SMS
+  발송 기능에 필요, 2026-08-14 팀 요청). V1에도 같은 DDL이 있지만 V1은 기존 DB에서
+  건너뛰어지므로, 운영 RDS에 실제로 반영하려면 V2가 따로 있어야 함
+- ➕ `db/migration/V3__vdoclip01m_factor_id_drop_not_null.sql`: `vdoclip01m.factor_id`
+  `NOT NULL` 해제. V1에도 `VideoClip` 엔티티에도 원래 NOT NULL이 없었고, Flyway 도입
+  전에 손으로 만든 운영 RDS·개발 DB에만 걸려 있던 드리프트를 맞춘 것
+- ✏️ `README.md`: "DB 마이그레이션은 수동입니다" → "DB 마이그레이션 (Flyway)"로 교체.
+  새 DDL 추가 방법, 적용된 파일 수정 금지 규칙, 시드 데이터가 Flyway 관리 밖인 이유
+- ✏️ `build.gradle`: `ext['flyway.version'] = '10.22.0'`. Spring Boot 3.3.4가 관리하는
+  10.10.0은 PostgreSQL 16까지만 검증된 버전이라, PostgreSQL 17인 개발/운영 DB에 붙을
+  때마다 기동 로그에 경고가 남았음(PostgreSQL 17 지원은 Flyway 10.20.0부터)
+- PR #56으로 머지, 운영 배포 완료(이미지 `ebce5e8`)
+- **⚠️ "Flyway가 운영 DDL을 대신 처리한다"는 아직 실제로 검증되지 않았습니다**:
+  이번 운영 배포 시점에는 `phone_number`/`is_duty`/`factor_id` DDL을 DBeaver로 이미
+  손으로 적용해 둔 상태였습니다. 그래서 V2/V3는 전부 no-op으로 지나갔고, 배포가
+  성공한 것은 손으로 친 DDL 덕분입니다(도입 목적 자체는 아직 미검증. 대신 "이미
+  반영된 DB에 다시 돌려도 안전하다"는 멱등성은 실제로 확인된 셈). 다음 스키마 변경
+  때는 손으로 치지 말고 마이그레이션 파일만 올려서 배포하면 검증됩니다
+- **⚠️ 빈 DB 경로 미검증**: V1부터 전부 실행되는 경로는 아직 돌려보지 않았습니다.
+  로컬에 Docker가 없어 확인하지 못했고, DB를 새로 만들 일이 생기면 그때 확인됩니다
+
 ### 2026-08-11 (3차 - 시장 오브젝트/구조 설정 저장 API 신규)
 - **요청**: 시장 구조 등록 화면에서 시뮬레이션 비교의 초기 배치로 쓸 "오브젝트 배치
   (푸드트럭/행사존/휴게공간/장애물) + 통로 제어 정책(출발/도착 구역, 폐쇄)"을 등록.

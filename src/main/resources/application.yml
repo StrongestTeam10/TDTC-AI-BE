@@ -63,6 +63,36 @@ aws:
   video:
     bucket: tdtc-cctv-upload
 
+# 2026-08-14 추가: 브이월드(공간정보 오픈플랫폼) 건물 폴리곤 적재.
+#
+# api-key에 콜론 기본값(빈 문자열)을 두는 이유는 naver.client.*/solapi.*와 같다 -
+# 키가 없으면 "건물 자동 적재"라는 그 기능만 못 쓰고, 앱 기동이나 다른 기능은
+# 멀쩡해야 한다. 키가 비어 있으면 BuildingImportService가 400으로 안내한다.
+#
+# domain: 브이월드는 인증키 발급 시 등록한 URL을 요청에 함께 보내도록 요구한다
+# (서버 사이드 호출은 Referer가 없어서 이 파라미터로 대신한다). 발급 화면에 적은
+# 주소와 정확히 같아야 하며, 다르면 키가 맞아도 거부된다.
+# 2026-08-14 추가: OpenStreetMap(Overpass API)에서 시장 경계 폴리곤을 찾아온다.
+# 인증키가 없다. 다만 공개 서버라 호출량 제한이 있어서, 실패하면 사용자에게 알리고
+# 직접 그리는 길로 돌아가게 한다(OsmMarketBoundaryClient 참고).
+osm:
+  # 쉼표로 구분한 미러 목록. 앞에서부터 시도하고 실패하면 다음으로 넘어간다.
+  #
+  # 공개 Overpass 서버는 IP당 동시 요청과 일일 할당이 빡빡해서 504·429가 자주 난다
+  # (2026-08-14 확인: 본진 overpass-api.de가 504, kumi.systems는 정상). 미러를
+  # 하나만 두면 그 서버가 흔들릴 때 기능 전체가 멈춘다.
+  overpass-urls: ${OSM_OVERPASS_URLS:https://overpass.kumi.systems/api/interpreter,https://overpass-api.de/api/interpreter}
+  # 같은 좌표를 다시 물어보면 이 시간 동안은 서버에 안 묻는다. 시장 경계는 거의
+  # 바뀌지 않고, 등록 화면에서 같은 시장을 여러 번 시도하는 일이 잦다.
+  cache-minutes: ${OSM_CACHE_MINUTES:60}
+
+vworld:
+  base-url: https://api.vworld.kr
+  api-key: ${VWORLD_API_KEY:}
+  domain: ${VWORLD_DOMAIN:http://localhost:8080}
+  # 건물 레이어. 폴리곤 + 지상층수(gro_flo_co) + 건물관리번호(bd_mgt_sn)를 준다.
+  building-layer: ${VWORLD_BUILDING_LAYER:LT_C_SPBD}
+
 # 2026-08-12: 아래 5개는 필수값(기본값 없음)이었다가 로컬/EC2/CI 전부를 기동
 # 불가로 만들어서 되돌림. SMS는 JWT_SECRET/DB 비밀번호 같은 보안 필수값이 아니라
 # "설정 안 하면 그 기능만 안 되는" 선택 기능이라, naver.client.* 와 같은 방식으로

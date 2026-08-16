@@ -13,6 +13,7 @@ import com.markettwin.backend.exception.ForbiddenActionException;
 import com.markettwin.backend.exception.InvalidCctvZonePolygonException;
 import com.markettwin.backend.repository.CctvZoneRepository;
 import com.markettwin.backend.repository.ZoneRepository;
+import com.markettwin.backend.util.GeoJsonPolygons;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -77,12 +78,12 @@ public class CctvZoneService {
         assertCanManageCctvZones(currentUser);
         marketService.getAccessibleMarket(request.getMarketId(), currentUser);
 
-        Zone zone = getZoneInMarketOrThrow(request.getZoneId(), request.getMarketId());
+        Zone zone = resolveZone(request, request.getMarketId());
         assertRectangleInsideZone(request.getPolygonCoordinates(), zone);
 
         CctvZone entity = CctvZone.builder()
                 .marketId(request.getMarketId())
-                .zoneId(request.getZoneId())
+                .zoneId(zone.getZoneId())
                 .polygonCoordinates(request.getPolygonCoordinates())
                 .isActive(request.getIsActive() == null || request.getIsActive())
                 .rmk(request.getRmk())
@@ -99,11 +100,11 @@ public class CctvZoneService {
                 .orElseThrow(() -> new CctvZoneNotFoundException(cctvZoneId));
         marketService.getAccessibleMarket(entity.getMarketId(), currentUser);
 
-        Zone zone = getZoneInMarketOrThrow(request.getZoneId(), entity.getMarketId());
+        Zone zone = resolveZone(request, entity.getMarketId());
         assertRectangleInsideZone(request.getPolygonCoordinates(), zone);
 
         entity.updateDetails(
-                request.getZoneId(),
+                zone.getZoneId(),
                 request.getPolygonCoordinates(),
                 request.getIsActive() == null || request.getIsActive(),
                 request.getRmk());
@@ -118,6 +119,53 @@ public class CctvZoneService {
                 .orElseThrow(() -> new CctvZoneNotFoundException(cctvZoneId));
         marketService.getAccessibleMarket(entity.getMarketId(), currentUser);
         cctvZoneRepository.delete(entity);
+    }
+
+    /**
+     * 2026-08-14 추가: 소속 시뮬레이션 구역을 정한다.
+     *
+     * zoneId를 주면 그 구역을 그대로 쓰고(기존 화면 동작), 비워서 보내면 사각형
+     * 중심 좌표가 들어가는 구역을 서버가 찾는다. 어느 쪽이든 뒤이어
+     * assertRectangleInsideZone이 네 꼭짓점 전부 그 구역 안인지 다시 확인하므로,
+     * 두 구역에 걸친 사각형은 자동 판정에서도 통과하지 못한다.
+     */
+    private Zone resolveZone(CctvZoneSaveRequestDto request, Long marketId) {
+        if (request.getZoneId() != null) {
+            return getZoneInMarketOrThrow(request.getZoneId(), marketId);
+        }
+        return findZoneContaining(request.getPolygonCoordinates(), marketId);
+    }
+
+    private Zone findZoneContaining(String polygonCoordinates, Long marketId) {
+        List<double[]> vertices = parseRectangleVertices(polygonCoordinates);
+        // GeoJSON은 [경도(x), 위도(y)] 순.
+        double centerLon = vertices.stream().mapToDouble(vertex -> vertex[0]).average().orElse(Double.NaN);
+        double centerLat = vertices.stream().mapToDouble(vertex -> vertex[1]).average().orElse(Double.NaN);
+
+        List<Zone> zones = zoneRepository.findByMarketId(marketId);
+        if (zones.isEmpty()) {
+            throw new InvalidCctvZonePolygonException(
+                    "이 시장에는 시뮬레이션 구역이 없습니다. 시장 등록 화면에서 구역을 먼저 나눠 주세요.");
+        }
+
+        return zones.stream()
+                .filter(zone -> zoneContainsPoint(zone, centerLon, centerLat))
+                .findFirst()
+                .orElseThrow(() -> new InvalidCctvZonePolygonException(
+                        "그린 사각형의 중심이 어느 구역에도 들어가지 않습니다. 구역 안쪽에 그려 주세요."));
+    }
+
+    private boolean zoneContainsPoint(Zone zone, double lon, double lat) {
+        if (zone.getPolygonCoordinates() == null) {
+            return false;
+        }
+        try {
+            List<double[]> ring = GeoJsonPolygons.parseOuterRing(zone.getPolygonCoordinates(), objectMapper);
+            return GeoJsonPolygons.containsPoint(ring, lon, lat);
+        } catch (IllegalArgumentException e) {
+            // 좌표가 깨진 구역이 하나 섞여 있다고 해서 CCTV 등록 전체가 막히면 안 된다.
+            return false;
+        }
     }
 
     private Zone getZoneInMarketOrThrow(Long zoneId, Long marketId) {
@@ -159,7 +207,10 @@ public class CctvZoneService {
         for (double[] v : vertices) {
             // GeoJSON은 [경도(x), 위도(y)] 순.
             if (!isPointInPolygon(v[0], v[1], zoneRing)) {
-                throw new InvalidCctvZonePolygonException("꼭짓점이 소속 구역 밖에 있습니다.");
+                // 2026-08-14: 구역명을 넣는다. 소속 구역을 서버가 자동으로 정하게 된 뒤로는
+                // 사용자가 고른 적 없는 구역이라, 어느 구역을 벗어났는지 알려줘야 한다.
+                throw new InvalidCctvZonePolygonException(
+                        "꼭짓점이 소속 구역(" + zone.getZoneName() + ") 밖에 있습니다.");
             }
         }
     }

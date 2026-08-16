@@ -101,6 +101,54 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorBody(ex.getMessage()));
     }
 
+    // 2026-08-14 추가 (시장 등록): 시장 코드/이름 중복. 요청 자체는 형식상 올바르고
+    // 서버 상태와 충돌하는 것이라 400이 아니라 409를 쓴다.
+    @ExceptionHandler(DuplicateMarketException.class)
+    public ResponseEntity<Map<String, Object>> handleDuplicateMarket(DuplicateMarketException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorBody(ex.getMessage()));
+    }
+
+    // 2026-08-14 추가 (구역 등록/수정/삭제)
+    @ExceptionHandler(ZoneNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleZoneNotFound(ZoneNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody(ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidZonePolygonException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidZonePolygon(InvalidZonePolygonException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody(ex.getMessage()));
+    }
+
+    // 구역 이름 중복, 또는 다른 데이터가 참조 중이라 삭제 불가.
+    @ExceptionHandler(ZoneInUseException.class)
+    public ResponseEntity<Map<String, Object>> handleZoneInUse(ZoneInUseException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorBody(ex.getMessage()));
+    }
+
+    // 2026-08-14 추가 (건물 폴리곤 적재)
+    // 브이월드 연동 실패는 사용자가 고칠 수 있는 것이 아니라 502로 보낸다
+    // (SimulationEngineException과 같은 취급). 원인 파악이 되도록 로그를 남긴다.
+    @ExceptionHandler(BuildingImportException.class)
+    public ResponseEntity<Map<String, Object>> handleBuildingImport(BuildingImportException ex) {
+        log.error("건물 폴리곤 적재 실패: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(errorBody(ex.getMessage()));
+    }
+
+    // 2026-08-14 추가 (시장 경계 제안): OSM 연동 실패. "OSM에 없다"는 것은 오류가 아니라
+    // found=false로 돌려주므로 여기 오지 않는다.
+    @ExceptionHandler(MarketBoundaryException.class)
+    public ResponseEntity<Map<String, Object>> handleMarketBoundary(MarketBoundaryException ex) {
+        log.warn("시장 경계 조회 실패: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(errorBody(ex.getMessage()));
+    }
+
+    // 이미 건물이 있는 시장에 overwrite 없이 적재를 시도한 경우.
+    @ExceptionHandler(BuildingImportConflictException.class)
+    public ResponseEntity<Map<String, Object>> handleBuildingImportConflict(
+            BuildingImportConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorBody(ex.getMessage()));
+    }
+
     // 2026-08-11 추가 (CCTV 관제 구역)
     @ExceptionHandler(CctvZoneNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleCctvZoneNotFound(CctvZoneNotFoundException ex) {
