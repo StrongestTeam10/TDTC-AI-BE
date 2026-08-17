@@ -8,6 +8,9 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.core.sync.RequestBody;
+import java.util.UUID;
 
 import java.net.URI;
 import java.net.URL;
@@ -20,11 +23,13 @@ import java.time.Duration;
 public class VideoS3Service {
 
     private final S3Presigner s3Presigner;
+    private final S3Client s3Client;
     private final String bucket;
 
-    public VideoS3Service(S3Presigner s3Presigner,
+    public VideoS3Service(S3Presigner s3Presigner, S3Client s3Client,
                           @Value("${aws.video.bucket}") String bucket) {
         this.s3Presigner = s3Presigner;
+        this.s3Client = s3Client;
         this.bucket = bucket;
     }
 
@@ -85,6 +90,17 @@ public class VideoS3Service {
                 .build();
 
         return s3Presigner.presignGetObject(presignRequest).url();
+    }
+
+    public String uploadCctvReport(byte[] content, String contentType, String keyPrefix) {
+        String key = keyPrefix + "/" + UUID.randomUUID() + ".pdf";
+        PutObjectRequest request = PutObjectRequest.builder()
+                .bucket(bucket) // tdtc-cctv-upload 버킷 사용!
+                .key(key)
+                .contentType(contentType)
+                .build();
+        s3Client.putObject(request, RequestBody.fromBytes(content));
+        return key;
     }
 
 }

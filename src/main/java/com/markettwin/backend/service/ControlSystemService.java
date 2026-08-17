@@ -9,6 +9,7 @@ import com.markettwin.backend.repository.EmergencyAlertRepository;
 import com.markettwin.backend.repository.PedestrianCoordinateJsonRepository;
 import com.markettwin.backend.repository.PostReportRepository;
 import com.markettwin.backend.repository.VideoClipRepository;
+import com.markettwin.backend.repository.RiskRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,10 @@ public class ControlSystemService {
     private final ExternalNotificationService externalNotificationService;
     private final VideoS3Service videoS3Service;
 
+    // 🟢 새로 추가된 서비스들
+    private final RiskRepository riskRepository;
+    private final PdfReportService pdfReportService;
+
     public List<EmergencyAlertDto> getUnresolvedAlerts() {
         return emergencyAlertRepository.findByIsResolvedFalse().stream()
                 .map(EmergencyAlertDto::from).toList();
@@ -51,12 +56,13 @@ public class ControlSystemService {
                 .map(PedestrianCoordinateDto::from).toList();
     }
 
+    // 🟢 완전히 업그레이드된 신고 발동 메서드
     @Transactional
     public Long triggerAlertFromAi(AlertTriggerRequest request) {
-        // 이미 진행 중인 알람이 있으면 기존 ID 반환, 없으면 새로 만들고 SMS 발송 후 ID 반환
         return emergencyAlertRepository.findFirstByZoneIdAndIsResolvedFalse(request.zoneId())
                 .map(EmergencyAlert::getAlertId)
                 .orElseGet(() -> {
+                    // 1. 알람 DB 저장 (기존과 동일)
                     EmergencyAlert alert = EmergencyAlert.builder()
                             .zoneId(request.zoneId())
                             .alertType(request.alertType() != null ? request.alertType() : "AI_DETECTED")
@@ -64,13 +70,32 @@ public class ControlSystemService {
                             .build();
                     emergencyAlertRepository.save(alert);
 
+                    // 2. 최신 위험 데이터(4가지 수치) 조회
+                    com.markettwin.backend.domain.entity.Risk latestRisk = riskRepository.findLatestRiskByZoneId(request.zoneId()).orElse(null);
+
+
+                    if (latestRisk != null) {
+                        // 3. PDF 생성
+                        byte[] pdfBytes = pdfReportService.generateEmergencyReport(request.zoneId(), latestRisk);
+
+                        // 4. S3 업로드 (VideoS3Service 사용 -> tdtc-cctv-upload 버킷의 post-reports 폴더로 들어감)
+                        String s3Key = videoS3Service.uploadCctvReport(pdfBytes, "application/pdf", "post-reports");
+
+                        // 5. PostReport DB 테이블에 S3 주소(Key) 적재
+                        com.markettwin.backend.domain.entity.PostReport postReport = com.markettwin.backend.domain.entity.PostReport.builder()
+                                .alertId(alert.getAlertId())
+                                .targetDate(LocalDate.now())
+                                .s3PdfUrl(s3Key)
+                                .build();
+                        postReportRepository.save(postReport);
+                    }
+
+                    // 6. 문자 발송 (기존과 동일)
                     externalNotificationService.sendEmergencySms(request.zoneId(), request.alertType());
 
                     return alert.getAlertId();
                 });
     }
-
-    // TDTC-AI-BE/src/main/java/com/markettwin/backend/service/ControlSystemService.java
 
     @Transactional
     public void resolveAlert(Long alertId) {
@@ -78,5 +103,4 @@ public class ControlSystemService {
                 .orElseThrow(() -> new IllegalArgumentException("해당 알람을 찾을 수 없습니다: " + alertId));
         alert.resolve();
     }
-
 }
