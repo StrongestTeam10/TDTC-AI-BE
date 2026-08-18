@@ -10,6 +10,8 @@ public record RiskDto(
         String reasonCode,
         Instant detectedAt,
         Integer totalCount,
-        String videoUrl
+        String videoUrl,
+        Float occupancyRate,
+        Float stagnationSec
 ) {
 }
