@@ -134,6 +134,38 @@ jobs:
           docker compose pull be
           docker compose up -d be
           docker image prune -f
+
+          # ---- 컨테이너 헬스체크 ----
+          # 아래 .env 갱신을 "정상 기동 확인 후"에만 하기 위한 게이트.
+          # 바깥의 Health check 스텝은 nginx를 거친 최종 확인이고, 여기서는
+          # .env를 새 태그로 넘겨도 되는지만 판단한다. (deploy-sim.yml과 같은 방침)
+          echo "--- BE 컨테이너 헬스체크 ---"
+          HEALTHY=0
+          for i in \$(seq 1 30); do
+            sleep 5
+            if docker compose exec -T be curl -fsS http://localhost:8080/actuator/health 2>/dev/null | grep -q '"status":"UP"'; then
+              echo "[\$i] UP"
+              HEALTHY=1
+              break
+            fi
+            echo "[\$i] 기동 대기..."
+          done
+          if [ "\$HEALTHY" -ne 1 ]; then
+            echo "BE 헬스체크 실패 - .env는 마지막 정상 이미지를 유지한다"
+            docker compose logs --tail 50 be || true
+            exit 1
+          fi
+
+          # .env 를 새 태그로 갱신한다. export만 하면 이 SSM 세션에서만 유효해서,
+          # 나중에 EC2 재부팅이나 수동 docker compose up -d 때 .env 에 남아 있던
+          # 옛 이미지로 되돌아간다. (2026-08-20 실제 발생: 수동 재기동이 낡은
+          # latest 태그로 롤백되면서 시장 등록 API들이 500을 반환했다)
+          if grep -q '^BE_IMAGE=' .env; then
+            sed -i "s|^BE_IMAGE=.*|BE_IMAGE=\${BE_IMAGE}|" .env
+          else
+            echo "BE_IMAGE=\${BE_IMAGE}" >> .env
+          fi
+          echo ".env BE_IMAGE 갱신 완료: \${BE_IMAGE}"
           EOF
           )
 
