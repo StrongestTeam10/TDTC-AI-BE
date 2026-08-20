@@ -17,6 +17,7 @@ import com.markettwin.backend.repository.MarketRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.markettwin.backend.util.UploadFiles;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
@@ -77,6 +78,12 @@ public class FacilityPhotoService {
         if (!VALID_DIRECTION_CODES.contains(directionCode)) {
             throw new InvalidDirectionCodeException(directionCode);
         }
+
+        // 2026-08-20 추가(보안 감사 BE-09): 상점 외관 "사진"이므로 이미지만 받는다.
+        // 아래 EXIF 추출도 이미지를 전제로 동작한다.
+        UploadFiles.requireAllowedExtension(
+                UploadFiles.sanitizeName(file.getOriginalFilename()),
+                UploadFiles.IMAGE_EXTENSIONS, "상점 사진");
 
         // 저장 시점에도 다시 추출(FE가 미리보기 때 받은 값을 그대로 되돌려 보내는 걸
         // 신뢰하지 않고, 서버가 최종 진실을 갖도록 함 - previewExif와 동일한 파일이라면

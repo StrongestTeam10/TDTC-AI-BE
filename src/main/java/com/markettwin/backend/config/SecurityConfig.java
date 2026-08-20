@@ -79,6 +79,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/common-codes/**").permitAll() // 회원가입 화면(로그인 전)에서 소속기관 조회
+                        // 2026-08-20(보안 감사 BE-08): 이 permitAll은 로컬·개발 전용이다.
+                        // 운영에서는 application-prod.yml이 springdoc 자체를 꺼서
+                        // (api-docs.enabled=false) 이 경로에 매핑되는 핸들러가 없다.
+                        // 여기서 경로를 지우지 않는 이유는 로컬에서 Swagger를 계속
+                        // 쓰기 때문이고, 운영 차단은 프로파일 설정 쪽이 담당한다.
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         // ★ 파이프라인 연동용 AI 웹훅(Python) 통로 개방 (JWT 검사 생략, X-API-KEY로 자체 인증)

@@ -182,6 +182,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorBody(ex.getMessage()));
     }
 
+    // 2026-08-20 추가(보안 감사 BE-09): 업로드 확장자·폴더명처럼 "요청이 잘못된"
+    // 경우를 400으로 돌려준다. 핸들러가 없던 동안에는 아래 handleGeneralException
+    // 으로 떨어져 500 + "서버 내부 오류"로 나갔고, 사용자는 무엇을 고쳐야 하는지
+    // 알 수 없었다(로그에도 서버 잘못처럼 남았다).
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody(ex.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationException(
             MethodArgumentNotValidException ex) {

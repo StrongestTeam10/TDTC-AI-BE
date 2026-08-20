@@ -4,6 +4,7 @@ import com.markettwin.backend.dto.request.AlertTriggerRequest;
 import com.markettwin.backend.dto.response.EmergencyAlertDto;
 import com.markettwin.backend.dto.response.PedestrianCoordinateDto;
 import com.markettwin.backend.service.ControlSystemService;
+import com.markettwin.backend.util.ApiKeys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -40,7 +41,7 @@ public class AiIntegrationController {
             @RequestHeader(value = "X-API-KEY", required = false) String apiKey,
             @RequestBody AlertTriggerRequest request) {
 
-        if (apiKey == null || !apiKey.equals(aiSecretKey)) {
+        if (!ApiKeys.matches(apiKey, aiSecretKey)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("❌ 경고: API 키가 일치하지 않거나 누락되었습니다.");
         }
