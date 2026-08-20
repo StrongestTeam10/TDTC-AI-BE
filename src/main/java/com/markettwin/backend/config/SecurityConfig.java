@@ -85,6 +85,9 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/ai/alerts/trigger").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/video-clips").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/post-reports").permitAll()
+                        // 벌크 적재 허용
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/metrics/bulk").permitAll()
+
                         // 2026-08-05 추가: 시뮬레이션은 관리자(ROL01)와 관제요원(ROL02)만 쓴다.
                         // 상인회(ROL03)는 What-if 실험과 그 결과로 만든 정책 보고서를 다루지 않는다.
                         //
