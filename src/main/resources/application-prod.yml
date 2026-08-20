@@ -40,3 +40,22 @@ aws:
   s3:
     bucket: ${AWS_S3_BUCKET}
     report-bucket: ${AWS_S3_REPORT_BUCKET:${AWS_S3_BUCKET}}
+
+# 2026-08-20 추가 (보안 감사 BE-08): 운영에서 API 문서를 닫는다.
+#
+# application.yml의 springdoc 설정은 프로파일 공통이라 운영에서도 그대로 살아
+# 있었고, SecurityConfig가 /swagger-ui/**, /v3/api-docs/** 를 permitAll로 두기
+# 때문에 누구나 인증 없이 전체 API 명세를 받아갈 수 있었다. 엔드포인트 경로와
+# 요청/응답 필드가 전부 들어 있어서 공격자에게는 공격 표면 지도가 된다.
+#
+# api-docs를 끄면 스펙(JSON) 생성 자체가 없어지고, swagger-ui는 그 스펙을 읽어
+# 그리는 화면이라 함께 막힌다. 둘 다 명시하는 이유는 UI만 끄고 /v3/api-docs를
+# 열어두는 실수를 방지하기 위함이다(스펙만 있어도 노출 문제는 그대로다).
+#
+# ⚠️ 로컬·개발(application-local.yml)에는 넣지 않는다. Swagger는 개발 중
+#    API 확인에 계속 쓰이고, 막아야 하는 대상은 외부에 열린 운영뿐이다.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

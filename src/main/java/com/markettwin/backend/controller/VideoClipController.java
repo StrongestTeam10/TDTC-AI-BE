@@ -5,7 +5,10 @@ import com.markettwin.backend.dto.request.VideoClipWebhookRequest;
 import com.markettwin.backend.dto.response.VideoClipDto;
 import com.markettwin.backend.repository.VideoClipRepository;
 import com.markettwin.backend.service.VideoS3Service;
+import com.markettwin.backend.util.ApiKeys;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,6 +29,8 @@ import java.util.Map;
 @RequestMapping("/api/v1/video-clips")
 @RequiredArgsConstructor
 public class VideoClipController {
+
+    private static final Logger log = LoggerFactory.getLogger(VideoClipController.class);
 
     private final VideoClipRepository repository;
     private final VideoS3Service videoS3Service;
@@ -55,12 +60,10 @@ public class VideoClipController {
             @RequestHeader(value = "X-API-KEY", required = false) String apiKey,
             @RequestBody VideoClipWebhookRequest payload) {
 
-        if (apiKey == null || !apiKey.equals(aiSecretKey)) {
+        if (!ApiKeys.matches(apiKey, aiSecretKey)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "❌ 경고: API 키가 일치하지 않거나 누락되었습니다."));
         }
-
-        System.out.println("✅ 파이썬으로부터 긴급 클립 URL 수신 완료: " + payload.getS3ClipUrl());
 
         VideoClip clip = VideoClip.builder()
                 .zoneId(payload.getZoneId())
@@ -74,6 +77,12 @@ public class VideoClipController {
                 .build();
 
         VideoClip savedClip = repository.save(clip);
+
+        // S3 URL은 남기지 않는다 - 서명 없는 객체 경로라도 버킷 구조가 로그로 새어
+        // 나가고, 외부(AI 서버)에서 온 문자열이라 그대로 찍으면 로그 위조에 쓰인다.
+        // 어느 클립이 들어왔는지 추적하는 데는 식별자로 충분하다.
+        log.info("AI 긴급 클립 수신: clipId={}, zoneId={}, clipType={}",
+                savedClip.getClipId(), savedClip.getZoneId(), savedClip.getClipType());
 
         return ResponseEntity.ok().body(Map.of(
                 "clipId", savedClip.getClipId(),

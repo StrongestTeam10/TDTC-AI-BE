@@ -26,6 +26,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.markettwin.backend.util.UploadFiles;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URL;
@@ -54,6 +55,13 @@ public class PostService {
 
     private static final String ADMIN_ROLE_CODE = "ROL01";
     private static final int MAX_PAGE_SIZE = 50;
+
+    /** 게시판 첨부로 허용할 확장자. 문서 + 이미지. */
+    private static final java.util.Set<String> ATTACHMENT_EXTENSIONS =
+            java.util.stream.Stream.concat(
+                            UploadFiles.DOCUMENT_EXTENSIONS.stream(),
+                            UploadFiles.IMAGE_EXTENSIONS.stream())
+                    .collect(java.util.stream.Collectors.toUnmodifiableSet());
     // 2026-08-04 재변경: 게시판 첨부파일과 보고서 버킷을 하나(tdtc-ai-report)로
     // 합치면서, 그 안에서 폴더로 구분하도록 접두사를 board로 바꿈(보고서는
     // ReportService.KEY_PREFIX="reports"라 서로 겹치지 않음). 이전엔
@@ -299,10 +307,16 @@ public class PostService {
             if (file == null || file.isEmpty()) {
                 continue;
             }
+            // 2026-08-20 추가(보안 감사 BE-09): 문서·이미지만 받는다. 실행파일(.exe,
+            // .bat, .js 등)이 첨부로 올라가면 내려받는 쪽이 위험해진다. 저장되는
+            // 원본 이름도 경로·제어문자를 걷어낸 뒤 넣는다(다운로드 시 헤더로 나간다).
+            String originalName = UploadFiles.sanitizeName(file.getOriginalFilename());
+            UploadFiles.requireAllowedExtension(originalName, ATTACHMENT_EXTENSIONS, "첨부파일");
+
             String key = fileStorageService.upload(file, ATTACHMENT_KEY_PREFIX + "/" + postId);
             attachmentRepository.save(PostAttachment.builder()
                     .postId(postId)
-                    .originalName(file.getOriginalFilename())
+                    .originalName(originalName)
                     .s3Key(key)
                     .fileSize(file.getSize())
                     .contentType(file.getContentType())
