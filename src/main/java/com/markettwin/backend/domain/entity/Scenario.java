@@ -19,8 +19,8 @@ import java.time.Instant;
  * character varying" 에러가 났음 - 이 어노테이션이 있어야 Hibernate가 값을
  * 실제로 jsonb로 변환해서 보낸다.
  *
- * 추가 변경: change_id(entchan01h 참조) 제거, user_id(usrusrs01m 참조)로
- * 교체. entchan01h는 승인 워크플로우 테이블이라 시나리오와 실질적 연관이 없었음.
+ * 소유자는 user_id(usrusrs01m 참조)로 잡는다. 승인 워크플로우 테이블(entchan01h)은
+ * 시나리오와 실질적 연관이 없어 참조하지 않는다.
  */
 @Entity
 @Table(name = "simscnr01m")

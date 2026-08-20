@@ -67,7 +67,7 @@ public class AuthService {
                 .loginId(request.getLoginId())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName())
-                .phoneNumber(request.getPhoneNumber()) // 추가 전화번호, 당직여부
+                .phoneNumber(request.getPhoneNumber())
                 .isDuty(false) // 처음 가입할 때는 무조건 당직 아님(false)으로 시작
                 .rulesCode(DEFAULT_ROLE_CODE)
                 .orgCode(request.getOrgCode())
