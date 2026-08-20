@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
 import java.util.Map;
@@ -199,6 +201,24 @@ public class GlobalExceptionHandler {
                 .orElse("입력값 검증 실패");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(errorBody(message));
+    }
+
+    /**
+     * 없는 경로 요청은 404로 돌려준다.
+     *
+     * 아래 handleGeneralException이 Exception을 전부 잡기 때문에, 매핑이 없는 경로도
+     * 500 "서버 내부 오류"로 나가고 ERROR 로그까지 쌓였다. 클라이언트는 서버 장애로
+     * 오해하고 모니터링 알람도 잘못 울린다. 없는 주소를 부른 것은 요청 쪽 문제이므로
+     * 404가 맞다.
+     *
+     * NoResourceFoundException은 정적 리소스가 없을 때, NoHandlerFoundException은
+     * 컨트롤러 매핑이 없을 때 발생한다.
+     */
+    @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
+    public ResponseEntity<Map<String, Object>> handleNotFound(Exception ex) {
+        log.debug("존재하지 않는 경로 요청: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(errorBody("요청한 경로를 찾을 수 없습니다."));
     }
 
     @ExceptionHandler(Exception.class)
