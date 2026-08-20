@@ -4,7 +4,7 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * 2026-08-20 추가: 업로드 파일명 정규화와 확장자 검사.
+ * 업로드 파일명 정규화와 확장자 검사.
  *
  * 업로드 경로가 세 군데인데(게시판 첨부, 상점 사진, presigned URL 발급) 어느 쪽도
  * 파일명이나 확장자를 확인하지 않고 있었다. 특히 presigned URL은 요청에 담긴

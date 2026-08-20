@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 
 /**
- * MRKCCTV01M - CCTV 관제 구역 (2026-08-11 신규, 08-11 2차 재설계)
+ * MRKCCTV01M - CCTV 관제 구역 (신규, 2차 재설계)
  *
  * ⚠️ 시뮬레이션 구역({@link Zone}, MRKADDR01D)과 의도적으로 분리된 테이블이다.
  * MRKADDR01D는 SIM이 직접 읽어 위험도를 계산하므로 CCTV 구역을 섞으면 결과가 바뀐다.

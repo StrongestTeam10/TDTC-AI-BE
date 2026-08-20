@@ -33,7 +33,7 @@ public class UploadController {
             throw new IllegalArgumentException("허용되지 않은 S3 폴더명입니다.");
         }
 
-        // 2026-08-20 추가(보안 감사 BE-09): 파일명과 확장자를 검사한다.
+        // 추가(보안 감사 BE-09): 파일명과 확장자를 검사한다.
         //
         // 이전에는 요청의 filename 을 그대로 S3 키에 이어 붙이고, content-type 은
         // ".pdf 로 끝나는가"로만 갈라서 그 외에는 전부 video/mp4 로 서명했다.

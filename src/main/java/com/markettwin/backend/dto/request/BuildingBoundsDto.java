@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 /**
- * 2026-08-14 추가: 건물을 받아올 사각형 범위.
+ * 건물을 받아올 사각형 범위.
  *
  * 반경(radiusMeters)만으로는 시장과 상관없는 건물이 잔뜩 딸려온다. 시장 골목은 대개
  * 한쪽으로 긴 모양이라 원으로 감싸면 필요 없는 사방이 함께 들어오기 때문이다

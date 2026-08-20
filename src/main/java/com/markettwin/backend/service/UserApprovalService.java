@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
- * 2026-08-04 추가 (회원가입 관리자 승인)
+ * 회원가입 관리자 승인
  *
  * 관리자(ROL01)만 호출 가능. 신규 가입자는 APRPD(대기) 상태로 생성되고
  * (AuthService.signup 참고), 여기서 승인(APRAP)/거부(APRRJ) 처리한다. 거부해도

@@ -24,7 +24,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
- * 2026-07-27 변경: 시나리오 실행 시 DB 적재 로직 추가.
+ * 시나리오 실행 시 DB 적재 로직 추가.
  *
  * 흐름: (1) 요청 내용을 simscnr01m에 먼저 저장해 scenarioId를 받고
  *       (2) SIM을 호출해 시뮬레이션을 돌리고
@@ -37,7 +37,7 @@ import java.time.Instant;
  * (화재 > 음향이상 > 통로정책 있음 > 없음 순 우선순위). 실제 상세 내용은
  * virtualConfig에 요청 전체가 JSON으로 그대로 남아있으니 정보 손실은 없다.
  *
- * 2026-08-06 변경: 실행 요청의 marketId를 그대로 믿지 않고 시장 접근 권한을 먼저
+ * 실행 요청의 marketId를 그대로 믿지 않고 시장 접근 권한을 먼저
  * 확인한다(assertMarketInScope). 조회 쪽은 이미 같은 검증을 하고 있었고 실행 경로만
  * 빠져 있었다.
  *
@@ -63,7 +63,7 @@ public class SimulationService {
     public ScenarioResultDto runScenario(ScenarioRequestDto request) {
         assertMarketInScope(request.marketId());
         Scenario scenario = saveScenario(request);
-        // 2026-08-12: CCTV 관측 초기배치를 조립해 SIM에 함께 보낸다(항상 적용, 데이터 없는
+        // CCTV 관측 초기배치를 조립해 SIM에 함께 보낸다(항상 적용, 데이터 없는
         // 구역은 SIM이 유입으로 채움). virtual_config엔 저장하지 않으므로 saveScenario는
         // 원본 request로 하고, 엔진 호출만 관측 좌표를 채운 요청으로 한다.
         ScenarioRequestDto effective = request.withObservedAgents(
@@ -82,7 +82,7 @@ public class SimulationService {
         Scenario scenario = Scenario.builder()
                 .userId(currentUserProvider.getCurrentUser().getUserId())
                 .marketId(request.marketId())
-                // 2026-07-27: 시나리오 이름을 사용자가 직접 입력하는 필드가 아직
+                // 시나리오 이름을 사용자가 직접 입력하는 필드가 아직
                 // FE/DTO에 없어서, 실행 시각 기반으로 자동 생성한다. 나중에 FE에서
                 // 이름 입력 필드가 추가되면 request.scenarioName() 같은 걸로 교체.
                 .scenarioName("시나리오 " + Instant.now())
@@ -100,18 +100,18 @@ public class SimulationService {
     /**
      * 이 실행을 대표하는 정책 유형 코드(simscnr01m.policy_type_code) 하나를 고른다.
      *
-     * ⚠️ 알려진 한계(2026-08-12 확인 후 그대로 두기로 함): 컬럼이 코드 하나(VARCHAR(5))라
+     * ⚠️ 알려진 한계(확인 후 그대로 두기로 함): 컬럼이 코드 하나(VARCHAR(5))라
      * 개입을 여러 개 걸어도 아래 우선순위 중 첫 번째만 남는다. 예를 들어 화재 + 통로폐쇄를
      * 함께 실행하면 POLCB는 기록되지 않는다. 오브젝트 배치나 게이트 폐쇄만 한 실행은
      * POLNO(없음)로 남는다.
      *
      * 고치지 않는 이유: 실행 요청 원본이 simscnr01m.virtual_config에 JSON으로 통째로 남아
      * 있어 정보가 사라지지 않고, 보고서도 그 원본을 쓴다. FE도 이 값을 더는 쓰지 않는다
-     * (시나리오 이력의 "정책 유형" 열과 검색 선택지를 2026-08-12에 제거했다 - 부정확한
+     * (시나리오 이력의 "정책 유형" 열과 검색 선택지를 에 제거했다 - 부정확한
      * 요약을 보여주고 그것으로 검색까지 하게 두는 것이 오히려 오해를 만들어서다).
      * 즉 이 값은 지금 ScenarioDisplayNameResolver가 시나리오 이름을 조립할 때만 쓴다.
      *
-     * 2026-08-12: acoustic_anomaly(POLAC) 분기를 제거했다. 음향 이상 이벤트는 SIM과
+     * acoustic_anomaly(POLAC) 분기를 제거했다. 음향 이상 이벤트는 SIM과
      * FE에서 이미 완전히 삭제되어(SIM EventTrigger.eventType은 "fire"만 받는다) 이
      * 분기는 어떤 요청으로도 도달할 수 없는 죽은 코드였다.
      */
@@ -175,7 +175,7 @@ public class SimulationService {
 
     public PredictResultDto predict(PredictRequestDto request) {
         assertMarketInScope(request.marketId());
-        // 2026-08-12: 개입 전(Before)도 개입 후와 "같은" 관측 초기배치를 쓴다. capturedAt이
+        // 개입 전(Before)도 개입 후와 "같은" 관측 초기배치를 쓴다. capturedAt이
         // 양쪽 동일하면 같은 프레임이 선택되어 배치가 일치한다.
         PredictRequestDto effective = request.withObservedAgents(
                 observedPlacementService.computeForMarket(request.marketId(), request.capturedAt()));

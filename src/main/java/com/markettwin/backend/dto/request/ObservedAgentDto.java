@@ -1,7 +1,7 @@
 package com.markettwin.backend.dto.request;
 
 /**
- * 2026-08-12 추가: CCTV 관측 기반 초기배치용 에이전트 1명의 지도 좌표.
+ * CCTV 관측 기반 초기배치용 에이전트 1명의 지도 좌표.
  *
  * BE가 각 구역의 현재 프레임 사람 픽셀좌표(pedaggr01h.pixels_json)를 그 구역의
  * CCTV 4점 폴리곤(mrkcctv01m)에 비례 매핑(bilinear)해 만든 결과다. 호모그래피

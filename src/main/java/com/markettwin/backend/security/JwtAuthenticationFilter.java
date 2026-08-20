@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * 2026-07-24 추가
  * Authorization: Bearer {token} 헤더를 읽어 유효하면 SecurityContext에 인증 정보를
  * 세팅함. 지금은 SecurityConfig에서 대부분의 API를 permitAll로 열어뒀기 때문에
  * "필수"는 아니지만, /api/auth/me 같은 보호된 엔드포인트와 향후 기존 API를 잠글 때를

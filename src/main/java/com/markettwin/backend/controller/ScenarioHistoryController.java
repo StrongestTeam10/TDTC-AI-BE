@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 2026-07-31 추가
  * 사용자가 실행한 시뮬레이션 이력 조회.
  *
  * 보고서 생성(/api/simulation/reports)과 경로를 나눈 이유: 이 목록은 보고서 유무와
@@ -46,7 +45,6 @@ public class ScenarioHistoryController {
     }
 
     /**
-     * 2026-08-08 추가
      * 시나리오 한 건의 실행 설정(오브젝트·이벤트·통로정책·닫은 게이트)을 반환한다.
      * 목록에서 행을 펼쳤을 때 쓴다.
      *
@@ -59,7 +57,6 @@ public class ScenarioHistoryController {
     }
 
     /**
-     * 2026-08-06 추가
      * 실행자와 무관하게 시뮬레이션 이력 전체를 최신순으로 반환한다. 관리자(ROL01) 전용이며,
      * 관제요원이 호출하면 ReportService가 403으로 거절한다(SecurityConfig의 경로 규칙은
      * ROL02까지 열려 있어 경로만으로는 좁혀지지 않는다).

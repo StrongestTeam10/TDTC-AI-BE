@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import java.util.List;
 
 /**
- * 2026-07-24 추가 (게시판 기능)
+ * 게시판 기능
  * JpaSpecificationExecutor: 목록 조회 시 "시장 범위 + 공지 제외 + 검색어" 조건을
  * 동적으로 조합해야 해서(관리자/일반 사용자별로 조건이 달라짐) Specification 방식 사용.
  * findAll(Specification, Pageable)은 JpaSpecificationExecutor가 이미 제공함.

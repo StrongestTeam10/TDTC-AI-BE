@@ -12,7 +12,7 @@ import java.time.Instant;
 /**
  * BRDPSTS01M - 게시글
  *
- * 2026-07-24 추가 (게시판 기능)
+ * 게시판 기능
  * 권한 규칙(PostService에서 강제):
  *  - 수정/삭제: 관리자(ROL01) 전체 가능, 그 외는 writerId 본인 글만
  *  - isNotice(공지 고정): 관리자만 true로 설정 가능
@@ -47,7 +47,7 @@ public class Post {
     @Column(name = "is_notice", nullable = false)
     private boolean notice;
 
-    // 2026-07-24 추가(UI 설계서 반영): 게시판 상단 카테고리 탭(공지사항/자유게시판)
+    // 추가(UI 설계서 반영): 게시판 상단 카테고리 탭(공지사항/자유게시판)
     // 필터 기준. comcode01m BCT 도메인 코드. is_notice(관리자 상단 고정)와는 별개 개념.
     @Column(name = "category_code", nullable = false, length = 5)
     private String categoryCode;

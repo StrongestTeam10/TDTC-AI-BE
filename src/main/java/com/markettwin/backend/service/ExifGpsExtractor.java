@@ -12,11 +12,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
- * 2026-08-04 추가 (상점 외관 직접 촬영 데이터 수집 파이프라인)
+ * 상점 외관 직접 촬영 데이터 수집 파이프라인
  *
  * 사진 파일에서 EXIF GPS 좌표와 촬영일시(DateTimeOriginal)를 서버(BE)에서 직접
  * 추출한다. 스마트폰 GPS 오차(5~15m)와 좁은 골목의 반사 오차 때문에 이 값은
@@ -30,8 +31,14 @@ public class ExifGpsExtractor {
     private static final Logger log = LoggerFactory.getLogger(ExifGpsExtractor.class);
 
     public Result extract(MultipartFile file) {
-        try {
-            Metadata metadata = ImageMetadataReader.readMetadata(file.getInputStream());
+        // 수정(보안 감사 BE-14): 업로드 스트림을 try-with-resources로 닫는다.
+        //
+        // ImageMetadataReader.readMetadata()는 넘겨받은 스트림을 닫아주지 않는다.
+        // 상점 사진은 한 장을 등록할 때 이 메서드가 두 번 호출되므로(previewExif에서
+        // 한 번, save에서 다시 한 번) 열린 스트림이 그만큼 쌓인다. 파일 기반
+        // MultipartFile은 임시 파일 핸들을 잡기 때문에 업로드가 몰리면 문제가 된다.
+        try (InputStream in = file.getInputStream()) {
+            Metadata metadata = ImageMetadataReader.readMetadata(in);
 
             BigDecimal latitude = null;
             BigDecimal longitude = null;

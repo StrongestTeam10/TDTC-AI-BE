@@ -1,7 +1,7 @@
 package com.markettwin.backend.exception;
 
 /**
- * 2026-08-14 추가 (구역 삭제): 다른 데이터가 이 구역을 참조하고 있어 지울 수 없을 때.
+ * (구역 삭제): 다른 데이터가 이 구역을 참조하고 있어 지울 수 없을 때.
  *
  * mrkaddr01d(zone_id)를 참조하는 테이블이 7개다 - mrkcctv01m(CCTV 구역),
  * mrkadjc01m(통로), simrslt01d·simbsln01d(시뮬레이션 결과의 최대밀집 구역),

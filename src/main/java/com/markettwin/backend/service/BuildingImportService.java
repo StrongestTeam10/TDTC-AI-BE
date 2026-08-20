@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 2026-08-14 추가: 브이월드에서 받은 건물 폴리곤을 mrkbldg01m에 적재한다.
+ * 브이월드에서 받은 건물 폴리곤을 mrkbldg01m에 적재한다.
  *
  * 이 데이터가 필요한 이유는 지도 표시가 아니라 시뮬레이션이다. SIM은 걸을 수 있는
  * 영역을 "구역 폴리곤 합집합 - 건물"로 계산하므로(app/simulation/model.py), 건물이
@@ -69,7 +69,7 @@ public class BuildingImportService {
     private static final double METERS_PER_DEGREE_LAT = 111_320.0;
 
     /**
-     * 2026-08-14 추가: 구역에서 멀리 떨어진 건물을 지운다.
+     * 구역에서 멀리 떨어진 건물을 지운다.
      *
      * 건물은 시장 중심 기준 <b>반경</b>으로 받아오기 때문에, 구역이 확정되고 나면 시장과
      * 상관없는 건물이 섞여 있다(광장시장 반경 150m 조회에서 실제로 확인). 시뮬레이션은

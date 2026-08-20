@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 2026-08-04 추가 (시설 관리 화면 - 상점 위치 등록)
+ * 시설 관리 화면 - 상점 위치 등록
  * 관리자(ROL01) 또는 상인회(ORGMA)만 호출 가능 - FacilityService.assertCanManageFacilities
  * 참고. 그 외 역할은 403을 받으며, FE도 이 화면 탭 자체를 숨김.
  */

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 2026-08-05 추가 (회원관리)
+ * 회원관리
  * FE UserAdminPage(관리자 전용 - "사용자 관리"/"회원 승인" 탭)와 대응.
  * 관리자 판정은 UserAdminService에서 함(CurrentUserProvider는 PostController와
  * 동일하게 loginId -> User 조회만 담당).
@@ -35,7 +35,7 @@ public class UserAdminController {
         return userAdminService.list(marketCode, pendingOnly, currentUser);
     }
 
-    // 2026-08-13 추가: 관리자 당직자 지정/해제 API
+    // 관리자 당직자 지정/해제 API
     @PatchMapping("/{userId}/duty")
     public UserSummaryDto updateDuty(
             @PathVariable Long userId,

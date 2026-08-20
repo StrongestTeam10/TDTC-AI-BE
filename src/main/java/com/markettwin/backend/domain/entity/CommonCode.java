@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 /**
  * COMCODE01M - 공통코드
  *
- * 2026-07-24 변경: code_cob(공통코드분류) 컬럼이 추가되면서 PK가 code 단독에서
+ * code_cob(공통코드분류) 컬럼이 추가되면서 PK가 code 단독에서
  * (code_cob, code) 복합키로 바뀜. 복합키는 CommonCodeId(@IdClass)로 표현함.
  */
 @Entity
@@ -39,7 +39,7 @@ public class CommonCode {
     private String remark;
 
     /**
-     * 2026-08-14 추가: 표시 이름만 바꾼다(시장 이름 수정 시 MKT 도메인 코드명 동기화).
+     * 표시 이름만 바꾼다(시장 이름 수정 시 MKT 도메인 코드명 동기화).
      *
      * 새 객체를 만들어 save()하지 않고 이 메서드로 고치는 이유: 이 엔티티는 복합키
      * (@IdClass)라 Spring Data가 "새 엔티티"로 오판해 merge 대신 persist를 시도할 수

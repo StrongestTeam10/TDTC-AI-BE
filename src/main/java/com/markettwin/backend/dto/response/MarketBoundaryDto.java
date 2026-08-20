@@ -1,7 +1,7 @@
 package com.markettwin.backend.dto.response;
 
 /**
- * 2026-08-14 추가: OpenStreetMap에서 찾은 시장 경계 제안.
+ * OpenStreetMap에서 찾은 시장 경계 제안.
  *
  * <b>저장하지 않는다.</b> 화면에 "이 모양이 맞나요?"를 보여주기 위한 값이고, 사용자가
  * 확인·수정한 뒤 기존 구역 저장 API로 넘어간다. OSM은 자원봉사로 만들어진 데이터라

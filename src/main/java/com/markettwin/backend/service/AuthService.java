@@ -27,24 +27,23 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 
 /**
- * 2026-07-24 추가
  * 회원가입/로그인 처리. FE authStore.ts의 mock 로그인을 대체하는 실제 BE 구현.
  */
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
-    // 2026-07-24: 자가 가입 시 부여하는 기본 권한. comcode-seed.sql 기준
+    // 자가 가입 시 부여하는 기본 권한. comcode-seed.sql 기준
     // ROL03 = 조회자(최소 권한). 관리자(ROL01)/관제요원(ROL02)으로의 승격은
     // 별도 관리자 승인 절차가 필요하며, 이번 범위에는 포함하지 않음.
     private static final String DEFAULT_ROLE_CODE = "ROL03";
 
-    // 2026-07-24: comcode01m.code_cob(공통코드분류) 값. 처음엔 code.startsWith("ORG")
+    // comcode01m.code_cob(공통코드분류) 값. 처음엔 code.startsWith("ORG")
     // 문자열 매칭으로 임시 검증했는데, code_cob 컬럼이 추가되면서 실제 컬럼 기반
     // 조회(existsByCodeCobAndCode)로 교체함.
     private static final String ORG_CODE_COB = "ORG";
 
-    // 2026-07-24 추가(게시판): comcode01m.code_cob 값(MKT 도메인). ORG_CODE_COB와
+    // 추가(게시판): comcode01m.code_cob 값(MKT 도메인). ORG_CODE_COB와
     // 동일한 패턴으로 signup 요청의 marketCode가 실제 존재하는 코드인지 검증함.
     private static final String MARKET_CODE_COB = "MKT";
 
@@ -68,7 +67,7 @@ public class AuthService {
                 .loginId(request.getLoginId())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName())
-                .phoneNumber(request.getPhoneNumber()) // 2026-08-13 추가 전화번호, 당직여부
+                .phoneNumber(request.getPhoneNumber()) // 추가 전화번호, 당직여부
                 .isDuty(false) // 처음 가입할 때는 무조건 당직 아님(false)으로 시작
                 .rulesCode(DEFAULT_ROLE_CODE)
                 .orgCode(request.getOrgCode())
@@ -78,7 +77,7 @@ public class AuthService {
                 .agreeTermsAt(now)
                 .agreePrivacyAt(now)
                 .agreeMarketingAt(request.isAgreeMarketing() ? now : null)
-                // 2026-08-04 추가: 관리자 승인 전엔 로그인 불가 - 명시적으로 대기 상태로
+                // 관리자 승인 전엔 로그인 불가 - 명시적으로 대기 상태로
                 // 생성(컬럼 DEFAULT도 APRPD지만, INSERT 시 명시하는 게 더 안전)
                 .approvalStatus("APRPD")
                 .build();
@@ -100,7 +99,7 @@ public class AuthService {
             throw new InvalidCredentialsException();
         }
 
-        // 2026-08-04 추가 (회원가입 관리자 승인): 아이디/비밀번호가 맞아도 승인
+        // (회원가입 관리자 승인): 아이디/비밀번호가 맞아도 승인
         // 전이면 로그인을 막음. 아이디/비밀번호 오류(InvalidCredentialsException)와는
         // 다른 메시지를 보여줘야 해서 별도 예외로 분리 - 비밀번호 자체는 맞았으니
         // "아이디 또는 비밀번호가 올바르지 않습니다"로 뭉뚱그리면 사용자가 혼란스러움
@@ -120,7 +119,7 @@ public class AuthService {
                 .build();
     }
 
-    // 2026-08-04 추가 (비밀번호 찾기)
+    // 비밀번호 찾기
     // 아이디+이름+소속기관+담당시장 4개가 모두 일치하는 계정이 있는지만 확인하고,
     // 존재 여부를 예외가 아니라 응답 필드(verified)로 알림(계정 존재 여부를 HTTP
     // 상태코드로 노출하지 않기 위함).
@@ -132,7 +131,7 @@ public class AuthService {
         return VerifyIdentityResponseDto.builder().verified(verified).build();
     }
 
-    // 2026-08-04 추가 (비밀번호 찾기)
+    // 비밀번호 찾기
     // FE가 verify-identity 단계를 건너뛰고 이 API를 바로 호출했더라도, 여기서 다시
     // 한 번 4개 필드 일치 여부를 검증한다(FE 라우터 state 조작에 대한 방어).
     @Transactional

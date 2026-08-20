@@ -29,7 +29,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * 2026-08-11 추가 (CCTV 관제 구역). 08-11 2차 재설계.
+ * (CCTV 관제 구역). 2차 재설계.
  *
  * ⚠️ 이 서비스는 mrkcctv01m만 다루고 시뮬레이션 구역(mrkaddr01d)은 읽기만 한다
  * (소속 구역명 조인 + 폴리곤 포함 검증). 두 테이블을 분리한 이유는 CctvZone 주석 참고.
@@ -122,7 +122,7 @@ public class CctvZoneService {
     }
 
     /**
-     * 2026-08-14 추가: 소속 시뮬레이션 구역을 정한다.
+     * 소속 시뮬레이션 구역을 정한다.
      *
      * zoneId를 주면 그 구역을 그대로 쓰고(기존 화면 동작), 비워서 보내면 사각형
      * 중심 좌표가 들어가는 구역을 서버가 찾는다. 어느 쪽이든 뒤이어
@@ -207,7 +207,7 @@ public class CctvZoneService {
         for (double[] v : vertices) {
             // GeoJSON은 [경도(x), 위도(y)] 순.
             if (!isPointInPolygon(v[0], v[1], zoneRing)) {
-                // 2026-08-14: 구역명을 넣는다. 소속 구역을 서버가 자동으로 정하게 된 뒤로는
+                // 구역명을 넣는다. 소속 구역을 서버가 자동으로 정하게 된 뒤로는
                 // 사용자가 고른 적 없는 구역이라, 어느 구역을 벗어났는지 알려줘야 한다.
                 throw new InvalidCctvZonePolygonException(
                         "꼭짓점이 소속 구역(" + zone.getZoneName() + ") 밖에 있습니다.");

@@ -6,7 +6,7 @@ import lombok.Getter;
 import java.time.Instant;
 
 /**
- * 2026-08-04 추가 (회원가입 관리자 승인)
+ * 회원가입 관리자 승인
  */
 @Getter
 @Builder

@@ -8,7 +8,7 @@ import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.jpa.domain.Specification;
 
 /**
- * 2026-07-24 추가 (게시판 기능)
+ * 게시판 기능
  * Post.writerId는 다른 엔티티들과 동일하게 순수 Long 컬럼이라(JPA @ManyToOne 관계
  * 없음) "작성자 검색"은 User를 서브쿼리로 걸어 writerId IN (...) 형태로 구현함.
  */

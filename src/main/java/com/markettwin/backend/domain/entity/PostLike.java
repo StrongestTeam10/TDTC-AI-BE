@@ -11,7 +11,7 @@ import java.time.Instant;
 /**
  * BRDLIKE01D - 게시글 좋아요
  *
- * 2026-07-24 추가 (게시판 기능)
+ * 게시판 기능
  * (post_id, user_id) UNIQUE 제약으로 중복 좋아요 방지 (schema-init.sql 참고)
  */
 @Entity

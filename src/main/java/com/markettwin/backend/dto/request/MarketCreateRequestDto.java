@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 /**
- * 2026-08-14 추가 (시장 등록).
+ * (시장 등록).
  *
  * 지금까지 시장은 seed-market-data.sql로만 들어갔다. 등록 API가 없으니 새 시장을
  * 추가하려면 SQL을 직접 쳐야 했고, 시장이 없으면 구역도 CCTV도 만들 수 없어서

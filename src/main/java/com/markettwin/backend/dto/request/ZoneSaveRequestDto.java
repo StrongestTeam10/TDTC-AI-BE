@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 2026-08-14 추가 (시뮬레이션 구역 등록/수정). 등록(POST)과 수정(PUT) 둘 다 쓴다.
+ * (시뮬레이션 구역 등록/수정). 등록(POST)과 수정(PUT) 둘 다 쓴다.
  *
  * polygonCoordinates를 문자열 그대로 받는 이유: 이 폴리곤이 사람이 지도에서 그린
  * 것인지, 나중에 건물 폴리곤 여백에서 자동 추출한 것인지 API는 구분할 필요가 없다.

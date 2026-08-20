@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 2026-08-13 추가: 관리자가 당직 상태를 변경할 때 사용하는 DTO
+// 관리자가 당직 상태를 변경할 때 사용하는 DTO
 @Getter
 @NoArgsConstructor
 public class UpdateUserDutyRequestDto {

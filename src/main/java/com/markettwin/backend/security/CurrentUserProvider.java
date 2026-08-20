@@ -10,7 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 /**
- * 2026-07-24 추가 (게시판 기능)
+ * 게시판 기능
  *
  * JwtAuthenticationFilter는 인증 성공 시 SecurityContext의 principal(authentication.getName())로
  * loginId만 채워둔다(기존 AuthController#me와 동일 패턴). 게시판 권한 판정(본인 글인지,

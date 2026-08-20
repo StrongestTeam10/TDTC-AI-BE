@@ -1,7 +1,7 @@
 package com.markettwin.backend.dto.response;
 
 /**
- * 2026-08-14 추가 (건물 폴리곤 자동 적재 결과).
+ * (건물 폴리곤 자동 적재 결과).
  *
  * fetchedFeatures와 savedBuildings가 다를 수 있다. 브이월드가 건물 하나를
  * MultiPolygon(여러 조각)으로 주면 조각마다 한 행으로 저장하기 때문이다.

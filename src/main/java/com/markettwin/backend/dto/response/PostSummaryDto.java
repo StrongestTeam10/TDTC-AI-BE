@@ -5,7 +5,7 @@ import lombok.Getter;
 
 import java.time.Instant;
 
-// 2026-07-24 추가 (게시판 기능) - 목록(리스트/공지 고정 영역)에서 쓰는 요약 응답
+// (게시판 기능) - 목록(리스트/공지 고정 영역)에서 쓰는 요약 응답
 @Getter
 @Builder
 public class PostSummaryDto {

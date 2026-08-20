@@ -17,13 +17,14 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.UUID;
 
 /**
- * 2026-07-24 추가 (게시판 첨부파일 기능)
+ * 게시판 첨부파일 기능
  * 버킷은 비공개(private)로 두고, 업로드는 BE가 직접 putObject, 다운로드는
  * presigned GET URL을 발급해 클라이언트가 S3에서 바로 받도록 함(BE가 파일을
  * 직접 스트리밍하지 않아 대용량 첨부에도 서버 메모리 부담이 없음).
@@ -43,7 +44,7 @@ public class S3FileStorageService implements FileStorageService {
     /**
      * 보고서 저장 위치. 미설정이면 aws.s3.bucket 값을 쓴다.
      *
-     * 2026-08-04에 게시판 첨부파일과 버킷을 하나로 합치고 키 prefix(board/ vs reports/)로만
+     * 에 게시판 첨부파일과 버킷을 하나로 합치고 키 prefix(board/ vs reports/)로만
      * 구분하기로 해서, 지금은 위 bucket과 같은 값이 들어온다. 통합이 확정이면 이 설정과
      * 보고서 전용 메서드들을 걷어낼 수 있다.
      */
@@ -56,16 +57,19 @@ public class S3FileStorageService implements FileStorageService {
         // 원본 파일명은 brdattc01d.original_name 컬럼에 별도로 보관해서 다운로드 시 복원함
         String key = keyPrefix + "/" + UUID.randomUUID();
 
-        try {
+        // 수정(보안 감사 BE-14): 업로드 스트림을 try-with-resources로 닫는다.
+        // putObject가 스트림을 소비하기는 하지만 닫아주지는 않아서, 게시판 첨부가
+        // 여러 건 올라오면 임시 파일 핸들이 남는다.
+        try (InputStream in = file.getInputStream()) {
             PutObjectRequest request = PutObjectRequest.builder()
                     .bucket(bucket)
                     .key(key)
                     .contentType(file.getContentType())
                     .build();
-            s3Client.putObject(request, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+            s3Client.putObject(request, RequestBody.fromInputStream(in, file.getSize()));
             return key;
         } catch (IOException | SdkException e) {
-            // 2026-07-25 버그 수정: 기존엔 S3Exception(버킷은 있지만 권한/요청 자체가
+            // 기존엔 S3Exception(버킷은 있지만 권한/요청 자체가
             // 거부된 경우)만 잡았는데, AWS 자격증명이 아예 설정 안 돼 있거나(로컬에
             // AWS_ACCESS_KEY_ID/SECRET_ACCESS_KEY 미설정) 버킷 자체가 없는 경우엔
             // SdkClientException(SdkException의 형제뻘 상위 타입)이 발생해서 여기서
@@ -79,7 +83,7 @@ public class S3FileStorageService implements FileStorageService {
     }
 
     /**
-     * 2026-07-30 추가 (보고서 기능)
+     * 보고서 기능
      * 보고서 전용 버킷에 올린다. 업로드된 파일이 아니라 BE가 만들어낸 결과물이라
      * MultipartFile이 없어 바이트를 그대로 받는다.
      *
@@ -115,7 +119,7 @@ public class S3FileStorageService implements FileStorageService {
                     .build());
         } catch (SdkException e) {
             // 삭제 실패는 게시글 삭제 자체를 막을 정도의 문제는 아니라고 판단해 로그만 남김
-            // (S3에 orphan 객체가 남을 수 있음 - 운영 배포 후 별도 정리 배치 고려 가능)
+            // S3에 orphan 객체가 남을 수 있음 - 운영 배포 후 별도 정리 배치 고려 가능
             log.error("S3 삭제 실패(무시하고 진행): bucket={}, key={}", bucket, key, e);
         }
     }
@@ -159,7 +163,7 @@ public class S3FileStorageService implements FileStorageService {
     }
 
     /**
-     * 2026-07-30 추가 (보고서 기능)
+     * 보고서 기능
      * 위 generatePresignedDownloadUrl과 동작이 같고 대상 버킷만 reportBucket이다.
      */
     @Override

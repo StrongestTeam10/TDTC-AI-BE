@@ -4,8 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * 2026-08-04 추가
- *
  * 첨부파일 다운로드 API가 302 리다이렉트 대신 이 DTO로 presigned URL을 반환한다.
  * 크로스오리진 302 리다이렉트는 브라우저가 리다이렉트 대상 요청의 Origin 헤더를
  * "null"로 바꿔버려서(표준 스펙 동작) S3 CORS 설정이 절대 통과할 수 없는 구조적

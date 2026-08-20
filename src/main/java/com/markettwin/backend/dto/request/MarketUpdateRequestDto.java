@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 /**
- * 2026-08-14 추가 (시장 정보 수정).
+ * (시장 정보 수정).
  *
  * marketCode가 없는 것은 일부러다. 코드는 시장의 신원이라 바뀌면 안 된다 -
  * usrusrs01m.market_code(담당 시장)와 brdpsts01m.market_code(게시글 소속)가 코드로

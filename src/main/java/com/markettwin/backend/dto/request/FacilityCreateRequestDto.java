@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 /**
- * 2026-08-04 추가 (시설 관리 화면 - 상점 위치 등록)
+ * 시설 관리 화면 - 상점 위치 등록
  * FE FacilityMapPage의 등록 폼과 대응.
  */
 @Getter

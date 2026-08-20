@@ -16,7 +16,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * 2026-08-05 추가 (회원관리)
+ * 회원관리
  *
  * 권한 규칙: 목록 조회/권한 변경 둘 다 관리자(ROL01) 전용. PostService/MarketService와
  * 동일하게 URL 단위가 아니라 서비스 레이어에서 rulesCode 직접 비교로 강제함
@@ -60,7 +60,7 @@ public class UserAdminService {
     }
 
     /**
-     * 2026-08-10 변경: 권한만 바꾸던 것을 "권한 + 소속 시장"으로 확대했다. 회원관리
+     * 권한만 바꾸던 것을 "권한 + 소속 시장"으로 확대했다. 회원관리
      * 화면이 한 행에서 두 값을 같이 고친 뒤 저장 버튼으로 일괄 전송하는 방식이 되어,
      * 한 회원당 요청이 두 번 나가지 않도록 한 엔드포인트에서 같이 처리한다.
      *
@@ -100,7 +100,7 @@ public class UserAdminService {
         return toSummary(target);
     }
 
-    // 2026-08-13 추가: 관리자의 당직 상태 변경 API 로직
+    // 관리자의 당직 상태 변경 API 로직
     @Transactional
     public UserSummaryDto updateDuty(Long targetUserId, Boolean isDuty, User currentUser, String clientIp) {
         requireAdmin(currentUser);

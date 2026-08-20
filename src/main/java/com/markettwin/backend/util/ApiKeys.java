@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 /**
- * 2026-08-20 추가: AI 파이프라인 웹훅의 X-API-KEY 검증.
+ * AI 파이프라인 웹훅의 X-API-KEY 검증.
  *
  * 지금까지는 컨트롤러마다 `apiKey == null || !apiKey.equals(aiSecretKey)`를 따로
  * 적고 있었다(AiIntegrationController, PostReportController, VideoClipController).

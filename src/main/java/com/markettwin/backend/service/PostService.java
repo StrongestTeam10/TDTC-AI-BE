@@ -38,14 +38,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 2026-07-24 추가 (게시판 기능)
+ * 게시판 기능
  *
  * 권한 규칙 요약:
  *  - 목록/상세 조회: 관리자(ROL01)는 전체 시장, 그 외는 본인 market_code 글 + 공지 전체
  *  - 수정/삭제: 관리자는 전체, 그 외는 본인 작성 글만
  *  - 공지 고정(notice): 관리자만 설정/해제 가능
  *
- * 2026-07-26: 목록 조회의 N+1 문제(게시글마다 첨부파일 개수·작성자 이름을 개별
+ * 목록 조회의 N+1 문제(게시글마다 첨부파일 개수·작성자 이름을 개별
  * 조회하던 것)를 배치 조회(IN 절, batchAttachmentCounts/batchWriterNames)로 해결함.
  * toDetail은 게시글 1건만 다루므로 N+1 대상이 아니라 그대로 유지.
  */
@@ -62,7 +62,7 @@ public class PostService {
                             UploadFiles.DOCUMENT_EXTENSIONS.stream(),
                             UploadFiles.IMAGE_EXTENSIONS.stream())
                     .collect(java.util.stream.Collectors.toUnmodifiableSet());
-    // 2026-08-04 재변경: 게시판 첨부파일과 보고서 버킷을 하나(tdtc-ai-report)로
+    // 게시판 첨부파일과 보고서 버킷을 하나(tdtc-ai-report)로
     // 합치면서, 그 안에서 폴더로 구분하도록 접두사를 board로 바꿈(보고서는
     // ReportService.KEY_PREFIX="reports"라 서로 겹치지 않음). 이전엔
     // upload/board-attachments였음 - 과거에 그 접두사로 이미 올라간 첨부파일은
@@ -71,10 +71,10 @@ public class PostService {
     private static final String ATTACHMENT_KEY_PREFIX = "board";
     private static final Duration DOWNLOAD_URL_TTL = Duration.ofMinutes(5);
 
-    // 2026-07-24 추가(UI 설계서 반영 - 카테고리 탭)
+    // 추가(UI 설계서 반영 - 카테고리 탭)
     private static final String CATEGORY_CODE_COB = "BCT";
     private static final String NOTICE_CATEGORY_CODE = "BCTNT"; // 공지사항 카테고리 - 관리자만 작성 가능
-    // 2026-07-25 변경: 카테고리를 공지사항/자유게시판 2개로 축소하면서 기본값도
+    // 카테고리를 공지사항/자유게시판 2개로 축소하면서 기본값도
     // BCTQA(질문과 답변, 폐지) -> BCTFR(자유게시판)로 변경
     private static final String DEFAULT_CATEGORY_CODE = "BCTFR"; // 카테고리 미지정 시 기본값(자유게시판)
     private static final String MARKET_CODE_COB = "MKT"; // comcode01m 담당 시장 도메인
@@ -97,7 +97,7 @@ public class PostService {
 
         Specification<Post> spec = Specification.where(PostSpecs.isNotNotice());
         if (isAdmin(currentUser)) {
-            // 2026-07-24 추가: 관리자는 시장 탭으로 특정 시장을 선택했을 때만 필터링하고,
+            // 관리자는 시장 탭으로 특정 시장을 선택했을 때만 필터링하고,
             // "전체"(파라미터 없음)면 전 시장을 다 봄. 일반 사용자는 이 파라미터 자체를
             // 보내지 않도록 FE에서 막아두지만, 혹시 보내더라도 서버가 무시하고 본인
             // market_code로 강제함(아래 else 분기) - 클라이언트를 신뢰하지 않기 위함.
@@ -117,7 +117,7 @@ public class PostService {
         Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Post> resultPage = postRepository.findAll(spec, pageable);
 
-        // 2026-07-26: 공지 + 페이지 게시글을 합친 ID 목록으로 첨부파일 개수·작성자 이름을
+        // 공지 + 페이지 게시글을 합친 ID 목록으로 첨부파일 개수·작성자 이름을
         // 각각 쿼리 1번씩(총 2번)만 배치 조회한다. 이전에는 게시글마다 개별 조회(N+1)했음.
         List<Post> allPosts = new ArrayList<>(pinnedPosts);
         allPosts.addAll(resultPage.getContent());
@@ -134,7 +134,7 @@ public class PostService {
                 .build();
     }
 
-    // 2026-07-26 추가: 게시글 목록의 첨부파일 개수를 IN 절 1번으로 일괄 조회
+    // 게시글 목록의 첨부파일 개수를 IN 절 1번으로 일괄 조회
     private Map<Long, Integer> batchAttachmentCounts(List<Post> posts) {
         List<Long> postIds = posts.stream().map(Post::getPostId).distinct().toList();
         if (postIds.isEmpty()) {
@@ -147,7 +147,7 @@ public class PostService {
         return counts;
     }
 
-    // 2026-07-26 추가: 게시글 목록의 작성자 이름을 IN 절 1번으로 일괄 조회
+    // 게시글 목록의 작성자 이름을 IN 절 1번으로 일괄 조회
     private Map<Long, String> batchWriterNames(List<Post> posts) {
         List<Long> writerIds = posts.stream().map(Post::getWriterId).distinct().toList();
         if (writerIds.isEmpty()) {
@@ -165,7 +165,7 @@ public class PostService {
         Post post = getPostOrThrow(postId);
         assertVisible(post, currentUser);
 
-        // 2026-07-26 변경: 편집 화면에서 기존 값을 불러오는 호출(countView=false)은
+        // 편집 화면에서 기존 값을 불러오는 호출(countView=false)은
         // 조회수를 올리지 않도록 분기. 상세 화면에서의 일반 조회(countView=true, 기본값)만 증가.
         if (countView) {
             post.setViewCount(post.getViewCount() + 1);
@@ -228,7 +228,7 @@ public class PostService {
         if (categoryCodeRequested != null && !categoryCodeRequested.isBlank()) {
             post.setCategoryCode(validateCategoryCode(categoryCodeRequested, currentUser));
         }
-        // 2026-08-12 추가: 게시 시장 변경. 관리자만 가능하며, 값을 아예 보내지 않으면
+        // 게시 시장 변경. 관리자만 가능하며, 값을 아예 보내지 않으면
         // (marketCodeRequested == null) 기존 시장을 그대로 둔다. 빈 문자열은 "전체"라는
         // 뜻이라 null과 구분해야 해서, 여기서 null 검사만으로 갈라낸다.
         if (marketCodeRequested != null) {
@@ -307,7 +307,7 @@ public class PostService {
             if (file == null || file.isEmpty()) {
                 continue;
             }
-            // 2026-08-20 추가(보안 감사 BE-09): 문서·이미지만 받는다. 실행파일(.exe,
+            // 추가(보안 감사 BE-09): 문서·이미지만 받는다. 실행파일(.exe,
             // .bat, .js 등)이 첨부로 올라가면 내려받는 쪽이 위험해진다. 저장되는
             // 원본 이름도 경로·제어문자를 걷어낸 뒤 넣는다(다운로드 시 헤더로 나간다).
             String originalName = UploadFiles.sanitizeName(file.getOriginalFilename());
@@ -346,7 +346,7 @@ public class PostService {
     }
 
     // 다른 시장 소속 글은 "권한 없음"이 아니라 "존재하지 않음"으로 응답을 통일함
-    // (다른 시장에 어떤 글이 있는지 자체를 노출하지 않기 위한 선택)
+    // 다른 시장에 어떤 글이 있는지 자체를 노출하지 않기 위한 선택
     private void assertVisible(Post post, User currentUser) {
         if (isAdmin(currentUser) || post.isNotice()) {
             return;
@@ -368,7 +368,7 @@ public class PostService {
     }
 
     /**
-     * 2026-08-12 추가: 글이 올라갈 시장을 정한다.
+     * 글이 올라갈 시장을 정한다.
      *
      * 관리자(ROL01)만 직접 지정할 수 있다. 그 외 권한이 값을 보내도 무시하고 작성자의
      * 담당 시장을 쓴다 - 화면에서 셀렉트를 숨기는 것과 별개로, 요청을 직접 만들어
@@ -406,7 +406,7 @@ public class PostService {
         return user.getMarketCode();
     }
 
-    // 2026-07-24 추가(UI 설계서 반영 - 카테고리 탭)
+    // 추가(UI 설계서 반영 - 카테고리 탭)
     // 카테고리 미지정 시 기본값(자유게시판)으로 채우고, comcode01m BCT 도메인에 실제
     // 존재하는 코드인지 확인함. 공지사항(BCTNT) 카테고리는 관리자만 선택 가능 -
     // is_notice(상단 고정) 권한 검증과 별개로 한 번 더 막아둠(카테고리만 공지사항으로

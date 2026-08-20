@@ -12,7 +12,7 @@ import java.time.Instant;
 /**
  * SIMBSLN01D - 현행안 예측 결과
  *
- * 2026-07-27 신규(ERD 반영). ScenarioResult(대안 예측 결과)와 필드 구성이
+ * 신규(ERD 반영). ScenarioResult(대안 예측 결과)와 필드 구성이
  * 거의 동일하나, baseline_id로 Baseline을 참조한다는 점만 다름. ScenarioResult가
  * baseline_result_id로 이 테이블의 결과를 참조해서 대안-현행안 비교를 한다.
  */

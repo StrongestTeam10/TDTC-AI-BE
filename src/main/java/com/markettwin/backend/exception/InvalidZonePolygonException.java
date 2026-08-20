@@ -1,7 +1,7 @@
 package com.markettwin.backend.exception;
 
 /**
- * 2026-08-14 추가 (구역 등록): 구역 폴리곤이 GeoJSON Polygon 형식이 아니거나
+ * (구역 등록): 구역 폴리곤이 GeoJSON Polygon 형식이 아니거나
  * 꼭짓점이 모자라거나 좌표 범위를 벗어났을 때.
  *
  * CCTV 구역용 InvalidCctvZonePolygonException과 나눠 둔 이유: CCTV는 사각형 4점

@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 2026-08-04 추가 (비밀번호 찾기)
+ * 비밀번호 찾기
  *
  * 본인확인 4개 필드(아이디+이름+소속기관+담당시장)를 재설정 요청에도 함께 받아
  * 서버가 다시 한 번 검증한다(FE가 verify-identity 단계를 건너뛰고 이 API를 바로

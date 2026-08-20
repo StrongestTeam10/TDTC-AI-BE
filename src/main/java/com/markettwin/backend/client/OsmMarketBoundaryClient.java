@@ -25,12 +25,12 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 2026-08-14 추가: OpenStreetMap(Overpass API)에서 시장 경계 폴리곤을 찾아온다.
+ * OpenStreetMap(Overpass API)에서 시장 경계 폴리곤을 찾아온다.
  *
  * 왜 OSM인가: 전통시장의 <b>경계</b>를 폴리곤으로 주는 공개 API가 달리 없다. 카카오·네이버
  * 검색은 좌표 한 점만 주고, 공공데이터 전국전통시장표준데이터도 위경도뿐이다. OSM에는
  * amenity=marketplace 로 태그된 폴리곤이 있고, 인증키도 필요 없다.
- * (2026-08-14 확인: 망원시장 way 31856777, 32점 폴리곤. 시드 데이터와 남쪽 끝이 1m 차이.)
+ * 확인: 망원시장 way 31856777, 32점 폴리곤. 시드 데이터와 남쪽 끝이 1m 차이.
  *
  * ⚠️ 자원봉사로 만들어진 데이터라 시장마다 있을 수도 없을 수도 있고, 모양이 실제와
  *    다를 수도 있다. 그래서 이 값은 <b>제안</b>일 뿐 바로 저장하지 않는다.

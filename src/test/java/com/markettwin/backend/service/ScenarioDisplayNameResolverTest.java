@@ -28,7 +28,7 @@ import static org.mockito.BDDMockito.given;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class ScenarioDisplayNameResolverTest {
 
-    /** 2026-08-06 09:12 KST. 저장은 UTC라 9시간 앞선 값을 넣는다. */
+    /** 09:12 KST. 저장은 UTC라 9시간 앞선 값을 넣는다. */
     private static final Instant REG_DATETIME = Instant.parse("2026-08-06T00:12:00Z");
 
     @Mock

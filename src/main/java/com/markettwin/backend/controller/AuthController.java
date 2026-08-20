@@ -22,7 +22,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 2026-07-24 추가
  * FE authStore.ts의 mock 로그인을 대체할 실제 로그인/회원가입 API.
  * FE 연동 시 authStore.login()의 mock 처리 부분을 아래 두 엔드포인트 호출로 교체하면 됨.
  */
@@ -48,7 +47,7 @@ public class AuthController {
         return authService.login(request);
     }
 
-    // 2026-08-04 추가 (비밀번호 찾기 1/2 - 본인확인)
+    // 비밀번호 찾기 1/2 - 본인확인
     // FE ForgotPasswordPage와 대응. /api/auth/**가 이미 SecurityConfig에서
     // permitAll이라 별도 설정 변경 없이 로그인 전 상태에서 호출 가능.
     @PostMapping("/verify-identity")
@@ -56,7 +55,7 @@ public class AuthController {
         return authService.verifyIdentity(request);
     }
 
-    // 2026-08-04 추가 (비밀번호 찾기 2/2 - 재설정)
+    // 비밀번호 찾기 2/2 - 재설정
     // FE ResetPasswordPage와 대응. 본인확인 4개 필드를 다시 받아 서버가 재검증함.
     @PostMapping("/reset-password")
     public ResponseEntity<Void> resetPassword(
@@ -67,7 +66,7 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
-    // 2026-07-24 추가: 지금은 SecurityConfig 전체가 permitAll이라 토큰 없이도 호출은
+    // 지금은 SecurityConfig 전체가 permitAll이라 토큰 없이도 호출은
     // 되지만, 인증 정보가 없으면 401을 직접 반환하도록 처리함. FE에서 로그인 유지
     // 여부를 서버에 확인하는 용도로 나중에 붙일 수 있음.
     @GetMapping("/me")

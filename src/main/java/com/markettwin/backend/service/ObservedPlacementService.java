@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 2026-08-12 추가: CCTV 관측 기반 초기배치 조립 (BE 조립 → SIM 전달).
+ * CCTV 관측 기반 초기배치 조립 (BE 조립 → SIM 전달).
  *
  * 호모그래피/바운더리 없이, "화면 속 사람 위치를 구역 지도 틀에 비율대로 옮기는" 경량 방식.
  * 구역마다:
@@ -47,9 +47,9 @@ public class ObservedPlacementService {
     private static final double IMAGE_HEIGHT = 720.0;
     // 반복재생 프레임 선택 간격(ms). 약 30fps 가정. 정확한 fps가 아니어도 "라이브 느낌"이면 충분.
     private static final long FRAME_INTERVAL_MS = 33L;
-    // 2026-08-13(퍼뜨리기): 사람이 화면 일부에만 몰려도 CCTV 구역 전체에 자연스럽게
+    // (퍼뜨리기): 사람이 화면 일부에만 몰려도 CCTV 구역 전체에 자연스럽게
     // 퍼지도록, 이 수 이상이면 "그 프레임 사람들의 픽셀 범위(bbox)"로 정규화한다.
-    // (겹침↓ + 출발이 흩어져 최근접 게이트가 위치별로 갈려 소시지 대피 완화)
+    // 겹침↓ + 출발이 흩어져 최근접 게이트가 위치별로 갈려 소시지 대피 완화
     private static final int SPREAD_MIN_PEOPLE = 3;
     // bbox 변이 이 픽셀보다 작으면(사실상 한 점) 늘리지 않는다(과장 방지).
     private static final double SPREAD_MIN_PIXELS = 20.0;
@@ -79,7 +79,7 @@ public class ObservedPlacementService {
                 if (maxFrame == null || maxFrame < 1) continue;
 
                 int frameId = (int) ((ts / FRAME_INTERVAL_MS) % maxFrame) + 1;
-                // 2026-08-13: 폴백 없음 - 그 프레임 그대로 쓴다. 사람 0명(빈 프레임)이면
+                // 폴백 없음 - 그 프레임 그대로 쓴다. 사람 0명(빈 프레임)이면
                 // 그 구역은 관측 0명(정직하게 그 순간 실제 반영).
                 PedestrianCoordinateJson frame = pedestrianRepository
                         .findFirstByClipIdAndFrameId(clip.getClipId(), frameId).orElse(null);
@@ -97,7 +97,7 @@ public class ObservedPlacementService {
     }
 
     // pixels_json = {"1":[x,y], ...}(값=픽셀좌표 배열)을 매핑해 result에 추가.
-    // (구버전 {"person_1":{"x":..,"y":..}} 객체 형식도 호환 지원.)
+    // 구버전 {"person_1":{"x":..,"y":..}} 객체 형식도 호환 지원.
     private void addMappedPeople(List<ObservedAgentDto> result, Long zoneId, String pixelsJson,
                                  double[][] quad, double[][] zoneRing) throws Exception {
         JsonNode root = objectMapper.readTree(pixelsJson);
@@ -108,7 +108,7 @@ public class ObservedPlacementService {
         while (it.hasNext()) {
             JsonNode p = it.next().getValue();
             if (p == null) continue;
-            // 2026-08-14: pedaggr01h.pixels_json의 실제 형식은 {"1":[x,y], ...}(값=배열)이다.
+            // pedaggr01h.pixels_json의 실제 형식은 {"1":[x,y], ...}(값=배열)이다.
             // 예전 코드는 {"x":..,"y":..}(객체)만 읽어 모든 사람을 건너뛰어 관측 0명이 됐다.
             // 배열([x,y])과 객체({x,y}) 둘 다 받아 호환성을 유지한다.
             double px, py;
@@ -177,7 +177,7 @@ public class ObservedPlacementService {
     /**
      * 4점을 화면 축에 맞춰 배정한다: 화면 위(v=0)=먼쪽=북(lat 큼), 아래(v=1)=가까움=남,
      * 왼(u=0)=서(lon 작음), 오(u=1)=동. → [P00(NW), P10(NE), P01(SW), P11(SE)].
-     * (카메라가 남향이라 가정한 기본 규칙. 방향이 다르면 배치가 회전/반전될 수 있어 추후 보정 대상.)
+     * 카메라가 남향이라 가정한 기본 규칙. 방향이 다르면 배치가 회전/반전될 수 있어 추후 보정 대상.
      */
     private double[][] cornersByGeography(double[][] pts) {
         if (pts.length < 4) throw new IllegalArgumentException("CCTV 폴리곤은 4점이어야 합니다: " + pts.length);

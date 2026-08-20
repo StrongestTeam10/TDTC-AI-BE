@@ -17,7 +17,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * 2026-08-04 추가 (시설 관리 화면 - 상점 위치 등록)
+ * 시설 관리 화면 - 상점 위치 등록
  *
  * 권한 규칙(재재님 확정): 관리자(ROL01) 또는 상인회(usrusrs01m.org_code = 'ORGMA')만
  * 시설을 등록/수정/삭제할 수 있고, 조회(목록)도 이 두 그룹만 가능하다 - FE에서

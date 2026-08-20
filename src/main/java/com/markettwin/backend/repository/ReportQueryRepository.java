@@ -47,7 +47,7 @@ public interface ReportQueryRepository extends Repository<ScenarioResult, Long> 
          */
         String getOwnerName();
         /**
-         * 2026-08-06 추가: 이 실행의 종합 위험 점수(simrslt01d.predicted_risk_score, 0~100).
+         * 이 실행의 종합 위험 점수(simrslt01d.predicted_risk_score, 0~100).
          *
          * 보고서 기능 도입 전 데이터와 위험도 계산이 실패한 실행은 null이다.
          * 등급(안전/주의/위험/심각) 구분은 화면이 맡고 여기서는 점수만 돌려준다 -
