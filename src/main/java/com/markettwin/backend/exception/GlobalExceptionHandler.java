@@ -26,6 +26,19 @@ public class GlobalExceptionHandler {
                 .body(errorBody(ex.getMessage()));
     }
 
+    /**
+     * 시뮬레이션 엔진의 사용량 한도. 429를 그대로 돌려준다.
+     *
+     * 502로 뭉치면 화면에서 "서버 오류"로만 보여 사용자가 잠시 뒤 다시 시도하면
+     * 된다는 것을 알 수 없다. 장애가 아니므로 로그도 error 가 아닌 warn 이다.
+     */
+    @ExceptionHandler(SimulationEngineRateLimitException.class)
+    public ResponseEntity<Map<String, Object>> handleSimulationEngineRateLimit(
+            SimulationEngineRateLimitException ex) {
+        log.warn("시뮬레이션 엔진 사용량 한도 초과: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(errorBody(ex.getMessage()));
+    }
+
     @ExceptionHandler(DuplicateLoginIdException.class)
     public ResponseEntity<Map<String, Object>> handleDuplicateLoginId(DuplicateLoginIdException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorBody(ex.getMessage()));
