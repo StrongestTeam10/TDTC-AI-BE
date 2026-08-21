@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * 2026-07-27 추가
  *
  * 권한 규칙(PostService의 게시판 시장 권한과 동일한 패턴):
  *  - 시장/구역 조회: 관리자(ROL01)는 전체 시장을 볼 수 있고, 대시보드에서 시장을
@@ -52,7 +51,7 @@ public class MarketService {
 
     private static final String ADMIN_ROLE_CODE = "ROL01";
 
-    // 2026-08-14 추가 (시장 등록): comcode01m의 담당 시장 도메인.
+    // (시장 등록): comcode01m의 담당 시장 도메인.
     private static final String MARKET_CODE_DOMAIN = "MKT";
 
     private final MarketRepository marketRepository;
@@ -64,7 +63,7 @@ public class MarketService {
     private final OsmMarketBoundaryClient osmMarketBoundaryClient;
 
     /**
-     * 2026-08-14 추가 (시장 등록). 관리자(ROL01)만 호출할 수 있다.
+     * (시장 등록). 관리자(ROL01)만 호출할 수 있다.
      *
      * comcode01m(MKT)과 mrkaddr01m에 한 트랜잭션으로 함께 넣는다. 시장은 두 곳에
      * 나뉘어 존재하기 때문이다 - 회원가입·게시판의 시장 선택은 공통코드(MKT)에서
@@ -111,7 +110,7 @@ public class MarketService {
     }
 
     /**
-     * 2026-08-14 추가 (시장 정보 수정). 관리자(ROL01)만.
+     * (시장 정보 수정). 관리자(ROL01)만.
      *
      * 이름과 좌표만 바꾼다. 코드는 바꾸지 않는다 - 이유는 MarketUpdateRequestDto 주석 참고.
      *
@@ -158,7 +157,7 @@ public class MarketService {
     }
 
     /**
-     * 2026-08-14 추가: OpenStreetMap에서 이 시장의 경계 폴리곤을 찾아 <b>제안</b>한다.
+     * OpenStreetMap에서 이 시장의 경계 폴리곤을 찾아 <b>제안</b>한다.
      * 저장하지 않는다 - 화면이 보여주고, 사람이 확인·수정한 뒤 구역 저장 API로 넘어간다.
      *
      * 전통시장 경계를 폴리곤으로 주는 공개 API가 달리 없어서 OSM을 쓴다(카카오·네이버
@@ -203,7 +202,7 @@ public class MarketService {
     }
 
     /**
-     * 2026-07-25 추가: 지도에 통로를 선으로 그리고 클릭으로 정책을 지정할 수 있도록
+     * 지도에 통로를 선으로 그리고 클릭으로 정책을 지정할 수 있도록
      * 구역 간 인접(통로) 목록을 반환한다. 폐쇄된 통로도 화면에 "폐쇄됨" 표시가 필요하니
      * isActive와 무관하게 전부 반환한다(findByMarketId, findByMarketIdAndIsActiveTrue 아님).
      */
@@ -214,7 +213,7 @@ public class MarketService {
     }
 
     /**
-     * 2026-07-25 추가: 지도에 게이트(출입구) 아이콘을 표시하고 클릭으로 열림/닫힘을
+     * 지도에 게이트(출입구) 아이콘을 표시하고 클릭으로 열림/닫힘을
      * 토글할 수 있도록, facility_type='GATE'인 시설 목록을 반환한다.
      */
     public List<GateDto> getGates(Long marketId) {
@@ -225,7 +224,7 @@ public class MarketService {
     }
 
     /**
-     * 2026-08-XX 추가: 지도에 상가/건물 폴리곤을 표시하기 위한 목록.
+     * 지도에 상가/건물 폴리곤을 표시하기 위한 목록.
      * 시뮬레이션 계산에는 안 쓰이는 순수 표시용이라 권한 검증 없이 zones/gates와
      * 동일한 패턴으로 marketId 기준 조회만 한다.
      */
@@ -256,7 +255,7 @@ public class MarketService {
     }
 
     /**
-     * 2026-08-14 추가 (시장 등록): 시장 추가·구역 편집 권한 검증.
+     * (시장 등록): 시장 추가·구역 편집 권한 검증.
      *
      * SecurityConfig는 /api/simulation/**, /api/dashboard/** 외에는
      * anyRequest().authenticated()라서, 여기서 막지 않으면 로그인만 한

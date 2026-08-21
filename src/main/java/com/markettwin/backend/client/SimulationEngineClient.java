@@ -8,6 +8,7 @@ import com.markettwin.backend.dto.response.DashboardSnapshotDto;
 import com.markettwin.backend.dto.response.PredictResultDto;
 import com.markettwin.backend.dto.response.ScenarioResultDto;
 import com.markettwin.backend.exception.SimulationEngineException;
+import com.markettwin.backend.exception.SimulationEngineRateLimitException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -82,8 +83,16 @@ public class SimulationEngineClient {
                 .retrieve()
                 .bodyToMono(Object.class)
                 .timeout(Duration.ofSeconds(60))
-                .onErrorMap(ex -> new SimulationEngineException(
-                        "정책 분석(LLM) 엔진 호출 실패: " + describeError(ex), ex))
+                .onErrorMap(ex -> {
+                    // 사용량 한도는 장애가 아니라 "잠시 뒤 다시" 상황이라 따로 올린다.
+                    // 502로 뭉치면 화면에서 원인 없는 오류로만 보인다.
+                    if (ex instanceof WebClientResponseException.TooManyRequests) {
+                        return new SimulationEngineRateLimitException(
+                                "AI 분석 사용량 한도를 초과했습니다. 잠시 후 다시 시도해주세요.");
+                    }
+                    return new SimulationEngineException(
+                            "정책 분석(LLM) 엔진 호출 실패: " + describeError(ex), ex);
+                })
                 .block();
     }
 

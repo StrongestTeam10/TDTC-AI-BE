@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 2026-08-14 추가: GeoJSON Polygon 문자열을 다루는 공용 계산.
+ * GeoJSON Polygon 문자열을 다루는 공용 계산.
  *
  * 지금까지 이 계산은 CctvZoneService 안에 private으로만 있었다(CCTV 사각형이 소속
  * 구역 안에 있는지 검증하는 용도). 구역 등록·통로 자동 생성·CCTV 소속 구역 자동
@@ -62,7 +62,7 @@ public final class GeoJsonPolygons {
     }
 
     /**
-     * 2026-08-14 추가: GeoJSON LineString에서 양 끝점을 [경도, 위도]로 꺼낸다.
+     * GeoJSON LineString에서 양 끝점을 [경도, 위도]로 꺼낸다.
      * 구역을 자르는 선은 직선으로 취급하므로 중간 점은 쓰지 않는다.
      *
      * @throws IllegalArgumentException LineString이 아니거나 점이 2개 미만일 때
@@ -93,7 +93,7 @@ public final class GeoJsonPolygons {
     }
 
     /**
-     * 2026-08-14 추가: [경도, 위도] 링을 GeoJSON Polygon 문자열로 만든다.
+     * [경도, 위도] 링을 GeoJSON Polygon 문자열로 만든다.
      * DB(mrkaddr01d.polygon_coordinates)에 들어가는 형식과 같아야 하므로,
      * 첫 점과 같은 점을 끝에 붙여 링을 닫는다.
      */
@@ -153,7 +153,7 @@ public final class GeoJsonPolygons {
     }
 
     /**
-     * 2026-08-14 추가: 점이 링에서 얼마나 떨어져 있는지(m). 안에 있으면 0.
+     * 점이 링에서 얼마나 떨어져 있는지(m). 안에 있으면 0.
      *
      * 반경으로 받아온 건물 중 시장과 상관없는 것을 골라내는 데 쓴다. 시장 중심에서
      * 반경 150m로 조회하면 시장 골목과 무관한 건물까지 딸려 오는데, 그것들은

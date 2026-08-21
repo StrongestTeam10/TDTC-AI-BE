@@ -19,9 +19,9 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * 2026-08-14 추가: 브이월드(공간정보 오픈플랫폼) 2D 데이터API에서 건물 폴리곤을 받아온다.
+ * 브이월드(공간정보 오픈플랫폼) 2D 데이터API에서 건물 폴리곤을 받아온다.
  *
- * 실제 응답으로 확인한 사실(2026-08-14, 망원시장 반경 조회):
+ * 실제 응답으로 확인한 사실(망원시장 반경 조회):
  *   - geometry.type이 <b>MultiPolygon</b>이다. 그대로 저장하면 SIM parse_polygon이
  *     예외로 거부하고, FE geoJsonToVertices는 예외 없이 잘못된 좌표를 만든다.
  *     그래서 여기서 조각별 Polygon으로 풀어서 넘긴다.
@@ -98,7 +98,7 @@ public class VworldBuildingClient {
     }
 
     /**
-     * 2026-08-14 추가: 지도에서 지정한 사각형 범위 안의 건물만 받아온다.
+     * 지도에서 지정한 사각형 범위 안의 건물만 받아온다.
      *
      * 반경은 원이라 시장 골목처럼 한쪽으로 긴 모양에서는 필요 없는 사방이 함께 들어온다.
      * 필요한 영역만 집어서 받으면 나중에 정리할 일이 줄어든다.
@@ -211,7 +211,7 @@ public class VworldBuildingClient {
 
         // ⚠️ 저장 키로 PNU(앞 19자리)를 쓰면 안 된다. PNU는 필지 번호라 한 필지에 건물이
         // 여러 동이면 값이 겹치고, mrkbldg01m.pnu_code에는 UNIQUE 제약이 걸려 있어
-        // 두 번째 건물부터 적재가 통째로 실패한다(2026-08-14 해운대전통시장에서 확인).
+        // 두 번째 건물부터 적재가 통째로 실패한다(해운대전통시장에서 확인).
         // 건물관리번호(25자리)는 건물마다 유일하므로 그대로 쓴다.
         List<String> polygons = toPolygonJsons(feature.path("geometry"));
         List<FetchedBuilding> result = new ArrayList<>();

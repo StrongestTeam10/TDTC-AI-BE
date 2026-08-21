@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 이 변환이 틀리면 예외가 안 나고 "그럴듯하지만 엉뚱한 위치의 도형"이 DB에 들어간다.
  * 특히 브이월드는 geometry를 MultiPolygon으로 주는데, 그대로 저장하면
  * SIM parse_polygon이 거부하고 FE geoJsonToVertices는 한 겹 더 깊은 배열을 좌표로
- * 오해해 조용히 깨진다. 아래 JSON은 2026-08-14에 실제 응답에서 가져온 값이다.
+ * 오해해 조용히 깨진다. 아래 JSON은 에 실제 응답에서 가져온 값이다.
  */
 class VworldBuildingClientTest {
 
@@ -73,7 +73,7 @@ class VworldBuildingClientTest {
 
         // PNU(앞 19자리)는 필지 번호라 한 필지에 건물이 여러 동이면 겹친다.
         // mrkbldg01m.pnu_code에는 UNIQUE 제약이 있어서, PNU를 쓰면 두 번째 건물부터
-        // 적재가 통째로 실패한다(2026-08-14 해운대전통시장에서 실제로 터졌다).
+        // 적재가 통째로 실패한다(해운대전통시장에서 실제로 터졌다).
         assertThat(buildings.get(0).pnuCode()).isEqualTo("1144012300104860028000001");
         assertThat(buildings.get(0).pnuCode()).startsWith("1144012300104860028");
     }

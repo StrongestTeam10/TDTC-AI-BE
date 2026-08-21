@@ -8,7 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 2026-07-24 추가
  * FE SignupPage(회원가입 화면) 입력값과 대응. 비밀번호 조합 규칙(8자 이상 + 영문
  * 대/소문자·숫자·특수문자 모두 포함)은 FE utils/password.ts와 동일한 정책을 서버에서도
  * 한 번 더 검증함(클라이언트 검증만 믿지 않음).
@@ -32,7 +31,7 @@ public class SignupRequestDto {
     @Size(max = 50, message = "이름은 50자 이하여야 합니다.")
     private String name;
 
-    // 2026-08-13 추가: 전화번호 (선택 항목)
+    // 전화번호 (선택 항목)
     @Size(max = 20, message = "전화번호는 20자 이하여야 합니다.")
     private String phoneNumber;
 
@@ -42,7 +41,7 @@ public class SignupRequestDto {
     @Size(max = 5)
     private String orgCode;
 
-    // 2026-07-24 추가(게시판): comcode01m의 MKT 도메인 코드(예: MKTMW) 중 하나여야 함.
+    // 추가(게시판): comcode01m의 MKT 도메인 코드(예: MKTMW) 중 하나여야 함.
     // 게시판 목록 노출 범위("본인 담당 시장 글만 조회") 기준이 되는 필드라 필수로 받음.
     // 실제 존재 여부는 orgCode와 동일하게 AuthService에서 한 번 더 확인함.
     @NotBlank(message = "담당 시장은 필수입니다.")

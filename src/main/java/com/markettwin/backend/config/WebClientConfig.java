@@ -13,7 +13,7 @@ public class WebClientConfig {
     private String simulationEngineBaseUrl;
 
     // WebClient 기본 응답 버퍼 한도(256KB)는 예측/시나리오 스텝 수가 늘어나면
-    // 프레임(frames) 응답이 쉽게 넘어선다. 2026-07-24: predict steps=30 정도에서도
+    // 프레임(frames) 응답이 쉽게 넘어선다. : predict steps=30 정도에서도
     // DataBufferLimitException -> SimulationEngineException -> 502로 이어지는 걸
     // 확인해서 10MB로 상향함.
     private static final int MAX_IN_MEMORY_SIZE = 10 * 1024 * 1024;
@@ -22,7 +22,7 @@ public class WebClientConfig {
     private String vworldBaseUrl;
 
     /**
-     * 2026-08-14 추가: 브이월드(공간정보 오픈플랫폼) 호출용.
+     * 브이월드(공간정보 오픈플랫폼) 호출용.
      *
      * 시뮬레이션 엔진과 버퍼 한도를 같이 쓰는 이유: 건물 폴리곤은 한 페이지에 최대
      * 1000건이고 각 건물이 꼭짓점 수십 개를 가져서, 기본값 256KB로는 넘어선다.
@@ -41,7 +41,7 @@ public class WebClientConfig {
     }
 
     /**
-     * 2026-08-14 추가: OpenStreetMap(Overpass) 호출용.
+     * OpenStreetMap(Overpass) 호출용.
      *
      * baseUrl을 두지 않는 이유: Overpass는 공개 미러가 여럿이라 엔드포인트를 통째로
      * 설정값(osm.overpass-url)으로 받는다. User-Agent를 명시하는 것은 Overpass 운영

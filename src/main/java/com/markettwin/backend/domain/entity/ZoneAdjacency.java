@@ -15,11 +15,11 @@ import java.time.Instant;
  * Mesa NetworkGrid 구성 및 유동인구 이동 경로 계산의 기반 데이터.
  * from_zone_id -> to_zone_id 방향으로 저장하며, 양방향 통로는 두 행으로 표현한다.
  *
- * 2026-07-27 변경: market_id 컬럼 제거(from_zone_id/to_zone_id가 속한 구역을 통해
+ * market_id 컬럼 제거(from_zone_id/to_zone_id가 속한 구역을 통해
  * mrkaddr01d.market_id로 알 수 있어 중복이었음 - MarketService.getCorridors() 등에서
  * 시장별로 조회할 땐 이제 ZoneAdjacencyRepository가 Zone과 조인해서 필터링함).
  * createdAt 추가.
- * (한때 테이블명을 mrkadjs01m으로 리네임했으나 오기로 확인되어 mrkadjc01m 유지.)
+ * 한때 테이블명을 mrkadjs01m으로 리네임했으나 오기로 확인되어 mrkadjc01m 유지.
  */
 @Entity
 @Table(name = "mrkadjc01m")
@@ -54,7 +54,7 @@ public class ZoneAdjacency {
     private Boolean isActive = true;
 
     /**
-     * 2026-07-24 추가: 통로 중심선(GeoJSON LineString, WGS84 [경도,위도] 순서).
+     * 통로 중심선(GeoJSON LineString, WGS84 [경도,위도] 순서).
      * 레이아웃 에디터로 실제 통로를 따라 그린 선. null이면 SIM이 두 구역이 맞닿은
      * 경계 중점 1개로 근사해서 대체한다(정확도는 떨어짐).
      */

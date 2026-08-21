@@ -11,7 +11,7 @@ public interface BaselineResultRepository extends JpaRepository<BaselineResult, 
     List<BaselineResult> findByBaselineId(Long baselineId);
 
     /**
-     * 2026-07-31 추가 (보고서 기능)
+     * 보고서 기능
      * 이 현행안의 가장 최근 결과 1건.
      *
      * 보고서는 "시나리오 1건 vs 그 시장의 현행안"이므로 인구수로 좁히지 않는다.

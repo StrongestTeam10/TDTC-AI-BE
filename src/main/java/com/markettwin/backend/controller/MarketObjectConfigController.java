@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 2026-08-11 추가 (시장 오브젝트/구조 설정 - 시장 구조 등록 화면).
+ * (시장 오브젝트/구조 설정 - 시장 구조 등록 화면).
  *
  * 시뮬레이션 비교의 초기 배치로 쓸 오브젝트 배치 + 통로 제어 정책을 시장당 1세트로
  * 저장/조회한다. 실제 시뮬레이션 실행 결과는 기존 baseline/scenario 흐름 그대로.

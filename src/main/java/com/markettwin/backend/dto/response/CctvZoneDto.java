@@ -5,7 +5,7 @@ import com.markettwin.backend.domain.entity.CctvZone;
 import java.time.Instant;
 
 /**
- * 2026-08-11 추가 (CCTV 관제 구역). 08-11 2차: zoneName은 zoneId로 MRKADDR01D를
+ * (CCTV 관제 구역). 2차: zoneName은 zoneId로 MRKADDR01D를
  * 조인해 채운다(이 테이블 자체엔 구역명이 없음).
  */
 public record CctvZoneDto(

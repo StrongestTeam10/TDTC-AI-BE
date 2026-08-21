@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface ZoneAdjacencyRepository extends JpaRepository<ZoneAdjacency, Long> {
 
-    // 2026-07-27 변경: mrkadjc01m에서 market_id 컬럼이 빠지면서(from_zone_id가 속한
+    // mrkadjc01m에서 market_id 컬럼이 빠지면서(from_zone_id가 속한
     // 구역을 통해 이미 알 수 있는 값이라 중복이었음), 시장별 조회는 Zone과 조인해서
     // 구현함. from_zone_id 기준으로만 조인하는 이유: uq_mrkadjc01m_edge 제약상
     // from/to 조합이 항상 같은 시장 내에서만 만들어진다는 전제(양방향은 두 행으로
@@ -34,7 +34,7 @@ public interface ZoneAdjacencyRepository extends JpaRepository<ZoneAdjacency, Lo
 
     List<ZoneAdjacency> findByFromZoneId(Long fromZoneId);
 
-    // 2026-08-14 추가 (구역 삭제): 통로는 구역에서 파생된 값이라, 구역이 없어지면
+    // (구역 삭제): 통로는 구역에서 파생된 값이라, 구역이 없어지면
     // 그 구역이 양 끝 중 어느 쪽이든 걸려 있는 행을 함께 지운다.
     void deleteByFromZoneIdOrToZoneId(Long fromZoneId, Long toZoneId);
 }

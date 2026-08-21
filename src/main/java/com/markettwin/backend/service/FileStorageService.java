@@ -6,7 +6,7 @@ import java.net.URL;
 import java.time.Duration;
 
 /**
- * 2026-07-24 추가 (게시판 첨부파일 기능)
+ * 게시판 첨부파일 기능
  * 저장소 구현(S3)을 서비스 레이어에서 직접 의존하지 않도록 인터페이스로 분리.
  * 현재 구현체는 S3FileStorageService 하나뿐이지만, 로컬 디스크 등 다른 저장소로
  * 바꿀 일이 생기면 이 인터페이스만 구현해서 갈아끼울 수 있음.
@@ -19,20 +19,20 @@ public interface FileStorageService {
     String upload(MultipartFile file, String keyPrefix);
 
     /**
-     * 2026-07-30 추가 (보고서 기능)
+     * 보고서 기능
      * 보고서를 aws.s3.report-bucket에 업로드하고 키를 반환한다.
      *
      * 업로드된 파일이 아니라 BE가 만들어낸 결과물이라 MultipartFile이 없어 바이트로 받는다.
      * upload()와 따로 있는 1차 이유가 이 입력 타입 차이다.
      *
-     * 2026-08-04에 게시판 첨부파일과 버킷을 하나로 합치고 키 prefix(board/ vs reports/)로만
+     * 에 게시판 첨부파일과 버킷을 하나로 합치고 키 prefix(board/ vs reports/)로만
      * 구분하기로 했다. 보고서 3종(uploadReport, generateReportDownloadUrl, deleteReport)은
      * 여전히 aws.s3.report-bucket을 보는데, 통합이 확정이면 함께 정리할 수 있다.
      */
     String uploadReport(byte[] content, String contentType, String keyPrefix);
 
     /**
-     * 2026-07-30 추가 (보고서 기능)
+     * 보고서 기능
      * 보고서 전용 버킷 객체의 임시 다운로드 URL을 발급한다.
      */
     URL generateReportDownloadUrl(String key, String originalFileName, Duration ttl);
@@ -43,11 +43,11 @@ public interface FileStorageService {
     void delete(String key);
 
     /**
-     * 2026-08-05 추가 (보고서 기능)
+     * 보고서 기능
      * 보고서 객체를 삭제한다.
      *
      * 보고서 업로드·다운로드가 aws.s3.report-bucket을 보므로 삭제도 같은 설정을 따르게 했다.
-     * 2026-08-04에 게시판 첨부파일과 버킷을 하나로 합쳐서, 지금은 delete()와 결과가 같다.
+     * 에 게시판 첨부파일과 버킷을 하나로 합쳐서, 지금은 delete()와 결과가 같다.
      */
     void deleteReport(String key);
 

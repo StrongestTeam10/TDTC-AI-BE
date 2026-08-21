@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-// 2026-07-24 추가
 // 예: GET /api/common-codes?domain=ORG -> [{code: "ORGKT", codeName: "KT"}, ...]
 @RestController
 @RequestMapping("/api/common-codes")

@@ -18,7 +18,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * 2026-08-11 추가 (시장 오브젝트/구조 설정).
+ * (시장 오브젝트/구조 설정).
  *
  * 오브젝트 배치(PlacedObject[])와 통로 제어 정책(CorridorPolicy[])을 시장당 1세트로
  * 보관한다. 형식이 시뮬레이션 요청과 1:1이라 리스트 ↔ JSON 문자열만 변환한다.
@@ -41,7 +41,7 @@ public class MarketObjectConfigService {
     private final MarketService marketService;
     private final ObjectMapper objectMapper;
 
-    // 2026-08-12: 조회(get)는 관리 권한(assertCanManage)을 요구하지 않는다.
+    // 조회(get)는 관리 권한(assertCanManage)을 요구하지 않는다.
     // 저장은 여전히 상인회(ORGMA)/관리자만이지만, 저장된 "현행"을 시뮬레이션 비교
     // 화면이 초기 배치로 읽어 쓰기 때문에, 시뮬을 쓰는 관제요원(ROL02)도 조회할 수
     // 있어야 한다. 시장 접근 검증(getAccessibleMarket)은 유지하므로 아무나 여는 게

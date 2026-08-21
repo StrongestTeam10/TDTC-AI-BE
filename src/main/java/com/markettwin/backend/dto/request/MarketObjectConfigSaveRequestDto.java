@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * 2026-08-11 추가 (시장 오브젝트/구조 설정 저장). 시장당 1세트를 통째로 덮어쓴다.
+ * (시장 오브젝트/구조 설정 저장). 시장당 1세트를 통째로 덮어쓴다.
  * objects/corridorPolicies가 null이면 서비스단에서 빈 배열로 취급한다.
  */
 @Getter

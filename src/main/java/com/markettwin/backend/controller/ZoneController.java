@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 2026-08-14 추가 (시뮬레이션 구역 수정/삭제).
+ * (시뮬레이션 구역 수정/삭제).
  *
  * 등록은 시장에 종속되므로 POST /api/markets/{marketId}/zones(MarketController)에
  * 두고, 이미 만들어진 구역을 다루는 수정·삭제만 여기 모았다. 조회는 기존

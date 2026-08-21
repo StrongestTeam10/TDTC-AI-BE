@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 import java.util.UUID;
 
 /**
- * 2026-07-27 추가 (보고서 기능)
+ * 보고서 기능
  *
  * 시뮬레이션 결과를 현행안과 비교한 정책 보고서(DOCX)를 만든다.
  * 보고서 1건 = 현행안 1건 vs 시나리오 1건이며, 결과 행에 S3 키와 제목을 남겨
@@ -418,7 +418,7 @@ public class ReportService {
      *
      * presigned URL은 수명이 짧아 DB에 담을 수 없으므로 S3 키만 저장해 두고, 필요할 때
      * 이렇게 주소만 다시 만든다. 파일은 S3에 그대로 있으니 보고서를 재생성할 필요가 없다.
-     * (재생성은 RAG 검색 + LLM 생성까지 다시 도는 수 분짜리 작업이다)
+     * 재생성은 RAG 검색 + LLM 생성까지 다시 도는 수 분짜리 작업이다
      */
     public ReportDownloadDto reissueDownloadUrl(Long scenarioId) {
         // 소유자 확인을 보고서 존재 여부보다 먼저 한다. 순서가 반대면 남의 시나리오라도

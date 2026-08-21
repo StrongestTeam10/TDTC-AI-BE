@@ -34,7 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * 2026-07-27 변경: 시장/구역별 권한 분리(관리자는 전체, 그 외는 본인 담당 시장만)
+ * 시장/구역별 권한 분리(관리자는 전체, 그 외는 본인 담당 시장만)
  * 적용을 위해 CurrentUserProvider로 로그인 사용자를 조회해 MarketService에 전달함.
  */
 @RestController
@@ -54,7 +54,7 @@ public class MarketController {
     }
 
     /**
-     * 2026-08-14 추가 (시장 등록). 관리자(ROL01) 전용이며, 권한 검증은
+     * (시장 등록). 관리자(ROL01) 전용이며, 권한 검증은
      * MarketService.assertCanManageMarkets에서 한다(SecurityConfig에는 이 경로에
      * 대한 역할 제한이 없어서 컨트롤러까지는 로그인한 누구나 도달한다).
      *
@@ -68,7 +68,7 @@ public class MarketController {
     }
 
     /**
-     * 2026-08-14 추가 (시장 정보 수정). 관리자(ROL01) 전용.
+     * (시장 정보 수정). 관리자(ROL01) 전용.
      *
      * 이름과 좌표만 바꾼다. 시장 코드는 요청에 없고 바뀌지도 않는다 - 담당 시장 권한이
      * 그 코드로 갈리기 때문이다(MarketUpdateRequestDto 주석 참고).
@@ -82,7 +82,7 @@ public class MarketController {
     }
 
     /**
-     * 2026-08-14 추가 (시장 경계 제안). 관리자(ROL01) 전용.
+     * (시장 경계 제안). 관리자(ROL01) 전용.
      *
      * OpenStreetMap에서 이 시장의 경계 폴리곤을 찾아 돌려준다. <b>저장하지 않는다</b> -
      * 화면이 그려서 보여주고, 사람이 확인·수정한 뒤 구역 저장 API로 넘어간다.
@@ -101,7 +101,7 @@ public class MarketController {
     }
 
     /**
-     * 2026-08-14 추가 (구역 등록). 관리자(ROL01) 전용.
+     * (구역 등록). 관리자(ROL01) 전용.
      *
      * 폴리곤을 문자열로 그대로 받는다. 사람이 지도에서 그린 것이든 나중에 건물
      * 폴리곤 여백에서 자동 추출한 것이든 같은 경로로 저장하기 위해서다.
@@ -117,7 +117,7 @@ public class MarketController {
     }
 
     /**
-     * 2026-08-14 추가 (영역을 선으로 잘라 구역 나누기). 관리자(ROL01) 전용.
+     * (영역을 선으로 잘라 구역 나누기). 관리자(ROL01) 전용.
      *
      * 시장 영역 폴리곤 하나와 자르는 선 N개를 받아 구역 N+1개를 한 번에 만든다.
      * 구역을 하나씩 그리는 위 API와 목적이 다를 뿐 저장되는 결과(mrkaddr01d 행)는
@@ -133,7 +133,7 @@ public class MarketController {
     }
 
     /**
-     * 2026-07-25 추가: 지도에 통로(구역 간 연결)를 선으로 그리고 클릭으로
+     * 지도에 통로(구역 간 연결)를 선으로 그리고 클릭으로
      * 폐쇄/개방/일방통행 정책을 지정할 수 있도록 통로 목록을 반환한다.
      */
     @GetMapping("/{marketId}/corridors")
@@ -142,7 +142,7 @@ public class MarketController {
     }
 
     /**
-     * 2026-07-25 추가: 지도에 게이트(출입구) 아이콘을 표시하고 클릭으로
+     * 지도에 게이트(출입구) 아이콘을 표시하고 클릭으로
      * 열림/닫힘을 토글할 수 있도록 게이트 목록을 반환한다.
      */
     @GetMapping("/{marketId}/gates")
@@ -151,7 +151,7 @@ public class MarketController {
     }
 
     /**
-     * 2026-08-XX 추가: 지도에 상가/건물 폴리곤(3D 느낌의 형태)을 표시하기 위한 목록.
+     * 지도에 상가/건물 폴리곤(3D 느낌의 형태)을 표시하기 위한 목록.
      */
     @GetMapping("/{marketId}/buildings")
     public List<BuildingDto> getBuildings(@PathVariable Long marketId) {
@@ -159,7 +159,7 @@ public class MarketController {
     }
 
     /**
-     * 2026-08-14 추가 (건물 폴리곤 자동 적재). 관리자(ROL01) 전용.
+     * (건물 폴리곤 자동 적재). 관리자(ROL01) 전용.
      *
      * 시장 중심에서 반경 안의 건물을 브이월드에서 받아 mrkbldg01m에 넣는다. 지도
      * 표시용이 아니라 시뮬레이션용이다 - SIM이 걸을 수 있는 영역에서 건물을 빼기
@@ -178,7 +178,7 @@ public class MarketController {
     }
 
     /**
-     * 2026-08-14 추가 (구역에서 먼 건물 정리). 관리자(ROL01) 전용.
+     * (구역에서 먼 건물 정리). 관리자(ROL01) 전용.
      *
      * 건물은 시장 중심 기준 반경으로 받아오기 때문에, 구역이 확정되고 나면 시장과 상관없는
      * 건물이 섞여 있다. 구역 경계에서 여유 거리(기본 30m)를 벗어난 건물을 지운다.

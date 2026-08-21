@@ -4,11 +4,11 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * 2026-07-27 추가: SIM /simulate/scenario 응답에 새로 생긴 4개 필드 반영.
+ * SIM /simulate/scenario 응답에 새로 생긴 4개 필드 반영.
  * averageDensity/maxDensity/maxDensityZoneId/maxDensityZoneName/evacuatedCount는
  * BE가 simrslt01d에 그대로 저장하는 데 쓰인다(SimulationService 참고).
  *
- * 2026-08-06 추가: persistedScenarioId.
+ * persistedScenarioId.
  */
 public record ScenarioResultDto(
         // SIM이 실행마다 새로 만드는 UUID다. DB의 시나리오 식별자가 아니라서
@@ -17,7 +17,7 @@ public record ScenarioResultDto(
         String scenarioId,
         Instant requestedAt,
         List<List<AgentStateDto>> frames,   // 스텝별 에이전트 상태 스냅샷
-        // 2026-08-XX 추가: 개입 후 스텝별 위험도 추이(개입 전과 겹쳐 비교용). SIM 응답 전달.
+        // 개입 후 스텝별 위험도 추이(개입 전과 겹쳐 비교용). SIM 응답 전달.
         List<RiskTrendPointDto> riskTrend,
         Integer evacuationTimeSeconds,       // null 가능 (대피 미완료)
         RiskScoreDto finalRiskScore,

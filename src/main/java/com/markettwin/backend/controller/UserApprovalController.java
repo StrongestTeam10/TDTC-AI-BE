@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 2026-08-04 추가 (회원가입 관리자 승인)
+ * 회원가입 관리자 승인
  * 관리자(ROL01)만 호출 가능 - UserApprovalService.assertAdmin 참고.
  */
 @RestController

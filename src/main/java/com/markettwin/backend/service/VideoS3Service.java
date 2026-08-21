@@ -55,7 +55,7 @@ public class VideoS3Service {
         // 그대로 넘기는 경우가 있어 둘 다 받아준다).
         if (key != null && key.startsWith("http")) {
             try {
-                // 2026-08-12: new URL(String)은 JDK 20부터 deprecated다(JDK-8294241).
+                // new URL(String)은 JDK 20부터 deprecated다(JDK-8294241).
                 // 검증 없이 관대하게 파싱해서 라이브러리마다 결과가 갈리는 문제가 있어
                 // URI 경유로 바꾼다. 예외 종류가 MalformedURLException ->
                 // IllegalArgumentException으로 바뀌지만, 아래에서 Exception으로 함께 받는다.
@@ -72,7 +72,7 @@ public class VideoS3Service {
                 }
                 key = path;
             } catch (Exception e) {
-                // 2026-08-12: 원래 빈 catch였다. 파싱이 실패하면 원본 문자열을 그대로 키로
+                // 원래 빈 catch였다. 파싱이 실패하면 원본 문자열을 그대로 키로
                 // 쓰게 되는데, 그러면 엉뚱한 키로 presigned URL이 만들어지고도 아무 흔적이
                 // 남지 않아 원인을 찾을 수 없었다. 동작(원본 유지)은 그대로 두고 기록만 남긴다.
                 log.warn("S3 주소에서 객체 키를 추출하지 못해 입력값을 그대로 사용합니다: {}", keyOrUrl, e);

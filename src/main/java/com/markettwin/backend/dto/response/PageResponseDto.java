@@ -6,7 +6,7 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-// 2026-07-24 추가 (게시판 기능) - Spring Data Page를 그대로 노출하지 않고
+// (게시판 기능) - Spring Data Page를 그대로 노출하지 않고
 // FE에서 쓰기 쉬운 형태로 얇게 감쌈
 @Getter
 @Builder

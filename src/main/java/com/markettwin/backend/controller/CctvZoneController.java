@@ -12,7 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 2026-08-11 추가 (CCTV 관제 구역 - 상점 위치 등록 화면). 08-11 2차 재설계.
+ * (CCTV 관제 구역 - 상점 위치 등록 화면). 2차 재설계.
  *
  * ⚠️ 시뮬레이션 구역 조회(GET /api/markets/{marketId}/zones)와는 다른 테이블(mrkcctv01m)을
  * 다룬다. 여기서 구역을 등록해도 시뮬레이션 비교 화면이나 SIM 계산에는 영향이 없다.

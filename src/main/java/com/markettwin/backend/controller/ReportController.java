@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 2026-07-27 추가 (보고서 기능)
+ * 보고서 기능
  * 시뮬레이션 결과를 현행안과 비교해 정책 보고서(DOCX)를 생성한다.
  */
 @RestController
@@ -36,7 +36,7 @@ public class ReportController {
      *
      * presigned URL은 수명이 짧아 DB에 담아둘 수 없으므로 S3 키만 저장해 두고 여기서
      * 주소만 다시 만든다. 파일은 S3에 그대로 있어 보고서를 재생성하지 않는다.
-     * (재생성은 RAG 검색 + LLM 생성까지 다시 도는 수 분짜리 작업이다)
+     * 재생성은 RAG 검색 + LLM 생성까지 다시 도는 수 분짜리 작업이다
      *
      * 302 리다이렉트 대신 JSON으로 URL을 돌려준다. 이 API는 JWT가 필요한데 브라우저가
      * 단순 이동하면 Authorization 헤더가 실리지 않고, fetch로 부르면 리다이렉트를 따라

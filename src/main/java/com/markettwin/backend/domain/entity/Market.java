@@ -31,12 +31,12 @@ public class Market {
     @Column(name = "longitude", precision = 11, scale = 8)
     private java.math.BigDecimal longitude;
 
-    // 2026-07-27 추가(ERD 반영): 시장 구분 코드(comcode01m MKT 도메인)
+    // 추가(ERD 반영): 시장 구분 코드(comcode01m MKT 도메인)
     @Column(name = "market_code", nullable = false, length = 5)
     private String marketCode;
 
     /**
-     * 2026-08-14 추가: 이름과 중심 좌표만 바꾼다.
+     * 이름과 중심 좌표만 바꾼다.
      *
      * marketCode를 뺀 것은 일부러다. 코드는 시장의 신원이고 담당 시장 권한이 그것으로
      * 갈려서(MarketService.getAccessibleMarket), 바뀌면 그 시장 담당자가 자기 시장에

@@ -1,7 +1,7 @@
 package com.markettwin.backend.dto.response;
 
 /**
- * 2026-07-30 추가 (보고서 기능)
+ * 보고서 기능
  * 이미 생성된 보고서의 다운로드 주소.
  *
  * 302 리다이렉트가 아니라 JSON으로 URL을 돌려주는 이유:

@@ -15,7 +15,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * 2026-07-27 변경: 시장/구역별 권한 분리 적용을 위해 CurrentUserProvider로 로그인
+ * 시장/구역별 권한 분리 적용을 위해 CurrentUserProvider로 로그인
  * 사용자를 조회해 DashboardService에 전달함(본인 담당 시장이 아닌 marketId로 요청하면
  * 403 응답).
  */

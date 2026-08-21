@@ -29,7 +29,7 @@ public record ScenarioResultRowDto(
         String flowDirection,
         Instant executedAt,
 
-        // 2026-08-03 추가. 시뮬레이션 저장 시점부터 simrslt01d/simbsln01d에 쌓여
+        // 시뮬레이션 저장 시점부터 simrslt01d/simbsln01d에 쌓여
         // 있었지만 보고서로는 전달되지 않던 값들이다. 화재·음향 이벤트 시나리오에서
         // 정책 효과가 실제로 드러나는 지표라 보고서 본문의 근거로 쓴다.
 

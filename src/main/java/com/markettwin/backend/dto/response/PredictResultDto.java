@@ -18,7 +18,7 @@ public record PredictResultDto(
         Long maxDensityZoneId,
         String maxDensityZoneName,
         Integer evacuatedCount,
-        // 2026-08-XX 추가: 개입 전 대피 완료 시간(개입 후와 비교용). null 가능(대피 미완료).
+        // 개입 전 대피 완료 시간(개입 후와 비교용). null 가능(대피 미완료).
         Integer evacuationTimeSeconds
 ) {
 }

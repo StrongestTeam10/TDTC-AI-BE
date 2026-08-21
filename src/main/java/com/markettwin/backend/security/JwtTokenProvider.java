@@ -13,7 +13,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 /**
- * 2026-07-24 추가
  * 로그인 성공 시 발급하는 JWT 액세스 토큰의 생성/검증을 담당.
  *
  * ⚠️ jwt.secret은 반드시 32바이트(256비트) 이상이어야 HS256 서명에 사용할 수 있음.

@@ -26,7 +26,7 @@ import java.util.Locale;
 import java.util.stream.IntStream;
 
 /**
- * 2026-08-14 추가 (시뮬레이션 구역 등록/수정/삭제).
+ * (시뮬레이션 구역 등록/수정/삭제).
  *
  * 지금까지 구역은 seed-market-data.sql로만 들어갔다. ZoneRepository는 있었지만
  * MarketService·ReportService·SpatialLayoutService·CctvZoneService 네 곳에서
@@ -71,7 +71,7 @@ public class ZoneService {
     }
 
     /**
-     * 2026-08-14 추가: 시장 영역 폴리곤 하나를 선으로 잘라 여러 구역을 한 번에 만든다.
+     * 시장 영역 폴리곤 하나를 선으로 잘라 여러 구역을 한 번에 만든다.
      *
      * 구역을 하나씩 그리는 것(createZone)보다 실제 시장 구조에 가깝다. 망원시장도
      * 골목 하나를 출입구 위치에서 두 번 잘라 3구역이 됐고, 그렇게 만들면 사람이

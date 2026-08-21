@@ -8,7 +8,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 /**
- * 2026-07-24 추가 (게시판 첨부파일 기능)
+ * 게시판 첨부파일 기능
  *
  * 자격증명은 코드/설정 파일에 직접 넣지 않고 AWS 기본 자격증명 체인
  * (환경변수 AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY, ~/.aws/credentials,
@@ -18,7 +18,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
  * ⚠️ 로컬 개발 시 필요 사전 준비 (README에도 안내):
  *   1) S3 버킷 생성 (예: tdtc-ai-board-attachments)
  *   2) 로컬 환경변수로 AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY 설정
- *      (또는 aws configure로 ~/.aws/credentials에 등록)
+ * 또는 aws configure로 ~/.aws/credentials에 등록
  *   3) application-local.yml의 aws.s3.bucket 값을 실제 버킷명으로 맞추기
  */
 @Configuration

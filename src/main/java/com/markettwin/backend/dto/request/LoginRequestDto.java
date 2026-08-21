@@ -4,7 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 2026-07-24 추가
 @Getter
 @NoArgsConstructor
 public class LoginRequestDto {

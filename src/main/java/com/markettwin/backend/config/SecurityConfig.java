@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 2026-07-24 추가, 같은 날 2차 변경
  * 로그인/회원가입 API 추가에 맞춰 Spring Security를 처음 도입함.
  *
  * 1차(최초 도입 시)에는 기존 API(대시보드/시뮬레이션/시장 등)가 FE에서 아직 토큰을
@@ -45,7 +44,7 @@ public class SecurityConfig {
      * 관제 기능(실시간 대시보드·시뮬레이션·정책 보고서)을 쓸 수 있는 권한.
      * ROL01 관리자, ROL02 관제요원.
      *
-     * 2026-08-06: 이름을 SIMULATION_ROLES에서 바꿨다. 대시보드까지 같은 두 권한으로
+     * 이름을 SIMULATION_ROLES에서 바꿨다. 대시보드까지 같은 두 권한으로
      * 제한하게 되면서 "시뮬레이션"이라는 이름이 범위를 좁게 말하게 됐다.
      *
      * hasAnyRole은 값 앞에 "ROLE_"을 붙여 비교하고, JwtAuthenticationFilter도
@@ -79,7 +78,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/common-codes/**").permitAll() // 회원가입 화면(로그인 전)에서 소속기관 조회
-                        // 2026-08-20(보안 감사 BE-08): 이 permitAll은 로컬·개발 전용이다.
+                        // (보안 감사 BE-08): 이 permitAll은 로컬·개발 전용이다.
                         // 운영에서는 application-prod.yml이 springdoc 자체를 꺼서
                         // (api-docs.enabled=false) 이 경로에 매핑되는 핸들러가 없다.
                         // 여기서 경로를 지우지 않는 이유는 로컬에서 Swagger를 계속
@@ -93,7 +92,7 @@ public class SecurityConfig {
                         // 벌크 적재 허용
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/metrics/bulk").permitAll()
 
-                        // 2026-08-05 추가: 시뮬레이션은 관리자(ROL01)와 관제요원(ROL02)만 쓴다.
+                        // 시뮬레이션은 관리자(ROL01)와 관제요원(ROL02)만 쓴다.
                         // 상인회(ROL03)는 What-if 실험과 그 결과로 만든 정책 보고서를 다루지 않는다.
                         //
                         // 경로 전체를 막는 이유: 개별 엔드포인트를 나열하면 /api/simulation 아래에
@@ -104,7 +103,7 @@ public class SecurityConfig {
                         // 좌표)도 포함된다. 경로 접두사만 공유할 뿐 성격이 다른 API지만, 관제요원이
                         // ROL02라 실제로 막히는 대상은 상인회뿐이라 함께 두었다.
                         .requestMatchers("/api/simulation/**").hasAnyRole(CONTROL_SYSTEM_ROLES)
-                        // 2026-08-06 추가: 실시간 관제 대시보드도 같은 두 권한으로 제한한다.
+                        // 실시간 관제 대시보드도 같은 두 권한으로 제한한다.
                         // 상인회(ROL03)는 실시간 관제 대상이 아니다 - 상인회에게 열려 있는 것은
                         // 게시판과 상점 위치 등록(/api/facilities/**)이다.
                         //
@@ -124,16 +123,16 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        // 2026-08-05 변경: 이전엔 CorsConfig.java(WebMvcConfigurer)에도 똑같은 CORS
+        // 이전엔 CorsConfig.java(WebMvcConfigurer)에도 똑같은 CORS
         // 설정이 따로 있어서 PATCH 하나만 여기 추가했다가 놓칠 뻔했음. Spring
         // Security를 쓰는 이상 실제로 적용되는 건 이 빈이므로, CorsConfig.java는
         // 삭제하고 이 메서드를 CORS 설정의 유일한 출처로 통일함.
         //
-        // 2026-08-12 변경: 오리진을 "정확 일치"로만 받고 있어서, 로컬에서 Vite dev
+        // 오리진을 "정확 일치"로만 받고 있어서, 로컬에서 Vite dev
         // 서버가 5173이 아닌 포트로 뜨면 API가 전부 막혔다. Vite는 지정 포트가 이미
         // 사용 중이면 조용히 5174, 5175로 올려 잡는데(dev 서버를 두 개 띄우면 바로
         // 이렇게 된다), 그러면 preflight가 403으로 떨어져 화면은 뜨는데 API만 전부
-        // 실패하는 상태가 된다(2026-08-12 실측: 5173 → 200, 5174 → 403).
+        // 실패하는 상태가 된다(실측: 5173 → 200, 5174 → 403).
         //
         // 설정값에 '*'가 든 항목만 패턴으로 취급하고 나머지는 예전처럼 정확 일치로 둔다.
         // 전부 setAllowedOriginPatterns로 넘기지 않는 이유: setAllowedOrigins는 값이

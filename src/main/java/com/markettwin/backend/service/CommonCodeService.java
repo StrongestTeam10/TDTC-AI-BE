@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 /**
- * 2026-07-24 추가, 같은 날 2차 변경
  * FE constants/orgCode.ts에 하드코딩돼 있던 소속기관(ORG) 옵션을 실제 DB(comcode01m)
  * 조회로 대체하기 위한 서비스.
  *

@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 /**
- * 2026-08-04 추가 (상점 외관 직접 촬영 데이터 수집 파이프라인)
+ * 상점 외관 직접 촬영 데이터 수집 파이프라인
  *
  * FE 플로우: (1) POST .../exif로 사진을 보내 EXIF GPS/촬영일시 미리보기를 받아
  * 지도 보정 UI 초기값으로 사용 -> (2) 사용자가 위치 보정 + 방향 라벨링 후

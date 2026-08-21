@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 
 /**
- * MRKOBJT01M - 시장 오브젝트/구조 설정 (2026-08-11 신규)
+ * MRKOBJT01M - 시장 오브젝트/구조 설정 (신규)
  *
  * 시뮬레이션 비교의 초기 배치로 쓸 "오브젝트 배치 + 통로 제어 정책"을 시장 구조 등록
  * 화면에서 미리 등록해두는 마스터. 시장당 1행이다.

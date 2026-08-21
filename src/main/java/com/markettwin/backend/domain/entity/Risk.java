@@ -11,7 +11,7 @@ import java.time.Instant;
 /**
  * MRKRISK01M - 위험 점수
  *
- * 2026-07-27 변경(ERD 반영): 그레인이 "구역 단위(zone_id)"에서 "CCTV 프레임의
+ * 변경(ERD 반영): 그레인이 "구역 단위(zone_id)"에서 "CCTV 프레임의
  * 좌표 1건 단위(coord_id, PedestrianCoordinate 참조)"로 바뀜. 기존 zone_id 기반
  * 데이터는 DB에서 mrkrisk01m_zone_legacy로 보존해뒀고(schema-init.sql 참고),
  * 이 엔티티는 새 mrkrisk01m 테이블에 매핑됨.

@@ -11,7 +11,7 @@ public interface BaselineRepository extends JpaRepository<Baseline, Long> {
     List<Baseline> findByMarketIdAndIsActiveTrue(Long marketId);
 
     /**
-     * 2026-07-31 추가 (보고서 기능)
+     * 보고서 기능
      * 해당 시장의 현재 유효한 현행안 1건.
      *
      * uq_simbsln01m_active_market(부분 유니크 인덱스)이 시장당 is_active=true를 1건으로

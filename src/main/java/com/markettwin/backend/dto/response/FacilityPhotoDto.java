@@ -9,7 +9,7 @@ import java.net.URL;
 import java.time.Instant;
 
 /**
- * 2026-08-04 추가 (상점 외관 직접 촬영 데이터 수집 파이프라인)
+ * 상점 외관 직접 촬영 데이터 수집 파이프라인
  */
 @Getter
 @Builder

@@ -13,7 +13,6 @@ import java.time.Instant;
 import java.util.Map;
 
 /**
- * 2026-08-05 추가
  * 로그인은 했지만 권한이 모자라 거부된 요청에 403 + JSON으로 응답한다.
  *
  * 이게 없으면 권한 거부가 RestAuthenticationEntryPoint(401)로 흘러간다. FE는 401을

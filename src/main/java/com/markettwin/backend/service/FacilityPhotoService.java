@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * 2026-08-04 추가 (상점 외관 직접 촬영 데이터 수집 파이프라인)
+ * 상점 외관 직접 촬영 데이터 수집 파이프라인
  *
  * 흐름: previewExif(사진만 보내 EXIF 미리보기, 저장 없음) -> FE 지도 보정 UI ->
  * save(같은 사진 + 보정된 좌표 + 방향 코드를 함께 보내 실제 저장).
@@ -41,7 +41,7 @@ import java.util.Set;
 public class FacilityPhotoService {
 
     private static final String ADMIN_ROLE_CODE = "ROL01";
-    // 2026-08-04 변경: 시설 관리 화면 전체(FacilityService와 동일)를 관리자+상인회
+    // 시설 관리 화면 전체(FacilityService와 동일)를 관리자+상인회
     // 전용으로 좁히면서, 사진 기능도 같은 기준으로 맞춤(기존엔 관리자 또는 "본인 담당
     // 시장이면 역할 무관 접근 가능"이었는데, 이제 상인회가 아닌 일반 조회자/관제요원은
     // 담당 시장이 같아도 접근 불가)
@@ -79,7 +79,7 @@ public class FacilityPhotoService {
             throw new InvalidDirectionCodeException(directionCode);
         }
 
-        // 2026-08-20 추가(보안 감사 BE-09): 상점 외관 "사진"이므로 이미지만 받는다.
+        // 추가(보안 감사 BE-09): 상점 외관 "사진"이므로 이미지만 받는다.
         // 아래 EXIF 추출도 이미지를 전제로 동작한다.
         UploadFiles.requireAllowedExtension(
                 UploadFiles.sanitizeName(file.getOriginalFilename()),
@@ -158,7 +158,7 @@ public class FacilityPhotoService {
                 .orElseThrow(() -> new FacilityNotFoundException(facilityId));
     }
 
-    // 2026-08-04 변경: 관리자(ROL01) 또는 상인회(ORGMA, 본인 담당 시장에 한해)만 접근
+    // 관리자(ROL01) 또는 상인회(ORGMA, 본인 담당 시장에 한해)만 접근
     // 가능 - FacilityService.assertCanManageFacilities와 동일한 기준
     private void assertAccessible(Facility facility, User currentUser) {
         if (isAdmin(currentUser)) {
