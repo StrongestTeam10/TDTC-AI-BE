@@ -25,4 +25,10 @@ public interface PedestrianCoordinateJsonRepository extends JpaRepository<Pedest
     @Modifying
     @Query("DELETE FROM PedestrianCoordinateJson p WHERE p.capturedAt < :threshold")
     void deleteByCapturedAtBefore(@Param("threshold") Instant threshold);
+
+    // 추가: 부모(clipId) 리스트를 기반으로 자식 일괄 삭제
+    @Modifying
+    @Query("DELETE FROM PedestrianCoordinateJson p WHERE p.clipId IN :clipIds")
+    void deleteByClipIdsIn(@Param("clipIds") List<Long> clipIds);
+
 }

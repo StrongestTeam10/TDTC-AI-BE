@@ -25,8 +25,13 @@ public interface VideoClipRepository extends JpaRepository<VideoClip, Long> {
     /** 추가(관측 초기배치): 그 구역의 최신 영상 1건(삭제 안 된 것). */
     Optional<VideoClip> findTopByZoneIdAndIsDeletedFalseOrderByStartTimeDesc(Long zoneId);
 
-    /** 추가(자동청소 스케줄러): startTime이 기준시각보다 오래된 TEMP 클립 삭제. */
+    // 추가: 부모 지울 대상 ID만 가볍게 뽑아오는 메서드
+    @Query("SELECT v.clipId FROM VideoClip v WHERE v.clipType = 'TEMP' AND v.startTime < :threshold")
+    List<Long> findTempClipIdsOlderThan(@Param("threshold") Instant threshold);
+
+    // 추가: ID 리스트로 부모 일괄 삭제
     @Modifying
-    @Query("DELETE FROM VideoClip v WHERE v.clipType = 'TEMP' AND v.startTime < :threshold")
-    void deleteTempClipsOlderThan(@Param("threshold") Instant threshold);
+    @Query("DELETE FROM VideoClip v WHERE v.clipId IN :clipIds")
+    void deleteByClipIdsIn(@Param("clipIds") List<Long> clipIds);
+
 }

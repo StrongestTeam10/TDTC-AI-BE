@@ -23,4 +23,10 @@ public interface RiskRepository extends JpaRepository<Risk, Long> {
             nativeQuery = true)
     java.util.Optional<com.markettwin.backend.domain.entity.Risk> findLatestRiskByZoneId(@Param("zoneId") Long zoneId);
 
+    // 추가: 부모(clipId) 리스트를 기반으로 손자(Risk) 일괄 삭제
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("DELETE FROM Risk r WHERE r.coordId IN (SELECT p.coordId FROM PedestrianCoordinateJson p WHERE p.clipId IN :clipIds)")
+    void deleteByVideoClipIds(@org.springframework.data.repository.query.Param("clipIds") java.util.List<Long> clipIds);
+
+
 }
