@@ -35,7 +35,7 @@ public class AiDataCleanupScheduler {
         try {
             Instant oneHourAgo = Instant.now().minus(1, ChronoUnit.HOURS);
 
-            List<Long> clipIds = videoClipRepository.findAllClipIdsOlderThan(oneHourAgo);
+            List<Long> clipIds = videoClipRepository.findTempClipIdsOlderThan(oneHourAgo);
 
             if (!clipIds.isEmpty()) {
                 riskRepository.deleteByVideoClipIds(clipIds);

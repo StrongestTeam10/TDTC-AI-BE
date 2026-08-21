@@ -26,9 +26,8 @@ public interface VideoClipRepository extends JpaRepository<VideoClip, Long> {
     Optional<VideoClip> findTopByZoneIdAndIsDeletedFalseOrderByStartTimeDesc(Long zoneId);
 
     // 추가: 부모 지울 대상 ID만 가볍게 뽑아오는 메서드
-    @Query("SELECT v.clipId FROM VideoClip v WHERE v.startTime < :threshold")
-    List<Long> findAllClipIdsOlderThan(@Param("threshold") Instant threshold);
-
+    @Query("SELECT v.clipId FROM VideoClip v WHERE v.clipType = 'TEMP' AND v.startTime < :threshold")
+    List<Long> findTempClipIdsOlderThan(@Param("threshold") Instant threshold);
 
     // 추가: ID 리스트로 부모 일괄 삭제
     @Modifying
